@@ -6,7 +6,7 @@ public static class GamePath {
 
    
     public static string PREFABS = "Prefabs/";
-    public static string WEAPON_BULLET_DEF = PREFABS + "Weapon/Bullet/Def_bullet";
+    public static string WEAPON_BULLET_DEF = PREFABS + "Weapon/Bullet/Def_Bullet";
 
 
     // MapTool 전용

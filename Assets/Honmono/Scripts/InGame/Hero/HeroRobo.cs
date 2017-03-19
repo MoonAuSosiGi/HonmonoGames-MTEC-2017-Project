@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public class HeroRobo : MonoBehaviour {
 
     public enum ROBO_STATE
@@ -17,7 +18,11 @@ public class HeroRobo : MonoBehaviour {
     // 주인공인지 다른사람인지
     [SerializeField]
     private bool m_isMe = true;
-    
+
+    // 추진체 발광
+    [SerializeField]
+    private Light m_fireLight = null; 
+
     // 이동을 제외한 상태가 지정된다.
     private ROBO_STATE  m_roboState = ROBO_STATE.NONE;
 
@@ -26,6 +31,39 @@ public class HeroRobo : MonoBehaviour {
 
     // Move 속도 
     private float m_moveSpeed = 10.0f;
+
+
+    //-- normal map animation -----------------------//
+    // normal map 의 경우 unity animation 에서
+    // 변경이 불가능한 것으로 보이므로 스크립트 내에서 바꿈
+    // [일단은 임시 구현] TODO 더 나은 방법을 찾기
+    [SerializeField]
+    private List<Texture> m_flyNormalList = new List<Texture>();
+    [SerializeField]
+    private List<Texture> m_fireNormalList = new List<Texture>();
+
+    private List<Texture> m_currentNormalList = null;
+
+    private int m_currentNormalIndex = 0;
+    
+
+    //-- animation --//
+    private void ChangeNormalAnimation()
+    {
+        if (m_renderer == null || m_currentNormalList == null)
+            return;
+        this.m_renderer.material.SetTexture("_BumpMap", m_currentNormalList[m_currentNormalIndex++]);
+
+        if (m_currentNormalIndex >= m_currentNormalList.Count)
+            m_currentNormalIndex = 0;
+    }
+    private void SetupNormalAnimation(int type)
+    {
+        // type  = 0  fly  type = 1 fire
+        this.m_currentNormalList = (type == 0) ? this.m_flyNormalList : this.m_fireNormalList;
+        m_currentNormalIndex = 0;
+        this.m_renderer.material.SetTexture("_BumpMap", m_currentNormalList[m_currentNormalIndex++]);
+    }
 
     //-----------------------------------------------//
 
@@ -37,20 +75,30 @@ public class HeroRobo : MonoBehaviour {
     //-----------------------------------------------//
 	// Use this for initialization
 	void Start () {
+
         m_renderer = this.GetComponent<SpriteRenderer>();
         m_animator = this.GetComponent<Animator>();
-        
 
-        // TESTCODE
-     //   MDebug.Log(string.Format(GamePath.TILE + m_test.name + "_{0}",1));
-     //   Sprite[] spr = Resources.LoadAll<Sprite>(string.Format(GamePath.TILE+ m_test.name + "_{0}"));
+        LightRangeUp();
 
-        //for(int i = 0; i < spr.Length; i ++)
-        //{
-        //    Sprite s = spr[i];
-        //    MDebug.Log("TEST : " + s.name);
-        //}
-	}
+    }
+
+    void LightUpdate(float s)
+    {
+        m_fireLight.range = s;
+    }
+
+    void LightRangeUp()
+    {
+        iTween.ValueTo(gameObject, iTween.Hash("from", 1.0f, "to", 1.7f, "time", 0.3f, "onupdatetarget", gameObject, "onupdate", "LightUpdate", "oncompletetarget", gameObject, "oncomplete", "LightRangeDown"));
+    }
+
+
+    void LightRangeDown()
+    {
+        iTween.ValueTo(gameObject, iTween.Hash("from", 1.7f, "to", 1.0f, "time", 0.3f, "onupdatetarget", gameObject, "onupdate", "LightUpdate", "oncompletetarget", gameObject, "oncomplete", "LightRangeUp"));
+    }
+
 	
 	// Update is called once per frame
 	void Update () {
@@ -68,20 +116,27 @@ public class HeroRobo : MonoBehaviour {
     void Control()
     {
         Vector3 pos = transform.position;
+        Vector3 lightPos = m_fireLight.transform.localPosition;
 
         float movex = 0;
         float movey = 0;
+        
 
         // Horizontal
         if (Input.GetKey(KeyCode.LeftArrow))
         {
             movex = -m_moveSpeed * Time.deltaTime;
             this.GetComponent<SpriteRenderer>().flipX = false;
+            //불빛 위치 변경
+            this.m_fireLight.transform.localPosition = new Vector3(0.7f, lightPos.y, lightPos.z);
+            
         }
         if (Input.GetKey(KeyCode.RightArrow))
         {
             movex = m_moveSpeed * Time.deltaTime;
             this.GetComponent<SpriteRenderer>().flipX = true;
+            //불빛 위치 변경
+            this.m_fireLight.transform.localPosition = new Vector3(-0.7f, lightPos.y, lightPos.z);
         }
         // Vertical
         if (Input.GetKey(KeyCode.UpArrow))
@@ -147,7 +202,7 @@ public class HeroRobo : MonoBehaviour {
     {
         this.m_roboState = ROBO_STATE.NONE;
         this.m_animator.SetInteger("STATE", (int)m_roboState);
-        this.m_animator.Play("hero_robo_fly");
+        this.m_animator.Play("Robo_fly");
     }
 
     void OnGUI()

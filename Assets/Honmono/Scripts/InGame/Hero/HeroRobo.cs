@@ -80,6 +80,7 @@ public class HeroRobo : MonoBehaviour {
         m_animator = this.GetComponent<Animator>();
 
         LightRangeUp();
+        PopupManager.Instance().AddPopup("LoginPopup");
 
     }
 

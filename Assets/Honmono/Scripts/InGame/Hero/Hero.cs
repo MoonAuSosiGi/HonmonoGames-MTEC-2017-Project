@@ -15,6 +15,8 @@ public class Hero : MonoBehaviour {
 
     // 기본 정보 ----------------------------------------------//
 
+    // 렌더러
+    private SpriteRenderer m_renderer = null;
     // 점프시 가할 힘
     private float m_jumpPower = 300.0f;
 
@@ -30,12 +32,68 @@ public class Hero : MonoBehaviour {
     // 애니메이터
     private Animator m_animator = null;
 
-   //----------------------------------------------------------//
+    // 연출용
+    [SerializeField]
+    private Light m_Light = null;
 
-	// Use this for initialization
-	void Start () {
+    //-- normal map animation -----------------------//
+    // normal map 의 경우 unity animation 에서
+    // 변경이 불가능한 것으로 보이므로 스크립트 내에서 바꿈
+    // [일단은 임시 구현] TODO 더 나은 방법을 찾기
+    [SerializeField]
+    private List<Texture> m_moveNormalList = new List<Texture>();
+    [SerializeField]
+    private List<Texture> m_idleNormalList = new List<Texture>();
+    private List<Texture> m_currentNormalList = null;
+    private int m_currentNormalIndex = 0;
+
+
+    //-- animation --//
+    private void ChangeNormalAnimation()
+    {
+        if (m_renderer == null || m_currentNormalList == null)
+            return;
+        this.m_renderer.material.SetTexture("_BumpMap", m_currentNormalList[m_currentNormalIndex++]);
+
+        if (m_currentNormalIndex >= m_currentNormalList.Count)
+            m_currentNormalIndex = 0;
+    }
+    private void SetupNormalAnimation(int type)
+    {
+        // type  = 0  fly  type = 1 fire
+        this.m_currentNormalList = (type == 0) ? this.m_moveNormalList : this.m_idleNormalList;
+        m_currentNormalIndex = 0;
+        this.m_renderer.material.SetTexture("_BumpMap", m_currentNormalList[m_currentNormalIndex++]);
+        
+
+    }
+
+    // 연출용 라이트
+    void MoveLeft()
+    {
+        iTween.ValueTo(gameObject, iTween.Hash("from", 7.0f, "to", -7.0f, "time", 3.0f, "onupdatetarget", gameObject, "onupdate", "LightUpdate", "oncompletetarget", gameObject, "oncomplete", "MoveRight"));
+    }
+
+    void MoveRight()
+    {
+        iTween.ValueTo(gameObject, iTween.Hash("from", -7.0f, "to", 7.0f, "time", 3.0f, "onupdatetarget", gameObject, "onupdate", "LightUpdate", "oncompletetarget", gameObject, "oncomplete", "MoveLeft"));
+    }
+    
+    void LightUpdate(float s)
+    {
+        m_Light.transform.localPosition = new Vector3(s, m_Light.transform.localPosition.y);
+    }
+
+    //-----------------------------------------------//
+
+    //----------------------------------------------------------//
+
+    // Use this for initialization
+    void Start () {
+        m_renderer = this.GetComponent<SpriteRenderer>();
         m_rigidBody = this.GetComponent<Rigidbody2D>();
         m_animator = this.GetComponent<Animator>();
+        MoveLeft();
 	}
 	
 	// Update is called once per frame

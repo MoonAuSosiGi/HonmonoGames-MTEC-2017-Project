@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 using WebSocketSharp;
 
@@ -10,22 +11,18 @@ public class WebSocketController : MonoBehaviour
     private string m_url = "localhost:8080";
     private WebSocket m_socket = null;
     private GameObject m_target = null;
-
-
-    public OnReceive m_receive = null;
+    private string m_targetFunc = null;
     //--------------------------------------------------------------//
 
-    // Delegate ----------------------------------------------------//
-    //메시지를 받을 델리게이트
-    public delegate void OnReceive(object o, MessageEventArgs e);
+
     // -------------------------------------------------------------//
 
 
-    public void Setup(string url, OnReceive recv)
+    public void Setup(string url,GameObject targetObj, EventHandler<MessageEventArgs> targetFunc)
     {
+        m_target = targetObj;
         m_socket = new WebSocket("ws://" + m_url + "/echo");
-        m_socket.OnMessage += RecieveMessage;
-        m_receive = recv;
+        m_socket.OnMessage += targetFunc;
         m_socket.Connect();
 
         MDebug.Log("# WebSocket Server Connect ----------------------------------");
@@ -43,8 +40,8 @@ public class WebSocketController : MonoBehaviour
 
     void RecieveMessage(object sender, MessageEventArgs e)
     {
-        if (m_receive != null)
-            m_receive(sender, e);
+        if (m_target != null)
+            m_target.SendMessage(m_targetFunc, e.Data);
 
     }
 }

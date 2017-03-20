@@ -58,7 +58,7 @@ public class RestController : MonoBehaviour {
             {
                 MDebug.Log("response code " + www.responseCode);
                 if (target != null)
-                    target.SendMessage(targetFunc, this.GetJSONArr(www));
+                    target.SendMessage(targetFunc, this.GetJSON(www));
                 
                 
                 MDebug.Log(www.downloadHandler.text);
@@ -85,18 +85,21 @@ public class RestController : MonoBehaviour {
             {
 
                 if (target != null)
-                    target.SendMessage(targetFunc, this.GetJSONArr(www));
+                    target.SendMessage(targetFunc, this.GetJSON(www));
             }
         }
         
     }
 
-    JSONObject[] GetJSONArr(UnityWebRequest www)
+    JSONObject GetJSON(UnityWebRequest www)
     {
         byte[] results = www.downloadHandler.data;
-        JSONObject[] objs = new JSONObject[2];
-        objs[0] = new JSONObject(System.Convert.ToBase64String(results));
-        objs[1] = new JSONObject(www.GetResponseHeaders());
-        return objs;
+        JSONObject obj = new JSONObject(www.downloadHandler.text);
+        MDebug.Log("d " + System.Convert.ToBase64String(results));
+        obj.AddField("data", System.Convert.ToBase64String(results));
+        //obj.AddField("status", www.downloadHandler.text);
+        obj.AddField("responseCode", new JSONObject(www.responseCode));
+        obj.AddField("responseHeader", new JSONObject(www.GetResponseHeaders()));
+        return obj;
     }
 }

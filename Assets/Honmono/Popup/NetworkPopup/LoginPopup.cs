@@ -33,6 +33,13 @@ public class LoginPopup : MonoBehaviour {
 
     void RecvMessage(JSONObject obj)
     {
+        if(!obj.HasField("status"))
+        {
+            PopupManager.Instance().ClosePopup(gameObject);
+            PopupManager.Instance().MessagePopupOK("ERROR", "REST 서버에 접속할 수 없습니다.");
+            return;
+        }
+
         // RESPONSE CODE 
         int response = (int)obj.GetField("responseCode").n;
         // HEADER
@@ -40,7 +47,7 @@ public class LoginPopup : MonoBehaviour {
         //result
         string result = obj.GetField("status").str;
 
-        MDebug.Log("responseCode " + response + " header " + header + " result " + result);
+        //MDebug.Log("responseCode " + response + " header " + header + " result " + result);
 
         //Success
         if(response == 200)
@@ -49,6 +56,7 @@ public class LoginPopup : MonoBehaviour {
             if(result == "you are signed up.")
             {
                 PopupManager.Instance().ClosePopup(gameObject);
+                PopupManager.Instance().MessagePopupOK("Login", "완료");
             }
         }
 

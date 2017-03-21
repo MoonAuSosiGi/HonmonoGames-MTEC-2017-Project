@@ -29,12 +29,21 @@ public class NetworkManager : Singletone<NetworkManager> {
     // WebSocket ---------------------------------------------------------------------------------------------//
     public void SetupWebSocket()
     {
-        m_socket.Setup(m_serverURL);
+        m_socket.SetupChat(m_serverURL);
+    }
+    public void SetupWebSocketMove()
+    {
+        m_socket.SetupMove(m_serverURL);
     }
 
-    public void SetupChatRecv(EventHandler<MessageEventArgs> chatRecvFunc)
+    public void SetChatRecv(EventHandler<MessageEventArgs> chatRecvFunc)
     {
-        m_socket.SetupChatReceiveMessage(chatRecvFunc);
+        m_socket.SetChatReceiveMessage(chatRecvFunc);
+    }
+
+    public void SetMoveRecv(EventHandler<MessageEventArgs> moveRecvFunc)
+    {
+        m_socket.SetMoveReceiveMessage(moveRecvFunc);
     }
 
     public void SendChatMessage(string message)

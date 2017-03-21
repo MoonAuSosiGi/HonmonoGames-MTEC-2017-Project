@@ -13,7 +13,6 @@ public class ChatUI : MonoBehaviour
     // 채팅이 입력되는 부분
     [SerializeField]
     private InputField m_inputField = null;
-    WebSocket m_socket;
 
     // 실제 메시지들이 저장될 리스트
     private List<string> m_messageStrs = new List<string>();
@@ -24,8 +23,8 @@ public class ChatUI : MonoBehaviour
     {
 
         // 임의로 여기서 호출
-        NetworkManager.Instance().SetupWebSocket();
-        NetworkManager.Instance().SetupChatRecv(ReceiveMessage);
+      //  NetworkManager.Instance().SetupWebSocket();
+       // NetworkManager.Instance().SetChatRecv(ReceiveMessage);
     }
 
     void Update()

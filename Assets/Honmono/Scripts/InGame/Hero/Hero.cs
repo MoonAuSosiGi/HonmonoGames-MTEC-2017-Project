@@ -21,7 +21,7 @@ public class Hero : MonoBehaviour {
     private float m_jumpPower = 300.0f;
 
     // 이동 속도
-    private float m_moveSpeed = 3.0f;
+    private float m_moveSpeed = 6.0f;
 
     //현재 상태 설정
     private int m_curState = (int)HERO_STATE.IDLE;
@@ -35,6 +35,16 @@ public class Hero : MonoBehaviour {
     // 연출용
     [SerializeField]
     private Light m_Light = null;
+
+    // 자기자신 판별용
+    [SerializeField]
+    public bool m_isMe = true;
+
+    [SerializeField]
+    private string m_userName = "";
+
+    // USER NAME
+    public string USERNAME {  get { return m_userName; } }
 
     //-- normal map animation -----------------------//
     // normal map 의 경우 unity animation 에서
@@ -100,7 +110,12 @@ public class Hero : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-        Control();
+        if(m_isMe)
+            Control();
+        else
+        {
+
+        }
 	}
 
 
@@ -140,7 +155,7 @@ public class Hero : MonoBehaviour {
             // move 상태인지 체크
             bool move = BitControl.Get(m_curState, (int)HERO_STATE.MOVE);
 
-            MDebug.Log("move " + move + " t " + BitControl.Get(m_curState, (int)HERO_STATE.JUMP));
+       //     MDebug.Log("move " + move + " t " + BitControl.Get(m_curState, (int)HERO_STATE.JUMP));
 
             if(BitControl.Get(m_curState,(int)HERO_STATE.LADDER))
             {

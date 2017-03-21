@@ -48,13 +48,13 @@ public class RestController : MonoBehaviour {
 
         yield return www.Send();
 
-        if(www.isError)
+        //if(www.isError)
+        //{
+        //    MDebug.Log("REST Post Error : "+ www.error);
+        //}
+        //else
         {
-            MDebug.Log("REST Post Error : "+ www.error);
-        }
-        else
-        {
-            if(www.GetResponseHeaders().Count > 0)
+//            if(www.GetResponseHeaders().Count > 0)
             {
                 MDebug.Log("response code " + www.responseCode);
                 if (target != null)
@@ -95,11 +95,11 @@ public class RestController : MonoBehaviour {
     {
         byte[] results = www.downloadHandler.data;
         JSONObject obj = new JSONObject(www.downloadHandler.text);
-        MDebug.Log("d " + System.Convert.ToBase64String(results));
+    //    MDebug.Log("d " + System.Convert.ToBase64String(results));
         obj.AddField("data", System.Convert.ToBase64String(results));
         //obj.AddField("status", www.downloadHandler.text);
         obj.AddField("responseCode", new JSONObject(www.responseCode));
-        obj.AddField("responseHeader", new JSONObject(www.GetResponseHeaders()));
+       // obj.AddField("responseHeader", new JSONObject(www.GetResponseHeaders()));
         return obj;
     }
 }

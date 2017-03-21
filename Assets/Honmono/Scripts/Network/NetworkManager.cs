@@ -27,9 +27,14 @@ public class NetworkManager : Singletone<NetworkManager> {
     }
 
     // WebSocket ---------------------------------------------------------------------------------------------//
-    public void SetupWebSocket(GameObject chatRecvObj, EventHandler<MessageEventArgs> chatRecvFunc)
+    public void SetupWebSocket()
     {
-        m_socket.Setup(m_serverURL, chatRecvObj, chatRecvFunc);
+        m_socket.Setup(m_serverURL);
+    }
+
+    public void SetupChatRecv(EventHandler<MessageEventArgs> chatRecvFunc)
+    {
+        m_socket.SetupChatReceiveMessage(chatRecvFunc);
     }
 
     public void SendChatMessage(string message)

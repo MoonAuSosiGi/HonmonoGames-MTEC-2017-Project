@@ -14,18 +14,24 @@ public class WebSocketController : MonoBehaviour
     private string m_targetFunc = null;
     //--------------------------------------------------------------//
 
+    EventHandler<MessageEventArgs> m_chatRecv = null;
 
     // -------------------------------------------------------------//
 
 
-    public void Setup(string url,GameObject targetObj, EventHandler<MessageEventArgs> targetFunc)
+    public void Setup(string url)
     {
-        m_target = targetObj;
+       // m_target = targetObj;
         m_socket = new WebSocket("ws://" + m_url + "/echo");
-        m_socket.OnMessage += targetFunc;
+        m_socket.OnMessage += RecieveMessage;
         m_socket.Connect();
 
         MDebug.Log("# WebSocket Server Connect ----------------------------------");
+    }
+
+    public void SetupChatReceiveMessage(EventHandler<MessageEventArgs> targetFunc)
+    {
+        m_chatRecv += targetFunc;
     }
 
     public void SendChatMessage(string message)
@@ -40,8 +46,8 @@ public class WebSocketController : MonoBehaviour
 
     void RecieveMessage(object sender, MessageEventArgs e)
     {
-        if (m_target != null)
-            m_target.SendMessage(m_targetFunc, e.Data);
+        // TODO Message 분기
+        m_chatRecv(sender, e);
 
     }
 }

@@ -22,16 +22,16 @@ public class ChatUI : MonoBehaviour
 
     void Start()
     {
-        // TODO 이부분은 정리가 필요한 부분. 여기서 호출하는게 맞는 것인가?
-        NetworkManager.Instance().SetupWebSocket(gameObject, ReceiveMessage);
+
+        // 임의로 여기서 호출
+        NetworkManager.Instance().SetupWebSocket();
+        NetworkManager.Instance().SetupChatRecv(ReceiveMessage);
     }
 
     void Update()
     {
-
         if (m_messageStrs.Count > 0)
         {
-            Debug.Log(m_messageStrs.Count);
             for (int i = 1; i < m_messages.Count; i++)
             {
                 m_messages[m_messages.Count - i].text = m_messages[m_messages.Count - i - 1].text;

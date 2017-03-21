@@ -64,7 +64,8 @@ public class Hero : MonoBehaviour {
         this.m_currentNormalList = (type == 0) ? this.m_moveNormalList : this.m_idleNormalList;
         m_currentNormalIndex = 0;
         this.m_renderer.material.SetTexture("_BumpMap", m_currentNormalList[m_currentNormalIndex++]);
-        
+        if (m_currentNormalIndex >= m_currentNormalList.Count)
+            m_currentNormalIndex = 0;
 
     }
 
@@ -93,6 +94,7 @@ public class Hero : MonoBehaviour {
         m_renderer = this.GetComponent<SpriteRenderer>();
         m_rigidBody = this.GetComponent<Rigidbody2D>();
         m_animator = this.GetComponent<Animator>();
+        this.m_currentNormalList = this.m_idleNormalList;
         MoveLeft();
 	}
 	

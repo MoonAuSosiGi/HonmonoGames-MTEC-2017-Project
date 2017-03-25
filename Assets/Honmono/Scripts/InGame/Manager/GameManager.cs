@@ -15,10 +15,20 @@ public class GameManager : Singletone<GameManager> {
 
     Resolution m_resoluation = new Resolution(1920,1080);
 
+    // 플레이어 정보
+    private PlayerInfo m_player = new PlayerInfo();
+    public PlayerInfo PLAYER { get { return m_player; } }
+
     //---------------------------------------------------------------//
 
     void Start()
     {
         Screen.SetResolution(m_resoluation.width, m_resoluation.height,false);
+    }
+
+    
+    public void HeroSetup(Hero hero)
+    {
+        m_player.PLAYER_HERO = hero;
     }
 }

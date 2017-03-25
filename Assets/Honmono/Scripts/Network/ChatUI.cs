@@ -23,8 +23,8 @@ public class ChatUI : MonoBehaviour
     {
 
         // 임의로 여기서 호출
-      //  NetworkManager.Instance().SetupWebSocket();
-       // NetworkManager.Instance().SetChatRecv(ReceiveMessage);
+        //NetworkManager.Instance().SetupWebSocket();
+        //NetworkManager.Instance().SetChatRecv(ReceiveMessage);
     }
 
     void Update()
@@ -43,7 +43,7 @@ public class ChatUI : MonoBehaviour
 
     public void SendMessageToServer()
     {
-        NetworkManager.Instance().SendChatMessage(m_inputField.text);
+        NetworkManager.Instance().SendMessage(JSONMessageTool.ToJsonChat(m_inputField.text));
         m_inputField.Select();
         m_inputField.text = "";
     }
@@ -52,8 +52,5 @@ public class ChatUI : MonoBehaviour
     {
         m_messageStrs.Add(e.Data);
     }
-
-  
-
-
+    
 }

@@ -8,7 +8,7 @@ public class NetworkManager : Singletone<NetworkManager> {
 
     // -- 기본 json 태그 --------------------------------------------------------------------------------------//
     public const string MSGTYPE = "MsgType";
-    public const string USER = "User";
+    public const string USERNAME = "UserName";
     public const string MSG = "Msg";
 
     // 상태값 
@@ -24,11 +24,18 @@ public class NetworkManager : Singletone<NetworkManager> {
     private RestController m_rest = null;
     [SerializeField]
     private WebSocketController m_socket = null;
+
+    public string SERVER_URL
+    {
+        get { return m_serverURL; }
+        set { m_serverURL = value; }
+    }
  
     
     // -- 메시지 큐 -------------------------------------------------------------------------------------------//
     private Queue<string> m_socketMessages = new Queue<string>();
-    //-- 옵저버 패턴-------------------------------------------------------------------------------------------//
+    private Queue<string> m_socketMoveMessage = new Queue<string>();
+    //-- 옵저버 패턴 [채팅] -------------------------------------------------------------------------------------------//
 
     public class MessageEvent
     {
@@ -61,21 +68,14 @@ public class NetworkManager : Singletone<NetworkManager> {
     }
 
     // 메시지 일괄 전송
-    private void SendNetworkMessage()
+    private void SendNetworkChatMessage()
     {
         if (m_socketMessages.Count <= 0)
             return;
 
         JSONObject obj = new JSONObject(m_socketMessages.Dequeue());
 
-        MessageEvent e = null; 
-        //// 이전 서버 제어용
-        //if (!obj.HasField(MSGTYPE))
-        //{
-        //    e = new MessageEvent(MOVE, obj.GetField("UserName").str, obj);
-        //}
-        //else
-            e = new MessageEvent(obj.GetField(MSGTYPE).str, obj.GetField(USER).str, obj.GetField(MSG));
+        MessageEvent e = new MessageEvent(obj.GetField(MSGTYPE).str, obj.GetField(USERNAME).str, obj.GetField(MSG));
 
         foreach(NetworkMessageEventListenrer listener in m_socketListener)
         {
@@ -83,15 +83,46 @@ public class NetworkManager : Singletone<NetworkManager> {
         }
 
     }
+    // -- 옵저버 패턴 [무브] -----------------------------------------------------------------------------------//
+    List<NetworkMoveEventListener> m_moveEventList = new List<NetworkMoveEventListener>();
+    public interface NetworkMoveEventListener
+    {
+        void ReceiveMoveEvent(string json);
+    }
+
+    public void AddNetworkMoveEventListener(NetworkMoveEventListener l)
+    {
+        m_moveEventList.Add(l);
+    }
+
+    void SendMoveNetworkMessage()
+    {
+        if (m_socketMoveMessage.Count <= 0)
+            return;
+
+        string json = m_socketMoveMessage.Dequeue();
+
+        //{"Users":[{"UserName":"test","x":-3.531799,"y":-0.02999991,"z":0,"dir":0}]}
+
+
+        
+        foreach (NetworkMoveEventListener l in m_moveEventList)
+        {
+            l.ReceiveMoveEvent(json);
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------//
 
     void Start()
     {
-        SetupWebSocket();
+      //  SetupWebSocket();
     }
 
     void Update()
     {
-        SendNetworkMessage();
+        SendNetworkChatMessage();
+        SendMoveNetworkMessage();
     }
     
     //-- REST ------------------------------------------------------------------------------------------------//
@@ -108,20 +139,24 @@ public class NetworkManager : Singletone<NetworkManager> {
     }
     public void SendNetworkMessage(string json)
     {
-        m_socket.SendNetworkMessage(json);
+        m_socket.SendChatMessage(json);
     }
 
-    // 큐에 메시지를 담는다.
-    public void PushSocketMessage(string json)
+    public void SendMoveMessage(string json)
     {
-        // 무브 테스트용ㅇ
-        //JSONObject j = new JSONObject(json);
-        //JSONObject users = j.GetField("Users");
-
-        //for(int i = 0; i < users.Count; i++)
-        //this.m_socketMessages.Enqueue(users[i].ToString());
+        m_socket.SendMoveMessage(json);
+    }
 
 
+    // 큐에 메시지를 담는다.
+    public void PushChatMessage(string json)
+    {
         this.m_socketMessages.Enqueue(json);
+    }
+
+    // 무브 이벤트 정보만 담는다.
+    public void PushMoveMessage(string json)
+    {
+        this.m_socketMoveMessage.Enqueue(json);   
     }
 }

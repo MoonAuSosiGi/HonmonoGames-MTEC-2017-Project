@@ -3,8 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using WebSocketSharp;
 using UnityEngine.UI;
+using System;
 
-public class ChatUI : MonoBehaviour
+public class ChatUI : MonoBehaviour, NetworkManager.NetworkMessageEventListenrer
 {
     // -- Chat UI -----------------------------------------------------------------//
     // 실제로 채팅이 보여질 부분
@@ -21,10 +22,7 @@ public class ChatUI : MonoBehaviour
 
     void Start()
     {
-
-        // 임의로 여기서 호출
-        //NetworkManager.Instance().SetupWebSocket();
-        //NetworkManager.Instance().SetChatRecv(ReceiveMessage);
+        NetworkManager.Instance().AddNetworkMessageEventListener(this);
     }
 
     void Update()
@@ -43,7 +41,8 @@ public class ChatUI : MonoBehaviour
 
     public void SendMessageToServer()
     {
-        NetworkManager.Instance().SendMessage(JSONMessageTool.ToJsonChat(m_inputField.text));
+        NetworkManager.Instance().SendNetworkMessage(JSONMessageTool.ToJsonChat(m_inputField.text));
+    //    m_messageStrs.Add(m_inputField.text);
         m_inputField.Select();
         m_inputField.text = "";
     }
@@ -52,5 +51,13 @@ public class ChatUI : MonoBehaviour
     {
         m_messageStrs.Add(e.Data);
     }
-    
+
+    void NetworkManager.NetworkMessageEventListenrer.ReceiveNetworkMessage(NetworkManager.MessageEvent e)
+    {
+        
+        if ( e.msgType != NetworkManager.CHAT)
+            return;
+
+        m_messageStrs.Add(e.user + " : " + e.msg.str);
+    }
 }

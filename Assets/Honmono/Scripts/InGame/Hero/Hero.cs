@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Hero : MonoBehaviour, NetworkManager.NetworkMessageEventListenrer
+public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
 {
 
     public enum HERO_STATE
@@ -106,36 +106,63 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMessageEventListenrer
 
     //--네트워크--------------------------------------------------------------------------------------------------------------//
 
-    void NetworkManager.NetworkMessageEventListenrer.ReceiveNetworkMessage(NetworkManager.MessageEvent e)
+    void NetworkManager.NetworkMoveEventListener.ReceiveMoveEvent(string json)
     {
-        // 임시  //면 처리할 필요 없음
-        if (m_userName != e.user)
+        if (m_isMe)
             return;
+        JSONObject obj = new JSONObject(json);
+        JSONObject users = obj.GetField("Users");
 
-        //임시
+        //{"Users":[{"UserName":"test","x":-3.531799,"y":-0.02999991,"z":0,"dir":0}]}
+
+        float x = 0.0f, y = 0.0f;
+        bool flip = false;
+        bool ck = false;
+        for(int i = 0; i < users.Count; i++)
+        {
+            if(users[i].GetField(NetworkManager.USERNAME).str == m_userName)
+            {
+                x = users[i].GetField("x").f;
+                y = users[i].GetField("y").f;
+                flip = users[i].GetField(NetworkManager.DIR).b;
+                ck = true;
+                break;
+            }
+        }
+        //// 임시  //면 처리할 필요 없음
+        //if (m_userName != e.user)
+        //    return;
+
+        if (!ck)
+            return;
+        ////임시
         m_renderer.enabled = true;
 
-        switch (e.msgType)
+        //switch (e.msgType)
+        //{
+        //    case NetworkManager.MOVE:
+        //        //if (m_isMe)
+        //        //    return;
+        Vector3 newPos = new Vector3(x, y);
+
+        float distance = Vector3.Distance(transform.position, newPos);
+        this.m_renderer.flipX = flip;
+        if (distance <= 0)
         {
-            case NetworkManager.MOVE:
-                if (m_isMe)
-                    return;
-                Vector3 newPos = new Vector3(e.msg.GetField("x").f, e.msg.GetField("y").f);
-
-                float distance = Vector3.Distance(transform.position, newPos);
-
-                if (distance <= 0)
-                    return;
-                m_targetPos = newPos;
-
-                m_syncTime = 0.0f;
-                m_delay = Time.time - m_lastSyncTime;
-                m_lastSyncTime = Time.time;
-                this.m_renderer.flipX = e.msg.GetField(NetworkManager.DIR).b;
-                this.m_animator.SetBool("Move", true);
-
-                break;
+            this.m_animator.SetBool("Move", false);
+            return;
         }
+        
+        m_targetPos = newPos;
+
+        m_syncTime = 0.0f;
+        m_delay = Time.time - m_lastSyncTime;
+        m_lastSyncTime = Time.time;
+        
+        this.m_animator.SetBool("Move", true);
+
+        //        break;
+        //}
     }
 
     //------------------------------------------------------------------------------------------------------------------------//
@@ -165,7 +192,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMessageEventListenrer
         MoveLeft();
         
         // 네트워크 이벤트 옵저버 등록
-        NetworkManager.Instance().AddNetworkMessageEventListener(this);
+        NetworkManager.Instance().AddNetworkMoveEventListener(this);
     }
 
     // Update is called once per frame
@@ -301,7 +328,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMessageEventListenrer
         if (distance <= 0)
             return;
 
-        NetworkManager.Instance().SendNetworkMessage(JSONMessageTool.ToJsonMove(pos.x, pos.y, m_renderer.flipX));
+      //  MDebug.Log(JSONMessageTool.ToJsonMove(pos.x, pos.y, m_renderer.flipX));
+        NetworkManager.Instance().SendMoveMessage(JSONMessageTool.ToJsonMove(pos.x, pos.y, m_renderer.flipX));
         // NetworkManager.Instance().SendMovePos(GameManager.Instance().PLAYER.ToJsonPositionInfo());
     }
 

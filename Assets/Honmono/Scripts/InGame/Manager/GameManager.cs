@@ -24,6 +24,7 @@ public class GameManager : Singletone<GameManager> {
     void Start()
     {
         Screen.SetResolution(m_resoluation.width, m_resoluation.height,false);
+        PopupManager.Instance().AddPopup("NetworkConnectPopup");
     }
 
     

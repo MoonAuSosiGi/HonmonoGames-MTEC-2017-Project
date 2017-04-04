@@ -186,12 +186,12 @@ public class HeroRobo : MonoBehaviour {
     void FireBullet()
     {
         this.m_roboState = ROBO_STATE.WEAPON_RELOAD;
-        GameObject bullet =  BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_HERO_DEF,m_renderer.flipX);
-        Vector3 pos = transform.position;
-        float width = (m_renderer.flipX) ? m_renderer.bounds.size.x / 2.0f : -m_renderer.bounds.size.x / 2.0f;
-        bullet.transform.position = new Vector3(pos.x + width, pos.y, pos.z);
+        //GameObject bullet =  BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_HERO_DEF,m_renderer.flipX);
+        //Vector3 pos = transform.position;
+        //float width = (m_renderer.flipX) ? m_renderer.bounds.size.x / 2.0f : -m_renderer.bounds.size.x / 2.0f;
+        //bullet.transform.position = new Vector3(pos.x + width, pos.y, pos.z);
 
-        Invoke("WeaponReload", m_reloadSpeed);
+        //Invoke("WeaponReload", m_reloadSpeed);
     }
 
     void FireEnd()

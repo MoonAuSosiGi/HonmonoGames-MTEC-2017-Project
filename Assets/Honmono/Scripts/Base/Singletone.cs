@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class Singletone<T> : MonoBehaviour where T : MonoBehaviour{
 
@@ -10,12 +11,20 @@ public class Singletone<T> : MonoBehaviour where T : MonoBehaviour{
     {
         if (m_instance == null)
         {
-            m_instance = FindObjectOfType(typeof(T)) as T;
-            if (m_instance == null)
+            try
             {
-                MDebug.Log("ERROR...Singletone Instance NULL");
+                m_instance = FindObjectOfType(typeof(T)) as T;
+                if (m_instance == null)
+                {
+                    MDebug.Log("ERROR...Singletone Instance NULL");
+                    return null;
+                }
+            }
+            catch(Exception e)
+            {
                 return null;
             }
+           
                 
         }
         return m_instance;

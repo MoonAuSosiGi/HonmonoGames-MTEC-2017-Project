@@ -6,7 +6,8 @@ public class BulletManager : Singletone<BulletManager> {
 
     public enum BULLET_TYPE
     {
-        B_HERO_DEF = 0  // 주인공의 디폴트 총알
+        B_HERO_DEF = 0,  // 주인공의 디폴트 총알
+        B_BOSS1_P1,      // 보스 1 패턴 1 총알
     }
 
     //-----------------------------------//
@@ -14,7 +15,7 @@ public class BulletManager : Singletone<BulletManager> {
     private List<Bullet> m_bulletList = new List<Bullet>();
     //----------------------------------//
 
-    public GameObject AddBullet(BULLET_TYPE type,bool right)
+    public GameObject AddBullet(BULLET_TYPE type)
     {
         string path = null;
 
@@ -32,7 +33,7 @@ public class BulletManager : Singletone<BulletManager> {
         bullet.transform.parent = transform;
 
         // TODO TempCode...!
-        bullet.GetComponent<SpriteRenderer>().flipX = right;
+        //bullet.GetComponent<SpriteRenderer>().flipX = right;
         
         m_bulletList.Add(bullet.GetComponent<Bullet>());
 

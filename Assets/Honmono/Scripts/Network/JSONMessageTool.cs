@@ -4,6 +4,24 @@ using UnityEngine;
 
 public static class JSONMessageTool  {
 
+    class EnemyMove
+    {
+        public string name;
+        public float x;
+        public float y;
+        public float z;
+        public bool Dir;
+
+    }
+
+    public static string ToJsoinEnemyMove(string name,float x,float y,float z, bool dir)
+    {
+        EnemyMove e = new EnemyMove();
+        e.name = name; e.x = x; e.y = y; e.z = z;
+        e.Dir = dir;
+        return JsonUtility.ToJson(e);
+    }
+
 
     public static string ToJsonMove(float x, float y, bool dir)
     {

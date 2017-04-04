@@ -18,6 +18,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
 
     // 렌더러
     private SpriteRenderer m_renderer = null;
+    // 로봇과의 렌더링
+    private BansheeGz.BGSpline.Curve.BGCurve m_bgCurve = null;
     // 점프시 가할 힘
     private float m_jumpPower = 300.0f;
 
@@ -44,11 +46,14 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
     [SerializeField]
     private string m_userName = "";
 
+    [SerializeField]
+    private GameObject m_robot = null;
+
 
     //기존 위치
     Vector3 m_prevPos = Vector3.zero;
     // USER NAME
-    public string USERNAME { get { return m_userName; } }
+    public string USERNAME { get { return m_userName; } set { m_userName = value;  /*변경이 일어날때 최초 수행*/ if(m_isMe)NetworkManager.Instance().SendMoveMessage(JSONMessageTool.ToJsonMove(transform.position.x, transform.position.y, m_renderer.flipX)); } }
 
     //-- normal map animation ---------------------------------------------------------------------------//
     // normal map 의 경우 unity animation 에서
@@ -106,11 +111,11 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
 
     //--네트워크--------------------------------------------------------------------------------------------------------------//
 
-    void NetworkManager.NetworkMoveEventListener.ReceiveMoveEvent(string json)
+    void NetworkManager.NetworkMoveEventListener.ReceiveMoveEvent(JSONObject json)
     {
         if (m_isMe)
             return;
-        JSONObject obj = new JSONObject(json);
+        JSONObject obj = json;
         JSONObject users = obj.GetField("Users");
 
         //{"Users":[{"UserName":"test","x":-3.531799,"y":-0.02999991,"z":0,"dir":0}]}
@@ -129,20 +134,10 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
                 break;
             }
         }
-        //// 임시  //면 처리할 필요 없음
-        //if (m_userName != e.user)
-        //    return;
-
+        
         if (!ck)
             return;
-        ////임시
-        m_renderer.enabled = true;
 
-        //switch (e.msgType)
-        //{
-        //    case NetworkManager.MOVE:
-        //        //if (m_isMe)
-        //        //    return;
         Vector3 newPos = new Vector3(x, y);
 
         float distance = Vector3.Distance(transform.position, newPos);
@@ -180,6 +175,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
 
         //-- 필요 컴포넌트 받아오기-------------------------------//
         m_renderer = this.GetComponent<SpriteRenderer>();
+        m_bgCurve = this.GetComponent<BansheeGz.BGSpline.Curve.BGCurve>();
         m_rigidBody = this.GetComponent<Rigidbody2D>();
         m_animator = this.GetComponent<Animator>();
         //-------------------------------------------------------//
@@ -193,17 +189,50 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         
         // 네트워크 이벤트 옵저버 등록
         NetworkManager.Instance().AddNetworkMoveEventListener(this);
+
+        //초기 렌더링용 포인트 추가
+        //Vector3 robo = m_robot.transform.position;
+        //Vector3 pos = transform.position;
+        //m_lineRenderer.numPositions = 2;
+        //m_lineRenderer.SetPosition(0, new Vector3(pos.x,pos.y,-1.0f));
+        //m_lineRenderer.SetPosition(1, new Vector3(robo.x,robo.y,-1.0f));
+        TestUp();   
+    }
+
+    void TestUp()
+    {
+        iTween.ValueTo(gameObject, iTween.Hash("from", 4.0f, "to", -4.0f, "time", 3.0f, "onupdatetarget", gameObject, "onupdate", "Change", "oncompletetarget", gameObject, "oncomplete", "TestEnd"));
+    }
+
+    void TestEnd()
+    {
+        iTween.ValueTo(gameObject, iTween.Hash("from", -4.0f, "to", 4.0f, "time", 3.0f, "onupdatetarget", gameObject, "onupdate", "Change", "oncompletetarget", gameObject, "oncomplete", "TestUp"));
+    }
+
+    void Change(float v)
+    {
+        Vector3 fp = m_bgCurve.Points[0].ControlFirstWorld;
+        Vector3 sp = m_bgCurve.Points[0].ControlSecondWorld;
+        m_bgCurve.Points[0].ControlFirstWorld = new Vector3(fp.x, v, fp.z);
+        m_bgCurve.Points[0].ControlSecondWorld = new Vector3(sp.x, -v, sp.z);
+
+        Vector3 fp2 = m_bgCurve.Points[1].ControlFirstWorld;
+        Vector3 sp2 = m_bgCurve.Points[1].ControlSecondWorld;
+        m_bgCurve.Points[1].ControlFirstWorld = new Vector3(fp2.x, v, fp2.z);
+        m_bgCurve.Points[1].ControlSecondWorld = new Vector3(sp2.x, -v, sp2.z);
     }
 
     // Update is called once per frame
     void Update()
     {
+
         if (m_isMe)
             Control();
         else
         {
             NetworkMoveLerp();
         }
+        
     }
 
     //-- Network Message 에 따른 이동 보간 ( 네트워크 플레이어 ) ------------------------------------------------------------//

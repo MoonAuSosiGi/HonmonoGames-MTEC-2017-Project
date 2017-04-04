@@ -53,7 +53,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
     //기존 위치
     Vector3 m_prevPos = Vector3.zero;
     // USER NAME
-    public string USERNAME { get { return m_userName; } set { m_userName = value;  /*변경이 일어날때 최초 수행*/ if(m_isMe)NetworkManager.Instance().SendMoveMessage(JSONMessageTool.ToJsonMove(transform.position.x, transform.position.y, m_renderer.flipX)); } }
+    public string USERNAME { get { return m_userName; } set { m_userName = value; } }
 
     //-- normal map animation ---------------------------------------------------------------------------//
     // normal map 의 경우 unity animation 에서
@@ -65,13 +65,15 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
     private List<Texture> m_idleNormalList = new List<Texture>();
     private List<Texture> m_currentNormalList = null;
     private int m_currentNormalIndex = 0;
-    Vector3 m_targetPos = Vector3.zero;
-    float m_syncTime = 0.0f;
-    float m_delay = 0.0f;
-    float m_lastSyncTime = 0.0f;
+
+    // -- 클라에서 보간용 ------------------------------------------------------------------------------------------------------//
+    private Vector3 m_targetPos = Vector3.zero;
+    private float m_syncTime = 0.0f;
+    private float m_delay = 0.0f;
+    private float m_lastSyncTime = 0.0f;
 
 
-    //-- animation ---------------------------------------------------------------------------------------//
+    //-- animation -------------------------------------------------------------------------------------------------------------//
     private void ChangeNormalAnimation()
     {
         if (m_renderer == null || m_currentNormalList == null)
@@ -93,7 +95,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
 
     }
 
-    // 연출용 라이트
+    // 연출용 라이트 -----------------------------------------------------------------------------------------------------------//
     void MoveLeft()
     {
         iTween.ValueTo(gameObject, iTween.Hash("from", 7.0f, "to", -7.0f, "time", 3.0f, "onupdatetarget", gameObject, "onupdate", "LightUpdate", "oncompletetarget", gameObject, "oncomplete", "MoveRight"));
@@ -135,8 +137,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
             }
         }
         
-        if (!ck)
-            return;
+        // 유저 이름과 같으면 할 필요가 없다
+        if (!ck)  return;
 
         Vector3 newPos = new Vector3(x, y);
 
@@ -155,9 +157,6 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         m_lastSyncTime = Time.time;
         
         this.m_animator.SetBool("Move", true);
-
-        //        break;
-        //}
     }
 
     //------------------------------------------------------------------------------------------------------------------------//
@@ -362,7 +361,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         // NetworkManager.Instance().SendMovePos(GameManager.Instance().PLAYER.ToJsonPositionInfo());
     }
 
-    // 충돌 --------------------------------------------------------------------//
+    //-- (행성/로봇내부) 충돌 -----------------------------------------------------------------------------------------------//
 
     void OnCollisionEnter2D(Collision2D col)
     {

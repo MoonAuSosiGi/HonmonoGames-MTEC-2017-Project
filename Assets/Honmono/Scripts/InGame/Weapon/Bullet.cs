@@ -59,6 +59,7 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener{
 
     void DeleteBullet()
     {
+        NetworkManager.Instance().m_bulletList.Remove(m_bulletName);
         BulletManager.Instance().RemoveBullet(this);
     }
 
@@ -109,11 +110,11 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener{
         {
             transform.Rotate(new Vector3(0, 0, z), Space.World);
         }
-        if (distance <= 0)
-        {
-        //    this.m_animator.SetBool("Move", false);
-            return;
-        }
+        //if (distance <= 0)
+        //{
+        ////    this.m_animator.SetBool("Move", false);
+        //    return;
+        //}
 
         m_targetPos = newPos;
 

@@ -32,24 +32,45 @@ public class Stage1BOSS : BOSS {
     private float m_coolTime = 0.0f;
     // --------------------------------------------------------------------------------------------//
 
+    // AI 를 보고싶다
+    void OnGUI()
+    {
+        if (m_pattern == null)
+            return;
+        string txt = "";
+        float tick = 0.0f;
+        float coolTime = m_coolTimeTick;
+
+        txt = m_pattern.GetType().ToString();
+        if (m_pattern is PatternA)
+            tick = m_patternATick;
+        else if (m_pattern is PatternB)
+            tick = m_patternBTick;
+        else if (m_pattern is PatternC)
+            tick = m_patternCTick;
+        else if (m_pattern is PatternNormal)
+            tick = m_attackableTick;
+
+       
+        GUI.TextArea(new Rect(500, 150, 100, 100), txt + " tick : " + tick + " coolTime ? : " + coolTime);
+    }
 
     void Start()
     {
-
+        
         // 처음 패턴은 A다.
         m_pattern = new PatternA();
-        m_hero = GameManager.Instance().PLAYER.PLAYER_HERO.gameObject;
+       
     }
 
 
     void Update()
     {
-        // 쿨타임 중이면 아~~무것도 안함
-        if (CoolTime())
-            return;
 
-        SetCoolTime(Attack());
-        Move();
+        if (NetworkOrderController.ORDER_NAME != GameManager.Instance().PLAYER.USER_NAME
+            && NetworkOrderController.ORDER_SPACE != 0)
+            return;
+        
 
         // 체력이 30% 이하로 떨어지면 
         if(m_hp <= m_fullHp * GameSetting.BOSS1_PATTERN_D_HP_CONDITION)
@@ -67,12 +88,28 @@ public class Stage1BOSS : BOSS {
             {
                 if(!PatternA_AbleCheck())
                 {
-
+                    if(!PatternB_AbleCheck())
+                    {
+                        if (!PatternC_AbleCheck())
+                        {
+                            m_attackableTick = 0.0f;
+                            m_patternATick = 0.0f;
+                            m_patternBTick = 0.0f;
+                            m_patternCTick = 0.0f;
+                            
+                        }
+                    }
                 }
                 
             }
         }
-       
+        // 쿨타임 중이면 아~~무것도 안함
+        if (CoolTime())
+            return;
+
+        SetCoolTime(Attack());
+        Move();
+
     }
 
     void SetCoolTime(float time)
@@ -84,13 +121,19 @@ public class Stage1BOSS : BOSS {
     }
 
     bool CoolTime()
-    {   
-        if(m_coolTimeTick >= m_coolTime)
+    {
+        
+        if(m_coolTimeTick > m_coolTime)
         {
+            // m_coolTime = 0.0f;
+       //     m_coolTimeTick = m_coolTime;
+            //  MDebug.Log("쿨타임 아님 "+m_coolTimeTick + " " + m_coolTime);
             return false;
         }
         else
         {
+            
+          
             m_coolTimeTick += Time.deltaTime;
             return true;
         }
@@ -100,6 +143,8 @@ public class Stage1BOSS : BOSS {
     // 공격 가능 범위 체크용
     bool AttackAbleCheck()
     {
+        if(m_hero == null)
+            m_hero = GameManager.Instance().PLAYER.PLAYER_HERO.gameObject;
         m_attackableTick += Time.deltaTime;
 
         if(m_attackableTick >= GameSetting.BOSS1_ATTACK_ABLE_COOLTIME)
@@ -114,7 +159,6 @@ public class Stage1BOSS : BOSS {
         // 공격가능 범위인가?
         if (Vector3.Distance(heroPos, pos) <= GameSetting.BOSS1_ATTACK_ABLE_DISTANCE)
         {
-            MDebug.Log("공격 가능 범위다. 노말 공격을 행한다.");
             //기본 공격!!
 
             if (!(m_pattern is PatternNormal))
@@ -146,9 +190,9 @@ public class Stage1BOSS : BOSS {
     // 패턴 B 체크용
     bool PatternB_AbleCheck()
     {
-        m_patternATick += Time.deltaTime;
+        m_patternBTick += Time.deltaTime;
 
-        if (m_patternATick >= GameSetting.BOSS1_PATTERN_B_ABLE_COOLTIME)
+        if (m_patternBTick >= GameSetting.BOSS1_PATTERN_B_ABLE_COOLTIME)
         {
             return false;
         }
@@ -156,6 +200,23 @@ public class Stage1BOSS : BOSS {
         // 이 시간 동안에는 패턴 B로 공격한다
         if (!(m_pattern is PatternB))
             m_pattern = new PatternB();
+
+        return true;
+    }
+
+    // 패턴 C 체크용
+    bool PatternC_AbleCheck()
+    {
+        m_patternCTick += Time.deltaTime;
+
+        if (m_patternCTick >= GameSetting.BOSS1_PATTERN_C_ABLE_COOLTIME)
+        {
+            return false;
+        }
+
+        // 이 시간 동안에는 패턴 C로 공격한다
+        if (!(m_pattern is PatternC))
+            m_pattern = new PatternC();
 
         return true;
     }

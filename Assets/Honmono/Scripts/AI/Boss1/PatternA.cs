@@ -18,7 +18,7 @@ public class PatternA : PatternState {
         // 2초마다 한번씩
         if(m_tick >= GameSetting.BOSS1_PATTERN_A_ATTACK_COOLTIME)
         {
-            BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_BOSS1_P1);
+         //   BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_BOSS1_P1);
             // 총알은 2.5초에 걸쳐 플레이어에게 도착함
             // 총알의 계산은 총알에서 하도록 함
             m_tick = 0.0f;

@@ -7,21 +7,32 @@ using WebSocketSharp;
 public class NetworkManager : Singletone<NetworkManager>
 {
 
-    // -- 기본 json 태그 --------------------------------------------------------------------------------------//
-    public const string MSGTYPE = "MsgType";
+    // --  사용자 정의  --------------------------------------------------------------------------------------//
+    public const string MSGTYPE = "msgType";
     public const string USERNAME = "UserName";
-    public const string MSG = "Msg";
+    public const string TARGETNAME = "targetName";
+    public const string MSG = "msg";
 
-    // 상태값 
+    public const string DIR = "Dir";
+
+    // order
     public const string CHAT = "chat";
-    public const string MOVE = "move";
-    public const string DIR = "dir";
+    public const string CREATE = "create";
+    public const string REMOVE = "remove";
+    public const string CH_ORIGINUSER = "ch_OriginUser";
+    public const string CH_ORIGINUSER_REQ = "ch_OriginUser_req";
+    public const string ANIMATION = "anmation";
+
+    //create order
+    public const string CREATE_TARGET = "create_target";
+
 
     // hero list
     [SerializeField]
     private List<Hero> m_userList = new List<Hero>();
-    public List<string> m_bulletList = new List<string>();
-    private List<string> m_userNameList = new List<string>(); // 플레이어 제외하고는 최대 3명     
+    public List<GameObject> m_enemyList = new List<GameObject>();
+    private List<string> m_userNameList = new List<string>(); // 플레이어 제외하고는 최대 3명 
+    private bool m_firstCheck = false;    
     // -- 기본 정보 -------------------------------------------------------------------------------------------//
 
     private string m_serverURL = "localhost:8090";
@@ -48,11 +59,13 @@ public class NetworkManager : Singletone<NetworkManager>
     {
         public string msgType = "";
         public string user = "";
+        public string targetName = "";
         public JSONObject msg = null;
 
-        public MessageEvent(string type, string user, JSONObject msg)
+        public MessageEvent(string type, string user, string targetName, JSONObject msg)
         {
-            this.msgType = type; this.user = user; this.msg = msg;
+            this.msgType = type; this.user = user; this.msg = (msg);
+            this.targetName = targetName;
         }
     }
 
@@ -82,7 +95,7 @@ public class NetworkManager : Singletone<NetworkManager>
 
         JSONObject obj = new JSONObject(m_socketMessages.Dequeue());
 
-        MessageEvent e = new MessageEvent(obj.GetField(MSGTYPE).str, obj.GetField(USERNAME).str, obj.GetField(MSG));
+        MessageEvent e = new MessageEvent(obj.GetField(MSGTYPE).str, obj.GetField(USERNAME).str, obj.GetField(TARGETNAME).str, obj.GetField(MSG));
 
         foreach (NetworkMessageEventListenrer listener in m_socketListener)
         {
@@ -109,23 +122,51 @@ public class NetworkManager : Singletone<NetworkManager>
 
         string json = m_socketMoveMessage.Dequeue();
         JSONObject obj = new JSONObject(json);
+
+        if(obj.GetField("Users") == null)
+        {
+            MDebug.Log("JSON " + obj);
+            // 임시코드 
+
+            string t = "hero_robo";
+            string a = "hero";
+
+            MDebug.Log(t == a);
+            if (obj.GetField("Client ID").i <= 1)
+            {
+                NetworkManager.Instance().SendNetworkMessage(JSONMessageTool.ToJsonOrderChange(GameManager.Instance().PLAYER.USER_NAME, 0));
+                
+            }
+            else if(obj.GetField("Client ID").i > 1)
+            {
+                MDebug.Log("전~~~송~~!!!요청");
+                NetworkManager.Instance().SendNetworkMessage(JSONMessageTool.ToJsonOrderRequest(NetworkOrderController.ORDER_NAME, NetworkOrderController.ORDER_SPACE));
+            }
+            return;
+        }
+
         JSONObject users = obj.GetField("Users");
         //{"Users":[{"UserName":"test","x":-3.531799,"y":-0.02999991,"z":0,"dir":0}]}
 
-        // Move 에서 User의 목록을 알 수 있다.
-        // 여기서 user들을 켜는 것이 좋을듯.
-        int userCount = users.Count;
+        
+
+        //변경
+        int userCount = 0;
+        //user
         //최대 접속자는 4명 그 중에 Hero
+        
         foreach (Hero user in m_userList)
         {
             //켜져있다면 체크해야함
             if (user.gameObject.activeSelf)
             {
                 bool check = false;
-                for (int i = 0; i < users.Count; i++)
+                for (int j = 0; j < users.Count; j++)
                 {
-                    string name = users[i].GetField(USERNAME).str;
-
+                    string name = users[j].GetField(USERNAME).str;
+                    
+                    if(name.IndexOf("robo") >= 0)
+                        continue;
                     if (name == GameManager.Instance().PLAYER.USER_NAME)
                         continue;
                     if (user.USERNAME == name)
@@ -146,17 +187,19 @@ public class NetworkManager : Singletone<NetworkManager>
             else
             {
                 // 꺼져있다면 추가해야 하므로 체크 로직 
-                for (int i = 0; i < users.Count; i++)
+                for (int j = 0; j < users.Count; j++)
                 {
                     bool check = false;
-                    string name = users[i].GetField(USERNAME).str;
-
+                    string name = users[j].GetField(USERNAME).str;
+                    
+                    if (name.IndexOf("robo") >= 0)
+                        continue;
                     if (name == GameManager.Instance().PLAYER.USER_NAME)
                         continue;
 
-                    for (int j = 0; j < m_userNameList.Count; j++)
+                    for (int k = 0; k < m_userNameList.Count; k++)
                     {
-                        if (m_userNameList[j] == name)
+                        if (m_userNameList[k] == name)
                         {
                             check = true;
                             break;
@@ -165,6 +208,7 @@ public class NetworkManager : Singletone<NetworkManager>
 
                     if (!check)
                     {
+                        
                         m_userNameList.Add(name);
                         user.gameObject.SetActive(true);
                         user.USERNAME = name;
@@ -173,7 +217,11 @@ public class NetworkManager : Singletone<NetworkManager>
                 }
             }
 
+
         }
+
+       
+
         foreach (NetworkMoveEventListener l in m_moveEventList)
         {
             l.ReceiveMoveEvent(obj);
@@ -190,6 +238,10 @@ public class NetworkManager : Singletone<NetworkManager>
     {
         m_enemyMoveEventList.Add(l);
     }
+    public void RemoveNetworkEnemyMoveEventListener(NetworkMoveEventListener l)
+    {
+        m_enemyMoveEventList.Remove(l);
+    }
 
     void SendEnemyMoveNetworkMessage()
     {
@@ -199,31 +251,7 @@ public class NetworkManager : Singletone<NetworkManager>
         string json = m_socketEnemyMoveMessage.Dequeue();
         JSONObject obj = new JSONObject(json);
         JSONObject users = obj.GetField("Enemies");
-        //{"Users":[{"UserName":"test","x":-3.531799,"y":-0.02999991,"z":0,"dir":0}]}
 
-        // Move 에서 User의 목록을 알 수 있다.
-        // 여기서 user들을 켜는 것이 좋을듯.
-        int userCount = users.Count;
-
-        if(userCount != m_bulletList.Count)
-        {
-            //추가로직
-            
-            for (int i = 0; i < users.Count; i++)
-            {
-                string name = users[i].GetField("Name").str;
-                if (!m_bulletList.Contains(name))
-                {
-                    GameObject bullet = BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_HERO_DEF);
-                    bullet.GetComponent<Bullet>().SetupBullet(name, true);
-                    m_bulletList.Add(name);
-                    
-                }
-            }
-            
-        }
-
-      
         foreach (NetworkMoveEventListener l in m_enemyMoveEventList)
         {
             l.ReceiveMoveEvent(obj);

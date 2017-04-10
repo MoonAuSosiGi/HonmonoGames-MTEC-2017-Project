@@ -6,6 +6,10 @@ public class BOSS : MonoBehaviour {
 
 
     // -- 기본 정보 --------------------------------------------------------------------------------//
+
+    // 누가 체크할것인지
+    protected string m_originUser = "";
+        
     // 패턴 정보
     protected PatternState m_pattern = null;
 

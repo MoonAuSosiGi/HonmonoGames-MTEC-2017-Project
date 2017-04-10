@@ -19,6 +19,18 @@ public class HeroRobo : MonoBehaviour {
     [SerializeField]
     private bool m_isMe = true;
 
+    public bool ROBO_ISPLAYER {  get { return m_isMe;}
+        set
+        {
+            if(IsInvoking("MoveSend"))
+                CancelInvoke("MoveSend");
+            if (value)
+                InvokeRepeating("MoveSend", 0.1f, 0.05f);
+            m_isMe = value;
+
+        }
+    }
+
     // 추진체 발광
     [SerializeField]
     private Light m_fireLight = null; 
@@ -31,6 +43,9 @@ public class HeroRobo : MonoBehaviour {
 
     // Move 속도 
     private float m_moveSpeed = 10.0f;
+
+    //이전꺼
+    private Vector3 m_prevPos = Vector3.zero;
 
 
     //-- normal map animation -----------------------//
@@ -73,6 +88,10 @@ public class HeroRobo : MonoBehaviour {
     private Animator m_animator = null;
 
     //-----------------------------------------------//
+    void Awake()
+    {
+        GameManager.Instance().HeroRoboSetup(this);
+    }
 	// Use this for initialization
 	void Start () {
 
@@ -80,6 +99,7 @@ public class HeroRobo : MonoBehaviour {
         m_animator = this.GetComponent<Animator>();
 
         LightRangeUp();
+
         
 
     }
@@ -110,6 +130,19 @@ public class HeroRobo : MonoBehaviour {
             NetworkUpdate();
         
 	}
+
+    void MoveSend()
+    {
+        Vector3 pos = transform.position;
+        float distance = Vector3.Distance(m_prevPos, pos);
+        m_prevPos = transform.position;
+
+        if (distance <= 0)
+            return;
+
+
+        NetworkManager.Instance().SendMoveMessage(JSONMessageTool.ToJsonMove(NetworkOrderController.ORDER_NAME + "_robo", pos.x, pos.y, 0, m_renderer.flipX));
+    }
 
     /// <summary>
     /// 캐릭터 조작에 관련된 함수

@@ -12,6 +12,15 @@ public class PlayerInfo {
     private int m_hp = 0;
     private PLAYER_STATUS m_status = new PLAYER_STATUS();
 
+
+    public enum PlayerJob
+    {
+        DRIVER = 100,
+        ARMY,
+        ENGINEER,
+        
+    }
+
     // -- 프로퍼티 ---------------------------------------------------------------------------------------------//
     public Hero PLAYER_HERO { set { m_hero = value; m_UserName = m_hero.USERNAME; } get{ return m_hero;}}
     public string USER_NAME { set { m_UserName = value; m_hero.USERNAME = value; } get { return m_UserName; } }

@@ -15,23 +15,23 @@ public static class GameSetting  {
 
     // -- 보스 패턴에 관련된 세팅값 ---------------------------------------------------//
 
-    public const float BOSS1_ATTACK_ABLE_COOLTIME = 4000.0f;
-    public const float BOSS1_PATTERN_A_ABLE_COOLTIME = 4000.0f;
-    public const float BOSS1_PATTERN_B_ABLE_COOLTIME = 15000.0f;
-    public const float BOSS1_PATTERN_C_ABLE_COOLTIME = 18000.0f;
+    public const float BOSS1_ATTACK_ABLE_COOLTIME = 4.0f;
+    public const float BOSS1_PATTERN_A_ABLE_COOLTIME = 4.0f;
+    public const float BOSS1_PATTERN_B_ABLE_COOLTIME = 15.0f;
+    public const float BOSS1_PATTERN_C_ABLE_COOLTIME = 18.0f;
 
     public const float BOSS1_ATTACK_ABLE_DISTANCE = 10.0f;
-    public const float BOSS1_DEF_ATTACK_COOLTIME = 1000.0f;
+    public const float BOSS1_DEF_ATTACK_COOLTIME = 1.0f;
 
 
 
-    public const float BOSS1_PATTERN_A_ATTACK_COOLTIME = 2000.0f;
-    public const float BOSS1_PATTERN_B_ATTACK_COOLTIME = 1000.0f;
-    public const float BOSS1_PATTERN_C_ATTACK_COOLTIME = 2000.0f;
+    public const float BOSS1_PATTERN_A_ATTACK_COOLTIME = 2.0f;
+    public const float BOSS1_PATTERN_B_ATTACK_COOLTIME = 1.0f;
+    public const float BOSS1_PATTERN_C_ATTACK_COOLTIME = 2.0f;
 
-    public const float BOSS1_PATTERN_A_BULLET_REACH_TIME = 2000.0f;
-    public const float BOSS1_PATTERN_B_BULLET_REACH_TIME = 3000.0f;
-    public const float BOSS1_PATTERN_C_BULLET_REACH_TIME = 2000.0f;
+    public const float BOSS1_PATTERN_A_BULLET_REACH_TIME = 2.0f;
+    public const float BOSS1_PATTERN_B_BULLET_REACH_TIME = 3.0f;
+    public const float BOSS1_PATTERN_C_BULLET_REACH_TIME = 2.0f;
 
     public const float BOSS1_PATTERN_D_HP_CONDITION = 0.3f;
     public const float BOSS1_PATTERN_D_SPECIAL = 5000.0f;

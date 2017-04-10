@@ -10,6 +10,17 @@ public class LoginPopup : MonoBehaviour {
     private InputField m_inputID = null;
     [SerializeField]
     private InputField m_inputPWD = null;
+
+
+    [SerializeField]
+    private Button m_loginButton = null;
+
+    [SerializeField]
+    private RectTransform m_loading = null;
+
+
+    private float m_tick = 0.0f;
+    
     //-------------------------------------------//
 
 
@@ -55,9 +66,25 @@ public class LoginPopup : MonoBehaviour {
             //TODO TEMP CODE
             if(result == "you are signed up.")
             {
-                PopupManager.Instance().ClosePopup(gameObject);
-                PopupManager.Instance().MessagePopupOK("Login", "완료");
+                m_loginButton.gameObject.SetActive(false);
+                m_loading.gameObject.SetActive(true);
+                InvokeRepeating("Loading", 0.0f, 0.01f);
             }
+        }
+
+    }
+
+    void Loading()
+    {
+        m_loading.Rotate(new Vector3(0, 0, 0.5f));
+        m_tick += 0.01f;
+
+        if(m_tick >= 1.5f)
+        {
+            CancelInvoke();
+            PopupManager.Instance().ClosePopup(gameObject);
+            PopupManager.Instance().AddPopup("NetworkConnectPopup");
+            //PopupManager.Instance().MessagePopupOK("Login", "완료");
         }
 
     }

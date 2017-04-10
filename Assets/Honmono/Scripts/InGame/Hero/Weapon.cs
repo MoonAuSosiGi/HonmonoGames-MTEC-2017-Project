@@ -13,6 +13,7 @@ public class Weapon : MonoBehaviour {
 
     void Update()
     {
+        //MDebug.Log("BULLET");
         float angle = 0.0f;
         if (Input.GetKey(KeyCode.U))
         {
@@ -37,10 +38,13 @@ public class Weapon : MonoBehaviour {
 
             Bullet b = bullet.GetComponent<Bullet>();
 
-            b.SetupBullet(GameManager.Instance().PLAYER.USER_NAME + "_" + index,false);
+            string n = GameManager.Instance().PLAYER.USER_NAME + "_" + index;
+            b.SetupBullet(n,false);
+            MDebug.Log("b " + n + "     " + JSONMessageTool.ToJsonCreateOrder(n, "myTeam_bullet", pos.x, pos.y, pos.z, bullet.GetComponent<SpriteRenderer>().flipX));
+            NetworkManager.Instance().SendNetworkMessage(JSONMessageTool.ToJsonCreateOrder(n, "myTeam_bullet",pos.x,pos.y,pos.z,bullet.GetComponent<SpriteRenderer>().flipX));
             index++;
         }
-        
+
     }
 
 }

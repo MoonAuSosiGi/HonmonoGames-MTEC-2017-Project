@@ -108,7 +108,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
 
     void LightUpdate(float s)
     {
-        m_Light.transform.localPosition = new Vector3(s, m_Light.transform.localPosition.y);
+        m_Light.transform.localPosition = new Vector3(s, m_Light.transform.localPosition.y,-1.0f);
     }
 
     //--네트워크--------------------------------------------------------------------------------------------------------------//
@@ -129,8 +129,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         {
             if(users[i].GetField(NetworkManager.USERNAME).str == m_userName)
             {
-                x = users[i].GetField("x").f;
-                y = users[i].GetField("y").f;
+                x = users[i].GetField("X").f;
+                y = users[i].GetField("Y").f;
                 flip = users[i].GetField(NetworkManager.DIR).b;
                 ck = true;
                 break;
@@ -195,6 +195,9 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         //m_lineRenderer.numPositions = 2;
         //m_lineRenderer.SetPosition(0, new Vector3(pos.x,pos.y,-1.0f));
         //m_lineRenderer.SetPosition(1, new Vector3(robo.x,robo.y,-1.0f));
+
+        if(m_isMe)
+            InvokeRepeating("MoveSend", 0.0f, 0.05f);
         TestUp();   
     }
 
@@ -344,7 +347,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
             }
         }
 
-        MoveSend();
+      //  MoveSend();
     }
 
     void MoveSend()
@@ -352,13 +355,13 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         Vector3 pos = transform.position;
         float distance = Vector3.Distance(m_prevPos, pos);
         m_prevPos = transform.position;
-        //    MDebug.Log(t);
+
         if (distance <= 0)
             return;
 
-      //  MDebug.Log(JSONMessageTool.ToJsonMove(pos.x, pos.y, m_renderer.flipX));
-        NetworkManager.Instance().SendMoveMessage(JSONMessageTool.ToJsonMove(pos.x, pos.y, m_renderer.flipX));
-        // NetworkManager.Instance().SendMovePos(GameManager.Instance().PLAYER.ToJsonPositionInfo());
+        
+        NetworkManager.Instance().SendMoveMessage(JSONMessageTool.ToJsonMove(m_userName,pos.x, pos.y,0, m_renderer.flipX));
+
     }
 
     //-- (행성/로봇내부) 충돌 -----------------------------------------------------------------------------------------------//

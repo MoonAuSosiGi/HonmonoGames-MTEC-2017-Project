@@ -58,6 +58,6 @@ public class ChatUI : MonoBehaviour, NetworkManager.NetworkMessageEventListenrer
         if ( e.msgType != NetworkManager.CHAT)
             return;
 
-        m_messageStrs.Add(e.user + " : " + e.msg.str);
+    //    m_messageStrs.Add(e.user + " : " + e.msg.str);
     }
 }

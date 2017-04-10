@@ -43,7 +43,7 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener{
             if (posx + movex - m_renderer.bounds.size.x / 2.0f >= rightCheck) DeleteBullet();
 
             transform.Translate(movex, 0, 0);
-            MoveSend();
+            
         }
         else
         {
@@ -59,7 +59,9 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener{
 
     void DeleteBullet()
     {
-        NetworkManager.Instance().m_bulletList.Remove(m_bulletName);
+        CancelInvoke();
+     //   NetworkManager.Instance().m_bulletList.Remove(m_bulletName);
+        NetworkManager.Instance().RemoveNetworkEnemyMoveEventListener(this);
         BulletManager.Instance().RemoveBullet(this);
     }
 
@@ -72,7 +74,10 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener{
         if (m_isNetworkObject)
             NetworkManager.Instance().AddNetworkEnemyMoveEventListener(this);
         else
-            NetworkManager.Instance().m_bulletList.Add(name);
+        {
+       //     NetworkManager.Instance().m_bulletList.Add(name);
+            InvokeRepeating("MoveSend", 0.0f, 0.05f);
+        }
     }
 
     void NetworkManager.NetworkMoveEventListener.ReceiveMoveEvent(JSONObject json)
@@ -89,9 +94,9 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener{
         {
             if (users[i].GetField("Name").str == m_bulletName)
             {
-                x = users[i].GetField("x").f;
-                y = users[i].GetField("y").f;
-                z = users[i].GetField("z").f;
+                x = users[i].GetField("X").f;
+                y = users[i].GetField("Y").f;
+                z = users[i].GetField("Z").f;
                 flip = users[i].GetField(NetworkManager.DIR).b;
                 ck = true;
                 break;
@@ -104,17 +109,17 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener{
         Vector3 newPos = new Vector3(x, y);
 
         float distance = Vector3.Distance(transform.position, newPos);
-        this.m_renderer.flipX = flip;
+        //this.m_renderer.flipX = flip;
 
         if(z != transform.rotation.z)
         {
             transform.Rotate(new Vector3(0, 0, z), Space.World);
         }
-        //if (distance <= 0)
-        //{
+        if (distance <= 0)
+        {
         ////    this.m_animator.SetBool("Move", false);
-        //    return;
-        //}
+            return;
+        }
 
         m_targetPos = newPos;
 

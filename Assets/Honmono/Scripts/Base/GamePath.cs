@@ -7,9 +7,12 @@ public static class GamePath {
    
     public static string PREFABS = "Prefabs/";
     public static string WEAPON_BULLET_DEF = PREFABS + "Weapon/Bullet/Def_Bullet";
+
     public static string POPUP = PREFABS + "Popup/";
+    public static string ENEMY = PREFABS + "Enemy/";
+    public static string BOSS = ENEMY + "BOSS/";
 
-
-    // MapTool 전용
-    public static string TILE = "TileMap/";
+    // BOSS
+    public static string BOSS1 = BOSS + "Stage1BOSS";
+    
 }

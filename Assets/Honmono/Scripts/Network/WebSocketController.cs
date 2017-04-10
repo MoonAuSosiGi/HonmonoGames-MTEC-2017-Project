@@ -13,16 +13,11 @@ public class WebSocketController : MonoBehaviour
     private WebSocket m_socketEnemy = null;
     //-----------------------------------------------------------------------------------------------//
 
-    // 채팅용
-    EventHandler<MessageEventArgs> m_chatRecv = null;
-    // 이동용
-    EventHandler<MessageEventArgs> m_moveRecv = null;
-
     // ---------------------------------------------------------------------------------------------//
 
     public void SetupSocket(string url)
     {
-        Application.runInBackground = true;
+        
         MDebug.Log(Network.player.ipAddress);
 
         m_socket = new WebSocket("ws://" + url + "/echo");
@@ -31,12 +26,15 @@ public class WebSocketController : MonoBehaviour
         m_socket.Connect();
 
         m_socketMove = new WebSocket("ws://" + url + "/user/move");
+        m_socketMove.OnOpen += OnOpen;
         m_socketMove.OnError += ErrorMessage;
         m_socketMove.OnMessage += RecieveMoveMessage;
         m_socketMove.Connect();
 
         m_socketEnemy = new WebSocket("ws://" + url + "/enemy/move");
         m_socketEnemy.OnError += ErrorMessage;
+        m_socketEnemy.OnOpen += OnOpen;
+        
         m_socketEnemy.OnMessage += RecieveMoveEnemyMessage;
         m_socketEnemy.Connect();
 
@@ -58,25 +56,26 @@ public class WebSocketController : MonoBehaviour
     public void SendEnemyMoveMessage(string json)
     {
         if (m_socketEnemy != null && m_socketEnemy.IsAlive)
+        {
             m_socketEnemy.Send(json);
+        }
     }
 
     //-- 서버로부터 받은 메시지를 넣는다 -----------------------------------------------------------//
     void RecieveMessage(object sender, MessageEventArgs e)
     {
         // 메시지 큐에 메시지 푸시
+        MDebug.Log("CHAT " + e.Data);
         NetworkManager.Instance().PushChatMessage(e.Data);
     }
 
     void RecieveMoveMessage(object sender,MessageEventArgs e)
     {
-        MDebug.Log(e.Data);
         NetworkManager.Instance().PushMoveMessage(e.Data);
     }
 
     void RecieveMoveEnemyMessage(object sender,MessageEventArgs e)
     {
-        MDebug.Log(e.Data);
         NetworkManager.Instance().PushEnemyMoveMessage(e.Data);
     }
 
@@ -85,4 +84,12 @@ public class WebSocketController : MonoBehaviour
         MDebug.Log(e.Message);
     }
 
+    void OnOpen(object sender, EventArgs e)
+    {
+
+    }
+    void test()
+    {
+       
+    }
 }

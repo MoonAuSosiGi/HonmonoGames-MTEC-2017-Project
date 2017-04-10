@@ -7,7 +7,7 @@ using WebSocketSharp;
 // MapManager 하위에 map 의 prefab을 가져온다.
 
 public class MapManager : Singletone<MapManager> {
-    //---------------------------------------//
+    //------------------------------------------------------------------------------------------//
     // background 나가는 체크용
 
     // 배경 밖으로 나갈 수 없게 처리
@@ -26,6 +26,12 @@ public class MapManager : Singletone<MapManager> {
     // 유저들 풀 - 임시로 게임 오브젝트를 받음 - 플레이어는 여기에 속해있다.
     [SerializeField]
     private List<Hero> m_users = new List<Hero>();
+
+    // 기타 오브젝트 리스트
+    // 플레이어를 제외한 오브젝트의 리스트가 여기에 들어온다.
+    // (총알도 제외한 리스트)
+    [SerializeField]
+    private List<GameObject> m_objectList = new List<GameObject>();
 
 
     //----------------------------------------------------------------------------------------//
@@ -60,6 +66,24 @@ public class MapManager : Singletone<MapManager> {
         // 리밋 배경을 통한 영역 세팅
         this.m_backgroundHalfWidth = this.m_limitBackground.GetComponent<SpriteRenderer>().bounds.size.x / 2.0f;
         this.m_backgroundHalfHeight = this.m_limitBackground.GetComponent<SpriteRenderer>().bounds.size.y / 2.0f;
+    }
+
+
+    // -- 오브젝트 생성 -------------------------------------------------------------------------------------------//
+
+    public GameObject AddObject(string prefabPath)
+    {
+        // prefab 주소를 넘기면 자동으로 불러옴
+
+        if (string.IsNullOrEmpty(prefabPath))
+            return null;
+
+        GameObject prefab = Resources.Load(prefabPath) as GameObject;
+        GameObject obj = GameObject.Instantiate(prefab);
+        obj.transform.parent = transform;
+
+        this.m_objectList.Add(obj);
+        return obj;
     }
 
 

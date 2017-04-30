@@ -1,0 +1,125 @@
+
+mon2.png
+size: 1024,512
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+_0000_수염
+  rotate: false
+  xy: 2, 154
+  size: 318, 33
+  orig: 318, 33
+  offset: 0, 0
+  index: -1
+_0001_꼬리
+  rotate: false
+  xy: 420, 324
+  size: 194, 186
+  orig: 194, 186
+  offset: 0, 0
+  index: -1
+_0002_꼬리수염
+  rotate: false
+  xy: 183, 100
+  size: 101, 52
+  orig: 101, 52
+  offset: 0, 0
+  index: -1
+_0003_등1
+  rotate: false
+  xy: 2, 2
+  size: 43, 39
+  orig: 43, 39
+  offset: 0, 0
+  index: -1
+_0004_등2
+  rotate: true
+  xy: 616, 322
+  size: 48, 78
+  orig: 48, 78
+  offset: 0, 0
+  index: -1
+_0005_등3
+  rotate: true
+  xy: 322, 159
+  size: 28, 89
+  orig: 28, 89
+  offset: 0, 0
+  index: -1
+_0006_등4
+  rotate: true
+  xy: 420, 194
+  size: 23, 99
+  orig: 23, 99
+  offset: 0, 0
+  index: -1
+_0007_등5
+  rotate: true
+  xy: 117, 45
+  size: 44, 65
+  orig: 44, 65
+  offset: 0, 0
+  index: -1
+_0008_등6
+  rotate: false
+  xy: 775, 444
+  size: 117, 31
+  orig: 117, 31
+  offset: 0, 0
+  index: -1
+_0009_팔3
+  rotate: false
+  xy: 420, 219
+  size: 157, 40
+  orig: 157, 40
+  offset: 0, 0
+  index: -1
+_0010_팔2
+  rotate: false
+  xy: 2, 43
+  size: 113, 46
+  orig: 113, 46
+  offset: 0, 0
+  index: -1
+_0011_팔1
+  rotate: false
+  xy: 616, 372
+  size: 98, 52
+  orig: 98, 52
+  offset: 0, 0
+  index: -1
+_0012_몸
+  rotate: false
+  xy: 2, 189
+  size: 416, 321
+  orig: 416, 321
+  offset: 0, 0
+  index: -1
+_0013_수염-2
+  rotate: false
+  xy: 616, 477
+  size: 318, 33
+  orig: 318, 33
+  offset: 0, 0
+  index: -1
+_0014_다리1
+  rotate: true
+  xy: 420, 261
+  size: 61, 179
+  orig: 61, 179
+  offset: 0, 0
+  index: -1
+_0015_다리2
+  rotate: true
+  xy: 2, 91
+  size: 61, 179
+  orig: 61, 179
+  offset: 0, 0
+  index: -1
+_0016_3
+  rotate: true
+  xy: 616, 426
+  size: 49, 157
+  orig: 49, 157
+  offset: 0, 0
+  index: -1

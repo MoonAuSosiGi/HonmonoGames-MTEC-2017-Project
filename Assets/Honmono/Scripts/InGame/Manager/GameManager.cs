@@ -13,15 +13,15 @@ public class GameManager : Singletone<GameManager> {
         public Resolution(int w,int h) { width = w;  height = h; }
     }
 
-    Resolution m_resoluation = new Resolution(1920,1080);
+    Resolution m_resoluation = new Resolution(1920 ,1080);
 
     // 플레이어 정보
     private PlayerInfo m_player = new PlayerInfo();
     public PlayerInfo PLAYER { get { return m_player; } }
 
     // 로봇
-    private HeroRobo m_robo = new HeroRobo();
-    public HeroRobo ROBO {  get { return m_robo; } }
+    private HeroRobo m_robo;
+    public HeroRobo ROBO {  get { return m_robo; } set { m_robo = value; } }
 
     // 조작자인가
     private bool m_isOriginOrder = false;

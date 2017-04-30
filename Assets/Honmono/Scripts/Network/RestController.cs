@@ -6,8 +6,7 @@ using UnityEngine.Networking;
 
 public class RestController : MonoBehaviour {
 
-    [SerializeField]
-    private string url = "localhost:8080";
+    private string url = "http://13.124.50.145:8080";
 	// Use this for initialization
 	void Start () {
         //StartCoroutine(Get(gameObject, "TEST"));
@@ -39,7 +38,8 @@ public class RestController : MonoBehaviour {
 
     IEnumerator Post(string json,GameObject target, string targetFunc)
     {
-
+        MDebug.Log("REST : " + json);
+        //url = "http://172.20.10.5:8080";
         UnityWebRequest www = new UnityWebRequest(url, "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         www.uploadHandler = (UploadHandler)new UploadHandlerRaw(bodyRaw);

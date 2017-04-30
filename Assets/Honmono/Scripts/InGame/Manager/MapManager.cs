@@ -33,7 +33,7 @@ public class MapManager : Singletone<MapManager> {
     [SerializeField]
     private List<GameObject> m_objectList = new List<GameObject>();
 
-
+    public HeroRobo m_robo = null;
     //----------------------------------------------------------------------------------------//
     // 바깥에서 사용할 GET
     public float CAMERA_HALF_WIDTH { get { return this.m_cameraHalfWdith; } }
@@ -52,9 +52,25 @@ public class MapManager : Singletone<MapManager> {
         this.m_cameraHalfWdith = (Camera.main.orthographicSize * Screen.width / Screen.height);
         this.m_cameraHalfHeight = (this.m_cameraHalfWdith * Screen.height / Screen.width);
 
+        GameManager.Instance().PLAYER.PLAYER_HERO = m_users[0];
+        GameManager.Instance().ROBO = m_robo;
         //temp 
 
     }
+
+    public void GameStart()
+    {
+
+        // 더이상 여기서 플레이어를 처리하지 않음
+        //m_users[0].gameObject.SetActive(true);
+
+        //m_robo.gameObject.SetActive(true);
+
+        //CameraManager.Instance().MoveCamera(m_robo.gameObject);
+        
+    }
+
+   
 
     //prefab을 부르는 마법의 함수
     public void SetupMap(string prefabPath)

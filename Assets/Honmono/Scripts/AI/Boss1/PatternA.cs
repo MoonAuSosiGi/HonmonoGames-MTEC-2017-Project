@@ -2,13 +2,24 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Spine.Unity;
 
 public class PatternA : PatternState {
 
-    private float m_tick = 0;
+    private float m_tick = 0.0f;
 
-    public override float Attack(GameObject hero)
+    public PatternA(SkeletonAnimation ani) : base(ani) { }
+
+    private bool m_attack = false;
+
+    public override bool GetAttack()
     {
+        return m_attack;
+    }
+    public override float Attack(GameObject hero,GameObject me, int index)
+    {
+        if (m_tick <= 0.0f)
+            m_attack = false;
         m_tick += Time.deltaTime;
         
         // 패턴 A
@@ -18,13 +29,37 @@ public class PatternA : PatternState {
         // 2초마다 한번씩
         if(m_tick >= GameSetting.BOSS1_PATTERN_A_ATTACK_COOLTIME)
         {
-         //   BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_BOSS1_P1);
+            //   BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_BOSS1_P1);
+            GameObject bullet = BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_BOSS1_P1);
+            Bullet b = bullet.GetComponent<Bullet>();
+            Vector3 pos = me.transform.position;
+
+            b.transform.position = pos;
+
+            Vector3 dir = hero.transform.position - me.transform.position;
+            dir.Normalize();
+
+            float distance = Vector3.Distance(hero.transform.position, me.transform.position);
+            string name = GameManager.Instance().PLAYER.USER_NAME + "_boss_A_" + Monster.m_index++;
+
+            b.BULLET_SPEED = 20.0f;
+            b.transform.position = me.transform.parent.position;
+            b.SetupBullet(name, false,dir);
+           
+            m_attack = true;
+
+
+            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(name, "boss1_bullet", pos.x, pos.y, b.transform.rotation.eulerAngles.y, bullet.GetComponent<SpriteRenderer>().flipX));
             // 총알은 2.5초에 걸쳐 플레이어에게 도착함
             // 총알의 계산은 총알에서 하도록 함
             m_tick = 0.0f;
+
+            me.GetComponent<Stage1BOSS>().m_attackEffect.Play("boss_shotEffect");
+
+            return GameSetting.BOSS1_PATTERN_A_ATTACK_COOL;
         }
-        // 쿨타임 없음
-        return 0.0f;
+
+        return 0.0f;        
     }
 
     public override float PreProcessedDamge()
@@ -41,7 +76,8 @@ public class PatternA : PatternState {
         dir.Normalize();
 
         // 임의로 랜덤이동
-        target.transform.position += dir * Time.deltaTime;
+        target.transform.position += dir * GameSetting.BOSS1_SPEED * Time.deltaTime;
     }
+
 
 }

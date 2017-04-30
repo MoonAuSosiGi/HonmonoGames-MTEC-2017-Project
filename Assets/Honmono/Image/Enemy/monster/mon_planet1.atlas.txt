@@ -1,0 +1,83 @@
+
+mon_planet1.png
+size: 512,256
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+몬스터_0000s_0000_Layer-5
+  rotate: true
+  xy: 2, 2
+  size: 51, 53
+  orig: 51, 53
+  offset: 0, 0
+  index: -1
+몬스터_0000s_0001_1
+  rotate: false
+  xy: 2, 55
+  size: 179, 199
+  orig: 179, 199
+  offset: 0, 0
+  index: -1
+몬스터_0000s_0002_2
+  rotate: false
+  xy: 183, 131
+  size: 93, 123
+  orig: 93, 123
+  offset: 0, 0
+  index: -1
+몬스터_0000s_0003_3
+  rotate: false
+  xy: 278, 157
+  size: 102, 97
+  orig: 102, 97
+  offset: 0, 0
+  index: -1
+몬스터_0000s_0004_다리
+  rotate: true
+  xy: 278, 139
+  size: 16, 27
+  orig: 16, 27
+  offset: 0, 0
+  index: -1
+몬스터_0000s_0005_다리2
+  rotate: false
+  xy: 234, 122
+  size: 11, 7
+  orig: 11, 7
+  offset: 0, 0
+  index: -1
+몬스터_0000s_0006_다리3
+  rotate: false
+  xy: 57, 43
+  size: 10, 10
+  orig: 10, 10
+  offset: 0, 0
+  index: -1
+몬스터_0000s_0007_4
+  rotate: false
+  xy: 183, 87
+  size: 49, 42
+  orig: 49, 42
+  offset: 0, 0
+  index: -1
+몬스터_0000s_0008_뒷다
+  rotate: false
+  xy: 382, 231
+  size: 15, 23
+  orig: 15, 23
+  offset: 0, 0
+  index: -1
+몬스터_0000s_0009_뒷다2
+  rotate: false
+  xy: 183, 75
+  size: 10, 10
+  orig: 10, 10
+  offset: 0, 0
+  index: -1
+몬스터_0000s_0010_뒷다3
+  rotate: false
+  xy: 307, 148
+  size: 10, 7
+  orig: 10, 7
+  offset: 0, 0
+  index: -1

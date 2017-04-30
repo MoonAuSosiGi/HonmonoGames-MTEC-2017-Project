@@ -2,14 +2,23 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Spine.Unity;
 
 public class PatternNormal : PatternState
 {
+    public PatternNormal(SkeletonAnimation ani) : base(ani) { }
+    private bool m_attack = false;
 
-    public override float Attack(GameObject hero)
+    public override bool GetAttack()
+    {
+        return m_attack;
+    }
+
+    public override float Attack(GameObject hero,GameObject me, int index)
     {
         // 기본공격
-       // MDebug.Log("기본 공격을 했다.");
+        MDebug.Log("기본 공격을 했다.");
+        
         return GameSetting.BOSS1_DEF_ATTACK_COOLTIME;
     }
 

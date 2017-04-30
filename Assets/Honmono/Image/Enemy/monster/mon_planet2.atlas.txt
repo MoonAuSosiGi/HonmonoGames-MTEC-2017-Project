@@ -1,0 +1,13 @@
+
+mon_planet2.png
+size: 512,512
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+몬스터_0001s_0000_Layer-4
+  rotate: false
+  xy: 2, 2
+  size: 354, 400
+  orig: 354, 400
+  offset: 0, 0
+  index: -1

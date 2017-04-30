@@ -1,0 +1,20 @@
+
+mon_planet3.png
+size: 1024,512
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+몬스터_0002s_0000_머리
+  rotate: false
+  xy: 349, 176
+  size: 327, 178
+  orig: 327, 178
+  offset: 0, 0
+  index: -1
+몬스터_0002s_0001_몸
+  rotate: false
+  xy: 2, 2
+  size: 345, 352
+  orig: 345, 352
+  offset: 0, 0
+  index: -1

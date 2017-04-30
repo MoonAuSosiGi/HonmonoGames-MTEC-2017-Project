@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListener
 {
 
@@ -16,6 +17,7 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
     public string NAME { get { return m_name; } set { m_name = value; } }
 
     // -- 클라에서 보간용 --------------------------------------------------------------//
+    private Vector3 m_prevPos = Vector3.zero;
     private Vector3 m_targetPos = Vector3.zero;
     private float m_syncTime = 0.0f;
     private float m_delay = 0.0f;
@@ -24,8 +26,9 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
 
     void Start()
     {
+        m_prevPos = transform.position;
         this.m_renderer = this.GetComponent<SpriteRenderer>();
-        NetworkManager.Instance().AddNetworkMoveEventListener(this);
+        NetworkManager.Instance().AddNetworkEnemyMoveEventListener(this);
     }
 
     public void SetupNetworkSpace(int space)
@@ -37,16 +40,16 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
     {
         if (NetworkOrderController.ORDER_NAME == GameManager.Instance().PLAYER.USER_NAME)
             return;
-        JSONObject obj = json.GetField("Users");
+        JSONObject obj = json.GetField("Enemies");
 
         float x, y, z;
         x = y = z = 0.0f;
         bool flip = false;
         bool ck = false;
-        for (int i = 0; i < obj.Count; i ++)
+        for (int i = 0; i < obj.Count; i++)
         {
             // 이름이 다르다면 패스
-            if (m_name == obj[i].GetField(NetworkManager.USERNAME).str)
+            if (m_name == obj[i].GetField("Name").str)
             {
                 x = obj[i].GetField("X").f;
                 y = obj[i].GetField("Y").f;
@@ -64,34 +67,63 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
         Vector3 newPos = new Vector3(x, y);
 
         float distance = Vector3.Distance(transform.position, newPos);
-        this.m_renderer.flipX = flip;
+        if (m_renderer != null)
+            this.m_renderer.flipX = flip;
 
         if(distance <= 0)
         {
             return;
         }
 
-        m_targetPos = newPos;
+        //m_targetPos = newPos;
 
         m_syncTime = 0.0f;
         m_delay = Time.time - m_lastSyncTime;
         m_lastSyncTime = Time.time;
+        transform.position = newPos;
     }
 
     //-- Network Message 에 따른 이동 보간 ( 네트워크 플레이어 ) ------------------------------------//
     void NetworkMoveLerp()
     {
-        m_syncTime += Time.deltaTime;
+        //m_syncTime += Time.deltaTime;
+        
 
-        // 네트워크 보간( 테스트 완료 - 로컬 )
-        if (m_delay > 0)
-            transform.position = Vector3.Lerp(transform.position, m_targetPos, m_syncTime / m_delay);
+        //// 네트워크 보간( 테스트 완료 - 로컬 )
+        //if (m_delay > 0)
+        //    transform.position = Vector3.Lerp(transform.position, m_targetPos, m_syncTime / m_delay);
+        
+        //P + V * D
+        // 레이턴시 ->보낸다 ->받는다(시간)
+        // target Pos 를 재계산
+        // 클라 A  좌표 샌딩 ->  서버 -> 클라B 좌표 받음
+        // 클라B가 알수 있는 레이턴시는 서버 <-> 클라B
+        // 클라 A에 대한 시간을 알수 없음 
+        // 클라 A가 시간을 보냄 -> 클라 B에서 계산방법 (딜레이는 현재시간 - A의 보낸 시간 )
+        // (속도는 정해져있음)
+        
     }
     //-----------------------------------------------------------------------------------------------//
 
     void Update()
     {
-        if(NetworkOrderController.ORDER_NAME != GameManager.Instance().PLAYER.USER_NAME)
+        if (NetworkOrderController.ORDER_NAME != GameManager.Instance().PLAYER.USER_NAME)
             NetworkMoveLerp();
+        else
+            MoveSend();
+    }
+
+    void MoveSend()
+    {
+        Vector3 pos = transform.position;
+        float distance = Vector3.Distance(m_prevPos, pos);
+        m_prevPos = transform.position;
+
+        if (distance <= 0)
+            return;
+
+
+        NetworkManager.Instance().SendEnemyMoveMessage(JSONMessageTool.ToJsoinEnemyMove(m_name, pos.x, pos.y, 0, true));
+
     }
 }

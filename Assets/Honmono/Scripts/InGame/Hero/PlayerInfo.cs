@@ -7,7 +7,7 @@ public class PlayerInfo {
     // -- 플레이어 정보 -----------------------------------------------------------------------------------------//
     // 현재 플레이어의 모든 정보가 집약되어 있다.
     private Hero m_hero = null;
-
+    private int m_NetworkIndex = 0;
     private string m_UserName = "";
     private int m_hp = 0;
     private PLAYER_STATUS m_status = new PLAYER_STATUS();
@@ -22,14 +22,26 @@ public class PlayerInfo {
     }
 
     // -- 프로퍼티 ---------------------------------------------------------------------------------------------//
-    public Hero PLAYER_HERO { set { m_hero = value; m_UserName = m_hero.USERNAME; } get{ return m_hero;}}
-    public string USER_NAME { set { m_UserName = value; m_hero.USERNAME = value; } get { return m_UserName; } }
+    public Hero PLAYER_HERO { set { m_hero = value; } get{ return m_hero;}}
+    public PLAYER_STATUS STATUS { get { return m_status; } }
+    public string USER_NAME {
+        set {
+            MDebug.Log("user NAme !! " + value);
+            m_UserName = value;  } get { return m_UserName; } }
+    public int NETWORK_INDEX { set { m_NetworkIndex = value; } get { return m_NetworkIndex; } }
 
     // -- 정보 구조체 ------------------------------------------------------------------------------------------//
 
     // Status (스탯 정보)        
-    public struct PLAYER_STATUS
+    public class PLAYER_STATUS
     {
+        private int m_stat_speed = 0;
+        private int m_stat_power = 0;
+        private int m_stat_repair = 0;
+
+        public int STAT_SPEED { get { return m_stat_speed; } set { m_stat_speed = value; } }
+        public int STAT_POWER { get { return m_stat_power; } set { m_stat_power = value; } }
+        public int STAT_REPAIR { get { return m_stat_repair; } set { m_stat_repair = value; } }
 
         public JSONObject ToJson()
         {

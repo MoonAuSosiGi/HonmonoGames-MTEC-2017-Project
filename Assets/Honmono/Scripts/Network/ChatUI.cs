@@ -27,6 +27,11 @@ public class ChatUI : MonoBehaviour, NetworkManager.NetworkMessageEventListenrer
 
     void Update()
     {
+        if(Input.GetKeyDown(KeyCode.Return))
+        {
+            m_inputField.Select();
+        }
+
         if (m_messageStrs.Count > 0)
         {
             for (int i = 1; i < m_messages.Count; i++)
@@ -58,6 +63,6 @@ public class ChatUI : MonoBehaviour, NetworkManager.NetworkMessageEventListenrer
         if ( e.msgType != NetworkManager.CHAT)
             return;
 
-    //    m_messageStrs.Add(e.user + " : " + e.msg.str);
+        m_messageStrs.Add(e.user + " : " + e.msg.GetField(NetworkManager.MSG));
     }
 }

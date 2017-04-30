@@ -39,9 +39,9 @@ public class Weapon : MonoBehaviour {
             Bullet b = bullet.GetComponent<Bullet>();
 
             string n = GameManager.Instance().PLAYER.USER_NAME + "_" + index;
-            b.SetupBullet(n,false);
-            MDebug.Log("b " + n + "     " + JSONMessageTool.ToJsonCreateOrder(n, "myTeam_bullet", pos.x, pos.y, pos.z, bullet.GetComponent<SpriteRenderer>().flipX));
-            NetworkManager.Instance().SendNetworkMessage(JSONMessageTool.ToJsonCreateOrder(n, "myTeam_bullet",pos.x,pos.y,pos.z,bullet.GetComponent<SpriteRenderer>().flipX));
+            b.SetupBullet(n,false,Vector3.zero);
+            //MDebug.Log("b " + n + "     " + JSONMessageTool.ToJsonCreateOrder(n, "myTeam_bullet", pos.x, pos.y, pos.z, bullet.GetComponent<SpriteRenderer>().flipX));
+            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(n, "myTeam_bullet",pos.x,pos.y,pos.z,bullet.GetComponent<SpriteRenderer>().flipX));
             index++;
         }
 

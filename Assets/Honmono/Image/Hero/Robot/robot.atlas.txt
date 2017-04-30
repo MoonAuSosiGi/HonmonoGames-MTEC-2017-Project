@@ -1,0 +1,132 @@
+
+robot.png
+size: 1024,256
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+L_arm
+  rotate: false
+  xy: 792, 18
+  size: 90, 60
+  orig: 90, 60
+  offset: 0, 0
+  index: -1
+L_foot
+  rotate: true
+  xy: 524, 76
+  size: 72, 99
+  orig: 72, 99
+  offset: 0, 0
+  index: -1
+L_forearm
+  rotate: false
+  xy: 925, 160
+  size: 94, 94
+  orig: 94, 94
+  offset: 0, 0
+  index: -1
+L_hand
+  rotate: false
+  xy: 912, 16
+  size: 82, 73
+  orig: 82, 73
+  offset: 0, 0
+  index: -1
+L_shoulder
+  rotate: true
+  xy: 669, 133
+  size: 121, 123
+  orig: 121, 123
+  offset: 0, 0
+  index: -1
+L_thigh
+  rotate: true
+  xy: 912, 91
+  size: 67, 108
+  orig: 67, 108
+  offset: 0, 0
+  index: -1
+R_foot
+  rotate: true
+  xy: 509, 2
+  size: 72, 88
+  orig: 72, 88
+  offset: 0, 0
+  index: -1
+R_thigh
+  rotate: true
+  xy: 625, 54
+  size: 77, 93
+  orig: 77, 93
+  offset: 0, 0
+  index: -1
+arm_R
+  rotate: true
+  xy: 524, 150
+  size: 104, 143
+  orig: 106, 143
+  offset: 0, 0
+  index: -1
+body
+  rotate: false
+  xy: 2, 52
+  size: 205, 202
+  orig: 205, 202
+  offset: 0, 0
+  index: -1
+booster
+  rotate: true
+  xy: 209, 10
+  size: 53, 96
+  orig: 53, 96
+  offset: 0, 0
+  index: -1
+cannon
+  rotate: true
+  xy: 720, 56
+  size: 75, 70
+  orig: 75, 70
+  offset: 0, 0
+  index: -1
+light_body
+  rotate: false
+  xy: 209, 65
+  size: 179, 189
+  orig: 179, 189
+  offset: 0, 0
+  index: -1
+light_cannon
+  rotate: false
+  xy: 390, 123
+  size: 132, 131
+  orig: 132, 131
+  offset: 0, 0
+  index: -1
+pelvis
+  rotate: false
+  xy: 390, 44
+  size: 117, 77
+  orig: 117, 77
+  offset: 0, 0
+  index: -1
+shield_1
+  rotate: true
+  xy: 794, 80
+  size: 86, 116
+  orig: 86, 116
+  offset: 0, 0
+  index: -1
+shield_2
+  rotate: true
+  xy: 794, 168
+  size: 86, 129
+  orig: 86, 129
+  offset: 0, 0
+  index: -1
+shield_frame
+  rotate: true
+  xy: 307, 5
+  size: 58, 70
+  orig: 58, 70
+  offset: 0, 0
+  index: -1

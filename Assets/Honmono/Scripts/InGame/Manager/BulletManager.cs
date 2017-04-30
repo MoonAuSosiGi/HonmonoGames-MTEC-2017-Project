@@ -22,6 +22,7 @@ public class BulletManager : Singletone<BulletManager> {
         switch(type)
         {
             case BULLET_TYPE.B_HERO_DEF: path = GamePath.WEAPON_BULLET_DEF; break;
+            case BULLET_TYPE.B_BOSS1_P1: path = GamePath.WEAPON_BULLET_BOSS; break;
         }
 
         if (path == null)
@@ -43,7 +44,29 @@ public class BulletManager : Singletone<BulletManager> {
     public void RemoveBullet(Bullet bullet)
     {
         this.m_bulletList.Remove(bullet);
+        NetworkManager.Instance().RemoveNetworkEnemyMoveEventListener(bullet);
         GameObject.Destroy(bullet.gameObject);
+    }
+
+    public void RemoveBullet(string bulletName)
+    {
+        Bullet target = null;
+        foreach(Bullet bullet in m_bulletList)
+        {
+            if(bullet != null)
+            {
+                if(bullet.BULLET_NAME == bulletName)
+                {
+                    target = bullet;
+                    break;
+                }
+            }
+        }
+
+        if(target != null)
+        {
+            RemoveBullet(target);
+        }
     }
     
 }

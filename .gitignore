@@ -27,6 +27,13 @@ ExportedObj/
 *.svd
 *.pdb
 
+# 리소스 제외 
+*.png
+*.json
+*.json.txt
+*.meta
+
+
 
 # Unity3D generated meta files
 *.pidb.meta

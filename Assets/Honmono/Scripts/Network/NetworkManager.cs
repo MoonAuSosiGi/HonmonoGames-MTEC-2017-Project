@@ -11,9 +11,13 @@ public class NetworkManager : Singletone<NetworkManager>
     public const string MSGTYPE = "msgType";
     public const string USERNAME = "UserName";
     public const string TARGETNAME = "targetName";
+    public const string ORDERS = "orders";
+    public const string ORDER = "order";
     public const string MSG = "msg";
-
+    public const string CLIENT_ID = "clientid";
+    public const string TIMESTAMP = "timestamp";
     public const string DIR = "Dir";
+    public const string DIRVECTOR = "DirVector";
 
     // order
     public const string CHAT = "chat";
@@ -22,20 +26,79 @@ public class NetworkManager : Singletone<NetworkManager>
     public const string CH_ORIGINUSER = "ch_OriginUser";
     public const string CH_ORIGINUSER_REQ = "ch_OriginUser_req";
     public const string ANIMATION = "anmation";
+    public const string STATE_CHANGE = "state_change";
+    public const string SOCKET_OPEN = "socket_open";
+    public const string GUN_ANGLE_CHANGE = "gun_angle_change";
 
+    public const string BOSS_SCENE_MOVE = "boss_scene_move";
+
+    //connect
+    public const string USER_CONNECT = "user_connect";
+    public const string USER_INFO_REQ = "userinfo_req";
+    public const string USER_CHARACTER_CREATE = "user_char_create";
+    public const string USER_LOGOUT = "user_logout";
+    public const string USER_READY = "user_ready";
+    public const string USER_INDEX = "user_index"; // ready
+    public const string GAME_START = "gamestart";
+    public const string READY_STATE = "ready_state";
+
+    public const string STATUS_SPEED = "status_userspeed";
+    public const string STATUS_POWER = "status_power";
+    public const string STATUS_REPAIR = "status_repair";
+
+    //충돌체크
+    public const string CRASH = "crash";
+    public const string CRASH_NAME1 = "crashname1";
+    public const string CRASH_NAME2 = "crashname2";
+
+    //place Change
+    public const string PLACE_CHANGE = "place_change";
     //create order
     public const string CREATE_TARGET = "create_target";
 
+    // robot order
+    public const string ROBOT_DRIVER = "robot_driver";
+    public const string ROBOT_GUNNER = "robot_gunner";
 
-    // hero list
+
+    // AI
+    public const string AI = "ai"; // type
+    public const string AI_C = "aiC";
+    public const string AI_C_LASER = "aiClaser";
+    public const string AI_D = "aiD";
+    public const string AI_D_END = "aiDend";
+    public const string AI_PATTERN_NAME = "ai_pattern_name";
+    public const string AI_ANI_NAME = "ai_ani_name";
+    public const string AI_ANI_INDEX = "ai_ani_index";
+    public const string AI_ANI_LOOP = "ai_ani_loop";
+    public const string AI_D_ROTATE = "ai_D_rotate";
+
+    //ㄱㄱ
+    public const string INTHE_STAR = "intherstar";
+
+
+    public GameObject m_chatUI = null;
+
+    // 우주에 있는 유저 리스트 ---------------------------------------------------------------//
     [SerializeField]
-    private List<Hero> m_userList = new List<Hero>();
+    private List<Hero> m_spaceUserList = new List<Hero>();
+
+    // 로봇 안에 있는 유저 리스트------------------------------------------------------------//
+    [SerializeField]
+    private List<Hero> m_robotUserList = new List<Hero>();
+
     public List<GameObject> m_enemyList = new List<GameObject>();
-    private List<string> m_userNameList = new List<string>(); // 플레이어 제외하고는 최대 3명 
-    private bool m_firstCheck = false;    
+    private List<string> m_userNameList = new List<string>(); // 플레이어 이름 리스트
+    
+
+    public List<string> USER_LIST
+    {
+        get { return m_userNameList; }
+    }
+
     // -- 기본 정보 -------------------------------------------------------------------------------------------//
 
-    private string m_serverURL = "localhost:8090";
+    private string m_serverURL = "13.124.50.145:8090";
 
     [SerializeField]
     private RestController m_rest = null;
@@ -53,6 +116,7 @@ public class NetworkManager : Singletone<NetworkManager>
     private Queue<string> m_socketMessages = new Queue<string>();
     private Queue<string> m_socketMoveMessage = new Queue<string>();
     private Queue<string> m_socketEnemyMoveMessage = new Queue<string>();
+    private Queue<string> m_socketOrders = new Queue<string>();
     //-- 옵저버 패턴 [채팅] -------------------------------------------------------------------------------------------//
 
     public class MessageEvent
@@ -61,10 +125,12 @@ public class NetworkManager : Singletone<NetworkManager>
         public string user = "";
         public string targetName = "";
         public JSONObject msg = null;
+        public JSONObject orders = null;
 
-        public MessageEvent(string type, string user, string targetName, JSONObject msg)
+        public MessageEvent(string type, string user, string targetName, JSONObject orders, JSONObject msg)
         {
             this.msgType = type; this.user = user; this.msg = (msg);
+            this.orders = orders;
             this.targetName = targetName;
         }
     }
@@ -95,11 +161,54 @@ public class NetworkManager : Singletone<NetworkManager>
 
         JSONObject obj = new JSONObject(m_socketMessages.Dequeue());
 
-        MessageEvent e = new MessageEvent(obj.GetField(MSGTYPE).str, obj.GetField(USERNAME).str, obj.GetField(TARGETNAME).str, obj.GetField(MSG));
+        MessageEvent e = new 
+            MessageEvent(obj.GetField(ORDERS)[0].GetField(ORDER).str,
+            obj.GetField(CLIENT_ID).str,
+            obj.GetField(ORDERS)[0].GetField(MSG).GetField(TARGETNAME).str,
+            obj.GetField(ORDERS)[0], obj.GetField(ORDERS)[0].GetField(MSG));
+
 
         foreach (NetworkMessageEventListenrer listener in m_socketListener)
         {
-            listener.ReceiveNetworkMessage(e);
+            if(listener != null)
+                listener.ReceiveNetworkMessage(e);
+        }
+
+    }
+    // ---------------------------------------------------------------------------------------------------------//
+    // -- 옵저버 패턴 [오더] -----------------------------------------------------------------------------------//
+    private List<NetworkMessageEventListenrer> m_orderList = new List<NetworkMessageEventListenrer>();
+
+    // 이벤트 리스너 등록
+    public void AddNetworkOrderMessageEventListener(NetworkMessageEventListenrer listener)
+    {
+        m_orderList.Add(listener);
+    }
+    // 이벤트 리스너 삭제
+    public void RemoveNetworkOrderMessageEventListener(NetworkMessageEventListenrer listener)
+    {
+        m_orderList.Remove(listener);
+    }
+
+    // 커맨드 내용이 들어온다 ---------------------------------------------------!
+    private void SendNetworkOrderMessage()
+    {
+        if (m_socketOrders.Count <= 0)
+            return;
+
+        JSONObject obj = new JSONObject(m_socketOrders.Dequeue());
+
+        MessageEvent e = 
+            new MessageEvent(obj.GetField(ORDERS)[0].GetField(ORDER).str, 
+            obj.GetField(CLIENT_ID).str, 
+            obj.GetField(ORDERS)[0].GetField(MSG).GetField(TARGETNAME).str, 
+            obj.GetField(ORDERS)[0], obj.GetField(ORDERS)[0].GetField(MSG));
+
+      //  MDebug.Log("ORDER     RRRRRRRRRRRRRRRRRRRRRRR" + obj.ToString());
+        foreach (NetworkMessageEventListenrer listener in m_orderList)
+        {
+            if (listener != null)
+                listener.ReceiveNetworkMessage(e);
         }
 
     }
@@ -115,6 +224,7 @@ public class NetworkManager : Singletone<NetworkManager>
         m_moveEventList.Add(l);
     }
 
+    // 이동메시지를 쏜다 ------------------------------------------------------------!
     void SendMoveNetworkMessage()
     {
         if (m_socketMoveMessage.Count <= 0)
@@ -132,15 +242,18 @@ public class NetworkManager : Singletone<NetworkManager>
             string a = "hero";
 
             MDebug.Log(t == a);
-            if (obj.GetField("Client ID").i <= 1)
+            GameManager.Instance().PLAYER.NETWORK_INDEX = (int)obj.GetField("Client ID").i;
+
+
+            if (GameManager.Instance().PLAYER.NETWORK_INDEX <= 1)
             {
-                NetworkManager.Instance().SendNetworkMessage(JSONMessageTool.ToJsonOrderChange(GameManager.Instance().PLAYER.USER_NAME, 0));
-                
+                NetworkOrderController.ORDER_NAME = GameManager.Instance().PLAYER.USER_NAME;
+                NetworkOrderController.ORDER_SPACE = 0;
+
             }
-            else if(obj.GetField("Client ID").i > 1)
+            else if(GameManager.Instance().PLAYER.NETWORK_INDEX > 1)
             {
-                MDebug.Log("전~~~송~~!!!요청");
-                NetworkManager.Instance().SendNetworkMessage(JSONMessageTool.ToJsonOrderRequest(NetworkOrderController.ORDER_NAME, NetworkOrderController.ORDER_SPACE));
+               // NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderRequest(NetworkOrderController.ORDER_NAME, NetworkOrderController.ORDER_SPACE));
             }
             return;
         }
@@ -148,85 +261,116 @@ public class NetworkManager : Singletone<NetworkManager>
         JSONObject users = obj.GetField("Users");
         //{"Users":[{"UserName":"test","x":-3.531799,"y":-0.02999991,"z":0,"dir":0}]}
 
-        
 
-        //변경
-        int userCount = 0;
-        //user
-        //최대 접속자는 4명 그 중에 Hero
-        
-        foreach (Hero user in m_userList)
+
+        //우주에 있는 유저놈들
+        //로봇에 있는 유저놈들
+        //행서에 있는 유저놈들
+        //동일 로직?
+
+        //확실한 것은 받아오는 리스트엔 모든 유저가 다 있다.
+        // 이름 구분 방법 : 이름_space 이름_robot 이름_행성이름
+      
+
+        // 들어와있는 것들은 켠다.
+        // 다만 위치를 판단해서 켜준다.
+
+        foreach(Hero hero in m_spaceUserList)
         {
-            //켜져있다면 체크해야함
-            if (user.gameObject.activeSelf)
+            for(int i = 0; i < users.Count; i ++)
             {
-                bool check = false;
-                for (int j = 0; j < users.Count; j++)
+                if(users[i].GetField(USERNAME).str == hero.USERNAME)
                 {
-                    string name = users[j].GetField(USERNAME).str;
+
+                    int area = (int)users[i].GetField("Z").f;
                     
-                    if(name.IndexOf("robo") >= 0)
-                        continue;
-                    if (name == GameManager.Instance().PLAYER.USER_NAME)
-                        continue;
-                    if (user.USERNAME == name)
-                    {
-                        check = true;
-                        break;
-                    }
-                }
-
-                if (!check)
-                {
-                    // UserName List 에서 삭제 
-                    m_userNameList.Remove(user.USERNAME);
-                    user.gameObject.SetActive(false);
-                }
-
-            }
-            else
-            {
-                // 꺼져있다면 추가해야 하므로 체크 로직 
-                for (int j = 0; j < users.Count; j++)
-                {
-                    bool check = false;
-                    string name = users[j].GetField(USERNAME).str;
-                    
-                    if (name.IndexOf("robo") >= 0)
-                        continue;
-                    if (name == GameManager.Instance().PLAYER.USER_NAME)
-                        continue;
-
-                    for (int k = 0; k < m_userNameList.Count; k++)
-                    {
-                        if (m_userNameList[k] == name)
-                        {
-                            check = true;
-                            break;
-                        }
-                    }
-
-                    if (!check)
-                    {
-                        
-                        m_userNameList.Add(name);
-                        user.gameObject.SetActive(true);
-                        user.USERNAME = name;
-                        break;
-                    }
+                    if (area == (int)NetworkOrderController.AreaInfo.AREA_SPACE 
+                        && m_userNameList.Contains(hero.USERNAME.Split('_')[0]))
+                        hero.gameObject.SetActive(true);
+                    else
+                        hero.gameObject.SetActive(false);
                 }
             }
-
-
         }
 
-       
+        //여긴 로봇 :: 아마 부하 없을거
+        foreach (Hero hero in m_robotUserList)
+        {
+            for (int i = 0; i < users.Count; i++)
+            {
+                if (users[i].GetField(USERNAME).str == hero.USERNAME)
+                {
+
+                    int area = (int)users[i].GetField("Z").f;
+                    if (area == (int)NetworkOrderController.AreaInfo.AREA_ROBOT
+                        && m_userNameList.Contains(hero.USERNAME.Split('_')[0]))
+                        hero.gameObject.SetActive(true);
+                    else
+                        hero.gameObject.SetActive(false);
+                }
+            }
+        }
+
+
 
         foreach (NetworkMoveEventListener l in m_moveEventList)
         {
             l.ReceiveMoveEvent(obj);
         }
 
+    }
+
+    public void GameStartUserSetup(string name)
+    {
+        m_userNameList.Add(name);
+        m_robotUserList[0].USERNAME = name + "_robo";
+        m_robotUserList[0].gameObject.SetActive(true);
+    }
+
+    public void LogOutUser(string name)
+    {
+        if(m_userNameList.Contains(name))
+        {
+            foreach(Hero user in m_spaceUserList)
+            {
+                if (user.USERNAME == name + "_space")
+                {
+                    user.USERNAME = "";
+                    user.gameObject.SetActive(false);
+                }
+            }
+            foreach (Hero user in m_robotUserList)
+            {
+                if (user.USERNAME == name + "_robo")
+                {
+                    user.USERNAME = "";
+                    user.gameObject.SetActive(false);
+                }
+            }
+        }
+    }
+
+    // 캐릭터 생성
+    public void CreateUserCharacter(string name)
+    {
+        if(!m_userNameList.Contains(name))
+        {
+            //TODO 추후 여기서 name split 해서 캐릭터 생성 
+            foreach(Hero user in m_robotUserList)
+            {
+                if(string.IsNullOrEmpty(user.USERNAME) || !m_userNameList.Contains(user.USERNAME.Split('_')[0]))
+                {
+                    if(!user.m_isMe)
+                    {
+                        m_userNameList.Add(name);
+                        user.USERNAME = name + "_robo";
+                        user.gameObject.SetActive(true);
+                        return;
+                    }
+
+                }
+            }
+        }
     }
     // ---------------------------------------------------------------------------------------------------------//
 
@@ -251,7 +395,7 @@ public class NetworkManager : Singletone<NetworkManager>
         string json = m_socketEnemyMoveMessage.Dequeue();
         JSONObject obj = new JSONObject(json);
         JSONObject users = obj.GetField("Enemies");
-
+     //   MDebug.Log("em " + json);
         foreach (NetworkMoveEventListener l in m_enemyMoveEventList)
         {
             l.ReceiveMoveEvent(obj);
@@ -260,16 +404,13 @@ public class NetworkManager : Singletone<NetworkManager>
     }
     // ---------------------------------------------------------------------------------------------------------//
 
-    void Start()
-    {
-        //  SetupWebSocket();
-    }
-
+    // 들어온 메시지 전송 각
     void Update()
     {
         SendNetworkChatMessage();
         SendMoveNetworkMessage();
         SendEnemyMoveNetworkMessage();
+        SendNetworkOrderMessage();
     }
 
     //-- REST ------------------------------------------------------------------------------------------------//
@@ -286,6 +427,7 @@ public class NetworkManager : Singletone<NetworkManager>
     }
     public void SendNetworkMessage(string json)
     {
+        MDebug.Log(json);
         m_socket.SendChatMessage(json);
     }
 
@@ -299,6 +441,15 @@ public class NetworkManager : Singletone<NetworkManager>
         m_socket.SendEnemyMoveMessage(json);
     }
 
+    public void SendOrderMessage(string json)
+    {
+        m_socket.SendOrderMessage(json);
+    }
+
+    public bool IsSocketAlived()
+    {
+        return m_socket.IsSocketAlived();
+    }
 
     // 큐에 메시지를 담는다.
     public void PushChatMessage(string json)
@@ -317,4 +468,36 @@ public class NetworkManager : Singletone<NetworkManager>
     {
         this.m_socketEnemyMoveMessage.Enqueue(json);
     }
+
+    // 오더를 큐에 담는다
+    public void PushOrderMessage(string json)
+    {
+        this.m_socketOrders.Enqueue(json);
+    }
+
+
+    // -- 게임 제어 ------------------------------------------------------//
+    public void GameStart()
+    {
+        // 로그인 / 로비 세팅 완료되었다.
+        m_robotUserList[0].gameObject.SetActive(true);
+        CameraManager.Instance().MoveCamera(m_robotUserList[0].transform.parent.gameObject,GameSetting.CAMERA_ROBO,CameraManager.CAMERA_PLACE.ROBO_IN);
+        
+        GameStartUserSetup(GameManager.Instance().PLAYER.USER_NAME);
+
+        SendOrderMessage(JSONMessageTool.ToJsonOrderUserCrateCharacter(
+            GameManager.Instance().PLAYER.USER_NAME));
+        SoundManager.Instance().PlayBGM(2);
+        m_chatUI.SetActive(true);
+    }
+
+    public void GototheRobo()
+    {
+        CameraManager.Instance().MoveCamera(m_robotUserList[0].gameObject, GameSetting.CAMERA_ROBO, CameraManager.CAMERA_PLACE.ROBO_IN);        
+    }
+
+    void Start()
+    {
+    }
+ 
 }

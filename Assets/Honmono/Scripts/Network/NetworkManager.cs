@@ -98,7 +98,7 @@ public class NetworkManager : Singletone<NetworkManager>
 
     // -- 기본 정보 -------------------------------------------------------------------------------------------//
 
-    private string m_serverURL = "13.124.50.145:8090";
+    private string m_serverURL = "localhost"; //"13.124.50.145:8090";
 
     [SerializeField]
     private RestController m_rest = null;
@@ -114,7 +114,7 @@ public class NetworkManager : Singletone<NetworkManager>
 
     // -- 메시지 큐 -------------------------------------------------------------------------------------------//
     private Queue<string> m_socketMessages = new Queue<string>();
-    private Queue<string> m_socketMoveMessage = new Queue<string>();
+    private Queue<string> m_socketMoveMessage = new Queue<string>(1000);
     private Queue<string> m_socketEnemyMoveMessage = new Queue<string>();
     private Queue<string> m_socketOrders = new Queue<string>();
     //-- 옵저버 패턴 [채팅] -------------------------------------------------------------------------------------------//
@@ -230,7 +230,11 @@ public class NetworkManager : Singletone<NetworkManager>
         if (m_socketMoveMessage.Count <= 0)
             return;
 
-        string json = m_socketMoveMessage.Dequeue();
+
+        string json = null;
+
+        while(m_socketMoveMessage.Count > 0)
+            json = m_socketMoveMessage.Dequeue();
         JSONObject obj = new JSONObject(json);
 
         if(obj.GetField("Users") == null)
@@ -240,8 +244,6 @@ public class NetworkManager : Singletone<NetworkManager>
 
             string t = "hero_robo";
             string a = "hero";
-
-            MDebug.Log(t == a);
             GameManager.Instance().PLAYER.NETWORK_INDEX = (int)obj.GetField("Client ID").i;
 
 
@@ -423,7 +425,7 @@ public class NetworkManager : Singletone<NetworkManager>
     // WebSocket ---------------------------------------------------------------------------------------------//
     public void SetupWebSocket()
     {
-        m_socket.SetupSocket(m_serverURL);
+        m_socket.SetupSocket(m_serverURL + ":8090");
     }
     public void SendNetworkMessage(string json)
     {
@@ -460,6 +462,7 @@ public class NetworkManager : Singletone<NetworkManager>
     // 무브 이벤트 정보만 담는다.
     public void PushMoveMessage(string json)
     {
+        if(m_socketMoveMessage.Count < 1000)
         this.m_socketMoveMessage.Enqueue(json);
     }
 
@@ -497,7 +500,7 @@ public class NetworkManager : Singletone<NetworkManager>
     }
 
     void Start()
-    {
+    { 
     }
  
 }

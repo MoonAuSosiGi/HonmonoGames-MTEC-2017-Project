@@ -94,8 +94,9 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     private float m_delay = 0.0f;
     private float m_lastSyncTime = 0.0f;
 
+    private float m_lastSendTime = 0.0f;
     // state
-    private float m_prevState = 0.0f;
+    private int m_prevState = 0;
 
     Vector3 m_recvPrevPos = Vector3.zero;
     Vector3 m_veloCity = Vector3.zero;
@@ -114,7 +115,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         float x = 0.0f, y = 0.0f, z = 0.0f;
         bool flip = false;
         bool ck = false;
-        Vector3 prevPos = Vector3.zero;
+        Vector3 drPos = Vector3.zero;
+        Vector3 targetPos = Vector3.zero;
         for(int i = 0; i < users.Count; i++)
         {
             if(users[i].GetField(NetworkManager.USERNAME).str == m_userName)
@@ -125,7 +127,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
                 flip = users[i].GetField(NetworkManager.DIR).b;
                 ck = true;
                 JSONObject v = users[i].GetField(NetworkManager.DIRVECTOR);
-                prevPos = new Vector3(v.GetField("X").f , v.GetField("Y").f , v.GetField("Z").f);
+                drPos = new Vector3(v.GetField("X").f , v.GetField("Y").f , v.GetField("Z").f);
                 break;
             }
         }
@@ -143,45 +145,62 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             case (int)NetworkOrderController.AreaInfo.AREA_ROBOT:
                 if (m_inSpace) return; break;
         }
+        Vector3 newPos = new Vector3(x , y);
 
-        Vector3 newPos = new Vector3(x, y);
 
-        float distance = Vector3.Distance(transform.position, newPos);
-
-        this.m_skletonAnimation.skeleton.flipX = flip;
-
-        if (distance <= 0)
+        // 기존 방향과 다르다면!?
+        if (this.m_skletonAnimation.skeleton.flipX != flip)
         {
-            // 애니메이션 여기서 할 필요가 없음 
-         //   return;
+            this.m_skletonAnimation.skeleton.flipX = flip;
+            targetPos = newPos;
         }
+        else
+            targetPos = drPos;
         
+
+        // 여기서 애니메이션을 유추한다.
+        float dy = Mathf.Round((targetPos.y - transform.position.y));
+        float distance = Mathf.Round(Vector3.Distance(transform.position, targetPos));
+
+        //MDebug.Log("distance "+ string.Format("{0:F2}" , distance) + "dy " + string.Format("{0:F2}" , dy) + " target "+ targetPos + " pos " +transform.position);
+        
+        //if (distance <= 0 && dy <= 0.0f)
+        //{
+        //    m_curState = (int)HERO_STATE.IDLE;
+        //}
+        //else
+        //{
+        //    if (dy <= 0.0f)
+        //    {
+
+
+        //    }
+        //    else
+        //    {
+        //        // 점프와 이동을 구별해야함
+        //        m_curState = BitControl.Set(m_curState , (int)HERO_STATE.MOVE);
+        //    }
+        //}
+
+
+        //MDebug.Log("cur " + m_curState);
+
+
         
 
         m_syncTime = 0.0f;
         m_delay = Time.time - m_lastSyncTime;
         m_lastSyncTime = Time.time;
 
-    //    transform.position = newPos;
-        
-
-        //Vector3 velocity = ((transform.position - newPos) / m_delay);
-        //velocity.z = 0.0f;
-        //transform.position += velocity;
-        ////    Vector3 velocity = (newPos - prevPos) / m_delay;// * Time.deltaTime;
-
-        //  transform.position += velocity;
-         //MDebug.Log("VElo " + velocity + " prev " + prevPos + " new " + newPos + " cur " +transform.position);
-        m_targetPos = (newPos);
-        m_startPos = transform.position;
-        //MDebug.Log("받았다 " + m_targetPos + " 시간 " +Time.time );
+        //MDebug.Log("!! 새로운 좌표가 왔음 : " + targetPos + " 이건 그전 " + transform.position);
+        m_targetPos = targetPos;
     }
     // Order 받는용
     void NetworkManager.NetworkMessageEventListenrer.ReceiveNetworkMessage(NetworkManager.MessageEvent e)
     {
 
         // 상태 체인지
-        if (e.msgType == NetworkManager.STATE_CHANGE && e.targetName != m_userName)
+        if (e.msgType == NetworkManager.STATE_CHANGE && e.targetName + "_robo" != m_userName)
         {
             if (m_isMe)
                 return;
@@ -328,11 +347,12 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     
     void Update()
     {
-        
+        m_prevPos = transform.position;
+        m_prevState = m_curState;
+
         if (m_isMe)
         {
-            m_prevPos = transform.position;
-            m_prevState = m_curState;
+            
 
             if (!m_inSpace)
                 Control();
@@ -352,13 +372,13 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     //-- Network Message 에 따른 이동 보간 ( 네트워크 플레이어 ) ------------------------------------------------------------//
     void NetworkMoveLerp()
     {
-        //    Vector3 velocity = (newPos - prevPos) / m_delay;// * Time.deltaTime;
-
         m_syncTime += Time.deltaTime;
-
-        //// 네트워크 보간( 테스트 완료 - 로컬 )
-        if (m_delay > 0)
-            transform.position = Vector3.Lerp(transform.position , m_targetPos , m_syncTime / m_delay);
+        transform.position = m_targetPos;
+        if ((m_delay > 0))
+        {
+            //MDebug.Log("현재 " + transform.position + " ㅌ타겟 " + m_targetPos);
+            //transform.position = Vector3.Lerp(transform.position , m_targetPos , m_syncTime / m_delay);
+        }
     }
 
     // -- Network Message 에 따른 애니메이션 처리 ---------------------------------------------------------------------------//
@@ -625,7 +645,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         Debug.DrawLine(pos, new Vector3(pos.x,pos.y - GetComponent<BoxCollider2D>().bounds.size.y,0.0f),Color.red);
         //MoveSend();
 
-        //if(m_delay >= (1.0f/60.0f))
+     //   if(m_delay >= (1.0f/60.0f))
         {
             MoveSend();
             //m_delay = 0.0f;
@@ -757,30 +777,33 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     {
         Vector3 pos = transform.position;
         float distance = Vector3.Distance(m_prevPos, pos);
-        
-
-        if (distance <= 0)
-            return;
 
         float area = (float)((m_inSpace) ? (int)NetworkOrderController.AreaInfo.AREA_SPACE : (int)NetworkOrderController.AreaInfo.AREA_ROBOT);
-        //Vector3 dirPos = m_prevPos - transform.position;
+        
+        Vector3 velocity = (transform.position - m_prevPos) / Time.deltaTime;
+        Vector3 sendPos = m_prevPos + ( velocity * (Time.deltaTime - m_lastSendTime));
         //dirPos.Normalize();
+        
         NetworkManager.Instance().SendMoveMessage(
             JSONMessageTool.ToJsonMove(
                 m_userName,
                 pos.x, pos.y,
                 area, // :: Area 선택해서 날림
                 m_skletonAnimation.skeleton.flipX,
-                m_prevPos));
+                sendPos));
+        m_lastSendTime = Time.deltaTime;
 
     }
 
     void StateSend()
     {
         if (m_prevState != m_curState)
-            NetworkManager.Instance().SendOrderMessage(
-                JSONMessageTool.ToJsonOrderStateValueChange(
-                    m_userName, m_curState));
+        {
+            //if (!BitControl.Get(m_curState , (int)HERO_STATE.IDLE))
+            //NetworkManager.Instance().SendOrderMessage(
+            //    JSONMessageTool.ToJsonOrderStateValueChange(
+            //        m_userName , m_curState));
+        }
     }
 
     //-- (행성/로봇내부) 충돌 -----------------------------------------------------------------------------------------------//
@@ -850,6 +873,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.JUMP_FALL);
             m_curState = (int)HERO_STATE.IDLE;//BitControl.Set(m_curState, (int)HERO_STATE.IDLE);
             m_skletonAnimation.state.SetAnimation(0, ANI_IDLE, true);
+            m_rigidBody.velocity = new Vector2(0.0f , 0.0f);
             StateSend();
 
         }

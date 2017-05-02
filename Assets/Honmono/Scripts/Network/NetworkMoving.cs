@@ -22,6 +22,7 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
     private float m_syncTime = 0.0f;
     private float m_delay = 0.0f;
     private float m_lastSyncTime = 0.0f;
+    private float m_lastSendTime = 0.0f;
     // --------------------------------------------------------------------------------//
 
     void Start()
@@ -119,11 +120,11 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
         float distance = Vector3.Distance(m_prevPos, pos);
         m_prevPos = transform.position;
 
-        if (distance <= 0)
-            return;
+        
+        Vector3 velocity = (transform.position - m_prevPos) / Time.deltaTime;
+        Vector3 sendPos = m_prevPos + (velocity * (Time.deltaTime - m_lastSendTime));
 
-
-        NetworkManager.Instance().SendEnemyMoveMessage(JSONMessageTool.ToJsoinEnemyMove(m_name, pos.x, pos.y, 0, true));
+        NetworkManager.Instance().SendEnemyMoveMessage(JSONMessageTool.ToJsoinEnemyMove(m_name, sendPos.x, sendPos.y, 0, true));
 
     }
 }

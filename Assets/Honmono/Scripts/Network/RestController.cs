@@ -6,7 +6,7 @@ using UnityEngine.Networking;
 
 public class RestController : MonoBehaviour {
 
-    private string url = "http://13.124.50.145:8080";
+
 	// Use this for initialization
 	void Start () {
         //StartCoroutine(Get(gameObject, "TEST"));
@@ -40,7 +40,7 @@ public class RestController : MonoBehaviour {
     {
         MDebug.Log("REST : " + json);
         //url = "http://172.20.10.5:8080";
-        UnityWebRequest www = new UnityWebRequest(url, "POST");
+        UnityWebRequest www = new UnityWebRequest(NetworkManager.Instance().SERVER_URL + ":8080", "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         www.uploadHandler = (UploadHandler)new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
@@ -71,7 +71,7 @@ public class RestController : MonoBehaviour {
     IEnumerator Get(GameObject target, string targetFunc)
     {
 
-        UnityWebRequest www = UnityWebRequest.Get(url + "/users");
+        UnityWebRequest www = UnityWebRequest.Get(NetworkManager.Instance().SERVER_URL + ":8080" + "/users");
 
         yield return www.Send();
 

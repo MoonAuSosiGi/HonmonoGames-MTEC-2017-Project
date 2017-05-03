@@ -314,7 +314,7 @@ public class NetworkManager : Singletone<NetworkManager>
         }
 
 
-
+        MDebug.Log("move " + obj);
         foreach (NetworkMoveEventListener l in m_moveEventList)
         {
             l.ReceiveMoveEvent(obj);
@@ -394,7 +394,9 @@ public class NetworkManager : Singletone<NetworkManager>
         if (m_socketEnemyMoveMessage.Count <= 0)
             return;
 
-        string json = m_socketEnemyMoveMessage.Dequeue();
+        string json = null;
+        while(m_socketEnemyMoveMessage.Count > 0)
+            json = m_socketEnemyMoveMessage.Dequeue();
         JSONObject obj = new JSONObject(json);
         JSONObject users = obj.GetField("Enemies");
      //   MDebug.Log("em " + json);

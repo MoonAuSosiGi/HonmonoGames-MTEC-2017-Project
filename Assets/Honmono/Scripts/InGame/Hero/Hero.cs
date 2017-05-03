@@ -90,9 +90,6 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     // -- NetworkMessage ------------------------------------------------------------------------------------------------------//
     private Vector3 m_targetPos = Vector3.zero;
     private Vector3 m_startPos = Vector3.zero;
-    private float m_syncTime = 0.0f;
-    private float m_delay = 0.0f;
-    private float m_lastSyncTime = 0.0f;
 
     private float m_lastSendTime = 0.0f;
     // state
@@ -119,8 +116,9 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         Vector3 targetPos = Vector3.zero;
         for(int i = 0; i < users.Count; i++)
         {
-            if(users[i].GetField(NetworkManager.USERNAME).str == m_userName)
+            if(users[i].GetField(NetworkManager.USERNAME).str.Equals(m_userName))
             {
+                
                 x = users[i].GetField("X").f;
                 y = users[i].GetField("Y").f;
                 z = users[i].GetField("Z").f;
@@ -188,11 +186,9 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
         
 
-        m_syncTime = 0.0f;
-        m_delay = Time.time - m_lastSyncTime;
-        m_lastSyncTime = Time.time;
-
-        //MDebug.Log("!! 새로운 좌표가 왔음 : " + targetPos + " 이건 그전 " + transform.position);
+        //m_syncTime = 0.0f;
+        //m_delay = Time.time - m_lastSyncTime;
+        //m_lastSyncTime = Time.time;
         m_targetPos = targetPos;
     }
     // Order 받는용
@@ -206,50 +202,61 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
                 return;
             m_curState = (int)e.msg.GetField(NetworkManager.STATE_CHANGE).i;
         }
-            
-        else if(e.msgType == NetworkManager.ROBOT_DRIVER && e.user + "_robo" == m_userName)
+        // 로봇 조종자            
+        else if(e.msgType == NetworkManager.ROBOT_DRIVER && m_isMe)
         {
-            if (!BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_DRIVE))
-            {
-                return;
-            }
-
             if (e.msg.GetField(NetworkManager.ROBOT_DRIVER).b)
             {
-                //test
 
+                GameManager.Instance().ROBO.MOVE_PLYAER = e.user;
 
-           //     NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(GameManager.Instance().PLAYER.USER_NAME, "boss1"));
-                CameraManager.Instance().MoveCamera(GameManager.Instance().ROBO.gameObject, GameSetting.CAMERA_SPACE, CameraManager.CAMERA_PLACE.STAGE1);
+                if (m_userName.Equals(e.user + "_robo"))
+                    CameraManager.Instance().MoveCamera(
+                        GameManager.Instance().ROBO.gameObject, 
+                        GameSetting.CAMERA_SPACE, 
+                        CameraManager.CAMERA_PLACE.STAGE1);
             }
             else
             {
-                m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.CONTROL_DRIVE);
-                NetworkManager.Instance().GototheRobo();
-                GameManager.Instance().PLAYER.PLAYER_HERO = this;
+                if (m_userName.Equals(e.user + "_robo"))
+                {
+                    m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.CONTROL_DRIVE);
+                    NetworkManager.Instance().GototheRobo();
+                    GameManager.Instance().PLAYER.PLAYER_HERO = this;
+                }
+               GameManager.Instance().ROBO.MOVE_PLYAER = null;
 
             }
 
         }
-        else if (e.msgType == NetworkManager.ROBOT_GUNNER && e.user + "_robo" == m_userName)
+        // 이녀석은 총기를 조작하는 사람
+        else if (e.msgType == NetworkManager.ROBOT_GUNNER && m_isMe)
         {
-            if (!BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_GUN))
-            {
-                return;
-            }
 
             if (e.msg.GetField(NetworkManager.ROBOT_GUNNER).b)
             {
-                CameraManager.Instance().MoveCamera(GameManager.Instance().ROBO.gameObject,GameSetting.CAMERA_SPACE, CameraManager.CAMERA_PLACE.STAGE1);
+                GameManager.Instance().ROBO.GUN_PLAYER = e.user;
+                
+                if(m_userName.Equals(e.user + "_robo"))
+                    CameraManager.Instance().MoveCamera(
+                        GameManager.Instance().ROBO.gameObject,
+                        GameSetting.CAMERA_SPACE, 
+                        CameraManager.CAMERA_PLACE.STAGE1);
             }
             else
             {
-                m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.CONTROL_GUN);
-                NetworkManager.Instance().GototheRobo();
-                GameManager.Instance().PLAYER.PLAYER_HERO = this;
+                if (m_userName.Equals(e.user + "_robo"))
+                {
+                    m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.CONTROL_GUN);
+                    NetworkManager.Instance().GototheRobo();
+                    GameManager.Instance().PLAYER.PLAYER_HERO = this;
+                }
+
+                GameManager.Instance().ROBO.GUN_PLAYER = null;
+
             }
         }
-        else if(e.msgType == NetworkManager.INTHE_STAR && e.user + "_robo" == m_userName)
+        else if(e.msgType == NetworkManager.INTHE_STAR)
         {
 
             if(e.msg.GetField(NetworkManager.INTHE_STAR).b)
@@ -372,13 +379,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     //-- Network Message 에 따른 이동 보간 ( 네트워크 플레이어 ) ------------------------------------------------------------//
     void NetworkMoveLerp()
     {
-        m_syncTime += Time.deltaTime;
         transform.position = m_targetPos;
-        if ((m_delay > 0))
-        {
-            //MDebug.Log("현재 " + transform.position + " ㅌ타겟 " + m_targetPos);
-            //transform.position = Vector3.Lerp(transform.position , m_targetPos , m_syncTime / m_delay);
-        }
     }
 
     // -- Network Message 에 따른 애니메이션 처리 ---------------------------------------------------------------------------//
@@ -422,7 +423,6 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     //-- 실 캐릭터 조작 -----------------------------------------------------------------------------------------------------//
     void Control()
     {
-        m_delay += Time.deltaTime;
         Vector2 pos = transform.position;
 
         //상황 설정
@@ -511,7 +511,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
                    NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderRobotSetting(false));
 
                 if (BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_GUN))
-                    NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderRobotGunSetting(false));
+                    NetworkManager.Instance().SendOrderMessage(
+                        JSONMessageTool.ToJsonOrderRobotGunSetting(false));
 
                 // 기능 구현해야함
                 if (BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_HEAL))
@@ -636,7 +637,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             {
                 if (string.IsNullOrEmpty(GameManager.Instance().ROBO.GUN_PLAYER))
                 {
-                    NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderRobotGunSetting());
+                    NetworkManager.Instance().SendOrderMessage(
+                        JSONMessageTool.ToJsonOrderRobotGunSetting());
                 }
             }
 

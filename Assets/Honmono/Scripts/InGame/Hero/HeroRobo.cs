@@ -79,9 +79,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     // -- Network Message --------------------------------------------------------------//
     private Vector3 m_prevPos = Vector3.zero;
     private Vector3 m_targetPos = Vector3.zero;
-    private float m_syncTime = 0.0f;
-    private float m_delay = 0.0f;
-    private float m_lastSyncTime = 0.0f;
+    private float m_lastSendTime = 0.0f;
 
     // 상태값 체크
     private int m_prevState = 0;
@@ -150,13 +148,17 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         float distance = Vector3.Distance(m_prevPos, pos);
         m_prevPos = transform.position;
 
-        if (distance <= 0)
-            return;
+        Vector3 velocity = (transform.position - m_prevPos) / Time.deltaTime;
+        Vector3 sendPos = m_prevPos + (velocity * (Time.deltaTime - m_lastSendTime));
+        //dirPos.Normalize();
 
-
+   
         NetworkManager.Instance().SendMoveMessage(
             JSONMessageTool.ToJsonMove(m_movePlayerName + "_robot", 
-            pos.x, pos.y, (int)NetworkOrderController.AreaInfo.AREA_SPACE, m_skletonAnimation.skeleton.flipX,Vector3.zero));
+            pos.x, pos.y, 
+            (int)NetworkOrderController.AreaInfo.AREA_SPACE, 
+            m_skletonAnimation.skeleton.flipX,
+            sendPos));
        
     }
 
@@ -461,22 +463,8 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     //-- Network Message 에 따른 이동 보간 ( 네트워크 플레이어 ) ------------------------------------//
     void NetworkMoveLerp()
     {
-        m_syncTime += Time.deltaTime;
-
-
-        // 네트워크 보간( 테스트 완료 - 로컬 )
-        if (m_delay > 0)
-            transform.position = Vector3.Lerp(transform.position, m_targetPos, m_syncTime / m_delay);
-
-        //P + V * D
-        // 레이턴시 ->보낸다 ->받는다(시간)
-        // target Pos 를 재계산
-        // 클라 A  좌표 샌딩 ->  서버 -> 클라B 좌표 받음
-        // 클라B가 알수 있는 레이턴시는 서버 <-> 클라B
-        // 클라 A에 대한 시간을 알수 없음 
-        // 클라 A가 시간을 보냄 -> 클라 B에서 계산방법 (딜레이는 현재시간 - A의 보낸 시간 )
-        // (속도는 정해져있음)
-
+        if(!string.IsNullOrEmpty(m_movePlayerName))
+            transform.position = m_targetPos;
     }
 
     // 앵글 보간
@@ -500,26 +488,31 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     // 이동하는 녀석이 아니면 다 받는다------------------------------------------------------
     void NetworkManager.NetworkMoveEventListener.ReceiveMoveEvent(JSONObject json)
     {
-        if (m_movePlayerName == GameManager.Instance().PLAYER.USER_NAME)
+        if (string.IsNullOrEmpty(m_movePlayerName) || m_movePlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
             return;
-
+        
         JSONObject obj = json.GetField("Users");
 
         float x, y, z;
         x = y = z = 0.0f;
         bool flip = false;
         bool ck = false;
+        Vector3 drPos = Vector3.zero;
+        Vector3 targetPos = Vector3.zero;
         for (int i = 0; i < obj.Count; i++)
         {
             // 이름이 다르다면 패스
            
-            if (m_movePlayerName + "_robot" == obj[i].GetField(NetworkManager.USERNAME).str)
+            if ((m_movePlayerName + "_robot").Equals(obj[i].GetField(NetworkManager.USERNAME).str))
             {
+            
                 x = obj[i].GetField("X").f;
                 y = obj[i].GetField("Y").f;
                 z = obj[i].GetField("Z").f;
-                flip = obj[i].GetField("Dir").b;
+                flip = obj[i].GetField(NetworkManager.DIR).b;
                 ck = true;
+                JSONObject v = obj[i].GetField(NetworkManager.DIRVECTOR);
+                drPos = new Vector3(v.GetField("X").f , v.GetField("Y").f , v.GetField("Z").f);
                 break;
             }
         }
@@ -529,19 +522,20 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         Vector3 newPos = new Vector3(x, y);
 
         float distance = Vector3.Distance(transform.position, newPos);
-        if (m_skletonAnimation != null)
-            this.m_skletonAnimation.skeleton.flipX = flip;
 
-        if (distance <= 0)
+
+        // 기존 방향과 다르다면!?
+        if (this.m_skletonAnimation.skeleton.flipX != flip)
         {
-            return;
+            this.m_skletonAnimation.skeleton.flipX = flip;
+            targetPos = newPos;
         }
+        else
+            targetPos = drPos;
 
-        m_targetPos = newPos;
+        m_targetPos = targetPos;
 
-        m_syncTime = 0.0f;
-        m_delay = Time.time - m_lastSyncTime;
-        m_lastSyncTime = Time.time;
+
     }
 
     // 상태값 교환으로 애니메이션 
@@ -608,7 +602,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     bool r = false;
     void OnCollisionStay2D(Collider2D col)
     {
-        MDebug.Log("TEST "+col.tag);
+        
         if (col.tag == "GO_TOTHE_STAR")
         {
             m_controllName = col.tag;
@@ -617,7 +611,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
 
     void OnTriggerStay2D(Collider2D col)
     {
-        MDebug.Log("TEST " + col.tag);
+        
         if (col.tag == "GO_TOTHE_STAR")
         {
             m_controllName = col.tag;

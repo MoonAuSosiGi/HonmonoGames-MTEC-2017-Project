@@ -167,12 +167,9 @@ public class NetworkManager : Singletone<NetworkManager>
             obj.GetField(ORDERS)[0].GetField(MSG).GetField(TARGETNAME).str,
             obj.GetField(ORDERS)[0], obj.GetField(ORDERS)[0].GetField(MSG));
 
-
-        foreach (NetworkMessageEventListenrer listener in m_socketListener)
-        {
-            if(listener != null)
-                listener.ReceiveNetworkMessage(e);
-        }
+        
+        for (int i = m_socketListener.Count - 1; i >= 0; i--)
+            m_socketListener[i].ReceiveNetworkMessage(e);
 
     }
     // ---------------------------------------------------------------------------------------------------------//
@@ -203,13 +200,9 @@ public class NetworkManager : Singletone<NetworkManager>
             obj.GetField(CLIENT_ID).str, 
             obj.GetField(ORDERS)[0].GetField(MSG).GetField(TARGETNAME).str, 
             obj.GetField(ORDERS)[0], obj.GetField(ORDERS)[0].GetField(MSG));
-
-      //  MDebug.Log("ORDER     RRRRRRRRRRRRRRRRRRRRRRR" + obj.ToString());
-        foreach (NetworkMessageEventListenrer listener in m_orderList)
-        {
-            if (listener != null)
-                listener.ReceiveNetworkMessage(e);
-        }
+        
+        for (int i = m_orderList.Count - 1; i >= 0; i--)
+            m_orderList[i].ReceiveNetworkMessage(e);
 
     }
     // -- 옵저버 패턴 [무브] -----------------------------------------------------------------------------------//
@@ -239,7 +232,7 @@ public class NetworkManager : Singletone<NetworkManager>
 
         if(obj.GetField("Users") == null)
         {
-            MDebug.Log("JSON " + obj);
+            MDebug.Log("Client Enter " + obj);
             // 임시코드 
 
             string t = "hero_robo";
@@ -312,14 +305,10 @@ public class NetworkManager : Singletone<NetworkManager>
                 }
             }
         }
+        
 
-
-        MDebug.Log("move " + obj);
-        foreach (NetworkMoveEventListener l in m_moveEventList)
-        {
-            l.ReceiveMoveEvent(obj);
-        }
-
+        for (int i = m_moveEventList.Count - 1; i >= 0; i--)
+            m_moveEventList[i].ReceiveMoveEvent(obj);
     }
 
     public void GameStartUserSetup(string name)
@@ -393,17 +382,15 @@ public class NetworkManager : Singletone<NetworkManager>
     {
         if (m_socketEnemyMoveMessage.Count <= 0)
             return;
-
         string json = null;
+
         while(m_socketEnemyMoveMessage.Count > 0)
             json = m_socketEnemyMoveMessage.Dequeue();
         JSONObject obj = new JSONObject(json);
         JSONObject users = obj.GetField("Enemies");
-     //   MDebug.Log("em " + json);
-        foreach (NetworkMoveEventListener l in m_enemyMoveEventList)
-        {
-            l.ReceiveMoveEvent(obj);
-        }
+    
+        for (int i = m_enemyMoveEventList.Count - 1; i >= 0; i--)
+            m_enemyMoveEventList[i].ReceiveMoveEvent(obj);
 
     }
     // ---------------------------------------------------------------------------------------------------------//

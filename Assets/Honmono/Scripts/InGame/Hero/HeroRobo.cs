@@ -98,13 +98,14 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         GameManager.Instance().HeroRoboSetup(this);
 
         //리시버 등록
-        NetworkManager.Instance().AddNetworkMoveEventListener(this);
+        NetworkManager.Instance().AddNetworkEnemyMoveEventListener(this);
         NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
     }
 
     // Use this for initialization
     void Start()
     {
+        m_targetPos = transform.position;
         m_prevState = m_roboState;
         m_skletonAnimation = this.GetComponent<SkeletonAnimation>();
         CheckAndSetAnimation(ANI_IDLE, true);
@@ -153,8 +154,8 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         //dirPos.Normalize();
 
    
-        NetworkManager.Instance().SendMoveMessage(
-            JSONMessageTool.ToJsonMove(m_movePlayerName + "_robot", 
+        NetworkManager.Instance().SendEnemyMoveMessage(
+            JSONMessageTool.ToJsonEnemyMove(m_movePlayerName + "_robot", 
             pos.x, pos.y, 
             (int)NetworkOrderController.AreaInfo.AREA_SPACE, 
             m_skletonAnimation.skeleton.flipX,
@@ -463,7 +464,8 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     //-- Network Message 에 따른 이동 보간 ( 네트워크 플레이어 ) ------------------------------------//
     void NetworkMoveLerp()
     {
-        if(!string.IsNullOrEmpty(m_movePlayerName))
+        if(!string.IsNullOrEmpty(m_movePlayerName) 
+            && !m_movePlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
             transform.position = m_targetPos;
     }
 
@@ -491,7 +493,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         if (string.IsNullOrEmpty(m_movePlayerName) || m_movePlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
             return;
         
-        JSONObject obj = json.GetField("Users");
+        JSONObject obj = json.GetField("Enemies");
 
         float x, y, z;
         x = y = z = 0.0f;
@@ -503,7 +505,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         {
             // 이름이 다르다면 패스
            
-            if ((m_movePlayerName + "_robot").Equals(obj[i].GetField(NetworkManager.USERNAME).str))
+            if ((m_movePlayerName + "_robot").Equals(obj[i].GetField("Name").str))
             {
             
                 x = obj[i].GetField("X").f;
@@ -600,12 +602,13 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         }
     }
     bool r = false;
-    void OnCollisionStay2D(Collider2D col)
+
+    void OnCollisionStay2D(Collision2D col)
     {
         
-        if (col.tag == "GO_TOTHE_STAR")
+        if (col.transform.tag == "GO_TOTHE_STAR")
         {
-            m_controllName = col.tag;
+            m_controllName = col.transform.tag;
         }
     }
 

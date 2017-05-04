@@ -402,8 +402,8 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener, Net
         if (distance <= 0)
             return;
         
-        NetworkManager.Instance().SendEnemyMoveMessage(JSONMessageTool.ToJsoinEnemyMove(m_BOSS_NAME ,
-            pos.x , pos.y , transform.rotation.eulerAngles.z , false));
+        NetworkManager.Instance().SendEnemyMoveMessage(JSONMessageTool.ToJsonEnemyMove(m_BOSS_NAME ,
+            pos.x , pos.y , transform.rotation.eulerAngles.z , false,Vector3.zero));
     }
 
     public void ReceiveNetworkMessage(NetworkManager.MessageEvent e)

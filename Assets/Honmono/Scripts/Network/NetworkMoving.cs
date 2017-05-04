@@ -124,7 +124,7 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
         Vector3 velocity = (transform.position - m_prevPos) / Time.deltaTime;
         Vector3 sendPos = m_prevPos + (velocity * (Time.deltaTime - m_lastSendTime));
 
-        NetworkManager.Instance().SendEnemyMoveMessage(JSONMessageTool.ToJsoinEnemyMove(m_name, sendPos.x, sendPos.y, 0, true));
+        NetworkManager.Instance().SendEnemyMoveMessage(JSONMessageTool.ToJsonEnemyMove(m_name, sendPos.x, sendPos.y, 0, true,Vector3.zero));
 
     }
 }

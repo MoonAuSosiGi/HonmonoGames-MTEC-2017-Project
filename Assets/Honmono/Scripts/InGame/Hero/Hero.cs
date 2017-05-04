@@ -284,7 +284,14 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     {
         if (m_isMe)
             GameManager.Instance().HeroSetup(this);
-        
+
+        //-- 필요 컴포넌트 받아오기-------------------------------//
+        m_skletonAnimation = this.GetComponent<SkeletonAnimation>();
+        m_bgCurve = this.GetComponent<BansheeGz.BGSpline.Curve.BGCurve>();
+        m_rigidBody = this.GetComponent<Rigidbody2D>();
+       
+        //-------------------------------------------------------//
+
     }
     // Use this for initialization
     void Start()
@@ -296,19 +303,9 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         // 움직였을 때만 패킷을 전송해야 한다. 그러기 위한 디스턴스 판별용 포지션 적용
         m_prevPos = transform.position;
 
-        //-- 필요 컴포넌트 받아오기-------------------------------//
-        m_skletonAnimation = this.GetComponent<SkeletonAnimation>();
-        m_bgCurve = this.GetComponent<BansheeGz.BGSpline.Curve.BGCurve>();
-        m_rigidBody = this.GetComponent<Rigidbody2D>();
-        // m_animator = this.GetComponent<Animator>();
-
-        m_skletonAnimation.state.Event += HandleEvent;
-        //-------------------------------------------------------//
         if(m_isMe)
             m_rigidBody.gravityScale = (m_inSpace) ? 0.0f : 1.0f;
-
-        // 보여주기용 라이팅
-        //MoveLeft();
+        m_skletonAnimation.state.Event += HandleEvent;
 
         // 네트워크 이벤트 옵저버 등록
         NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
@@ -328,7 +325,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
               m_userName ,
               pos.x , pos.y ,
               1 , // :: Area 선택해서 날림
-              m_skletonAnimation.skeleton.flipX ,
+              false,
               m_prevPos));
         //if (!IsInvoking("MoveSend"))
         //     InvokeRepeating("MoveSend", 0.0f, 1.0f / 60.0f);

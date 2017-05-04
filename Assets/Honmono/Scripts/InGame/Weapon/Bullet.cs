@@ -64,7 +64,7 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
     {
         CancelInvoke();
 
-        string json = JSONMessageTool.ToJsoinEnemyMove(m_bulletName , transform.position.x , transform.position.y , transform.rotation.eulerAngles.y , false , "Delete");
+        string json = JSONMessageTool.ToJsonEnemyMove(m_bulletName , transform.position.x , transform.position.y , transform.rotation.eulerAngles.y , false,Vector3.zero, "Delete");
 
         MDebug.Log("동네 사람들 이생키 죽었어요 " + json);
 
@@ -167,8 +167,8 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         if (distance <= 0)
             return;
 
-        NetworkManager.Instance().SendEnemyMoveMessage(JSONMessageTool.ToJsoinEnemyMove(m_bulletName ,
-            pos.x , pos.y , transform.rotation.eulerAngles.z , m_filp));
+        NetworkManager.Instance().SendEnemyMoveMessage(JSONMessageTool.ToJsonEnemyMove(m_bulletName ,
+            pos.x , pos.y , transform.rotation.eulerAngles.z , m_filp,Vector3.zero));
     }
 
     void OnCollisionEnter2D(Collision2D col)
@@ -189,7 +189,7 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         // DeleteBullet();
     }
 
-    void OnTriggerEnter2D(Collision2D col)
+    void OnTriggerEnter2D(Collider2D col)
     {
       //  MDebug.Log("이거다 " + col.transform.name);
     }

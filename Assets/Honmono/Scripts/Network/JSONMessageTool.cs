@@ -47,11 +47,23 @@ public static class JSONMessageTool  {
 
     // -----------------------------------------------------------------------------------------------//
 
-    public static string ToJsoinEnemyMove(
-        string name,float x,float y,float z, bool dir,string status=null)
+    public static string ToJsonEnemyMove(
+        string name,float x,float y,float z, bool dir,Vector3 vec,string status=null)
     {
-        EnemyMove e = new EnemyMove(name,x,y,z,dir,status);
-        return JsonUtility.ToJson(e);
+        JSONObject obj = new JSONObject();
+        obj.AddField("Name" , name);
+        obj.AddField("X" , x);
+        obj.AddField("Y" , y);
+        obj.AddField("Z" , z);
+        obj.AddField(NetworkManager.DIR , dir);
+
+        JSONObject dirObj = new JSONObject();
+        dirObj.AddField("X" , vec.x);
+        dirObj.AddField("Y" , vec.y);
+        dirObj.AddField("Z" , vec.z);
+
+        obj.AddField(NetworkManager.DIRVECTOR , dirObj);
+        return obj.ToString();
     }
 
     // 이동

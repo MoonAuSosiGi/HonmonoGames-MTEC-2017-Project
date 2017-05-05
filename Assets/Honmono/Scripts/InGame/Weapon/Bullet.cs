@@ -5,22 +5,25 @@ using UnityEngine;
 public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
 {
 
-
+    // -- 기본 정보 -------------------------------------------------------------------------//
     private SpriteRenderer m_renderer = null;
     private float m_moveSpeed = 10.0f;
     private string m_bulletName = "";
-    private Vector3 m_targetPos = Vector3.zero;
-    private Vector3 m_prevPos = Vector3.zero;
     private bool m_isNetworkObject = false;
-    float m_syncTime = 0.0f;
-    float m_delay = 0.0f;
-    float m_lastSyncTime = 0.0f;
+
     Vector3 m_bulletDir = Vector3.left;
+
     public string BULLET_NAME { get { return m_bulletName; } }
 
     public float BULLET_SPEED { get { return m_moveSpeed; } set { m_moveSpeed = value; } }
     private bool m_filp = false;
 
+    // -- 네트워크 ------------------------------------------------------------------------- //
+    private Vector3 m_prevPos = Vector3.zero;
+    private Vector3 m_targetPos = Vector3.zero;
+    private float m_lastSendTime = 0.0f;
+
+    // ------------------------------------------------------------------------------------- //
     // Use this for initialization
     void Start()
     {
@@ -50,11 +53,7 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         }
         else
         {
-            m_syncTime += Time.deltaTime;
-
-            //네트워크 보간(테스트 완료 - 로컬 )
-            if (m_delay > 0)
-                transform.position = Vector3.Lerp(transform.position , m_targetPos , m_syncTime / m_delay);
+            transform.position = m_targetPos;
         }
 
 
@@ -114,15 +113,19 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         float x = 0.0f, y = 0.0f, z = 0.0f;
         bool flip = false;
         bool ck = false;
+        Vector3 drPos = Vector3.zero;
         for (int i = 0; i < users.Count; i++)
         {
             if (users[i].GetField("Name").str == m_bulletName)
             {
+               
                 x = users[i].GetField("X").f;
                 y = users[i].GetField("Y").f;
                 z = users[i].GetField("Z").f;
                 flip = users[i].GetField(NetworkManager.DIR).b;
                 ck = true;
+                JSONObject v = users[i].GetField(NetworkManager.DIRVECTOR);
+                drPos = new Vector3(v.GetField("X").f , v.GetField("Y").f , v.GetField("Z").f);
                 break;
             }
         }
@@ -134,41 +137,29 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
             return;
         }
 
-        Vector3 newPos = new Vector3(x , y , -1.0f);
-
-        float distance = Vector3.Distance(transform.position , newPos);
-        //this.m_renderer.flipX = flip;
-
+        
         if (z > transform.rotation.eulerAngles.z)
         {
 
             transform.rotation = Quaternion.Euler(0 , 0 , z);
         }
-        if (distance <= 0)
-        {
-            ////    this.m_animator.SetBool("Move", false);
-            //        return;
-        }
 
 
-        m_syncTime = 0.0f;
-        m_delay = Time.time - m_lastSyncTime;
-        m_lastSyncTime = Time.time;
-        m_targetPos = newPos; //* m_delay;
+
+        m_targetPos = drPos; //* m_delay;
                               // transform.position = newPos;
     }
 
     void MoveSend()
     {
         Vector3 pos = transform.position;
-        float distance = Vector3.Distance(m_prevPos , pos);
         m_prevPos = transform.position;
-        //    MDebug.Log(t);
-        if (distance <= 0)
-            return;
+
+        Vector3 velocity = (transform.position - m_prevPos) / Time.deltaTime;
+        Vector3 sendPos = m_prevPos + (velocity * (Time.deltaTime - m_lastSendTime));
 
         NetworkManager.Instance().SendEnemyMoveMessage(JSONMessageTool.ToJsonEnemyMove(m_bulletName ,
-            pos.x , pos.y , transform.rotation.eulerAngles.z , m_filp,Vector3.zero));
+            pos.x , pos.y , transform.rotation.eulerAngles.z , m_filp,sendPos));
     }
 
     void OnCollisionEnter2D(Collision2D col)
@@ -195,7 +186,7 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
     }
     void OnTriggerStay2D(Collider2D col)
     {
-        if(m_isNetworkObject ||  (m_bulletName.IndexOf("boss") >= 0))
+        if(m_isNetworkObject &&  (m_bulletName.IndexOf("boss") >= 0))
         {
             // 에너미
             if(col.name == "ROBO")

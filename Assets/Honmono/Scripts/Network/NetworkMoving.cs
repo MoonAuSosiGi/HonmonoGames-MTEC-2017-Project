@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Spine.Unity;
 
 
 public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListener
@@ -11,6 +12,7 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
 
     private string m_name = null;
     private SpriteRenderer m_renderer = null;
+    private SkeletonAnimation m_skeltonAni = null;
     private int m_networkSpace = 0;
 
 
@@ -19,9 +21,6 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
     // -- 클라에서 보간용 --------------------------------------------------------------//
     private Vector3 m_prevPos = Vector3.zero;
     private Vector3 m_targetPos = Vector3.zero;
-    private float m_syncTime = 0.0f;
-    private float m_delay = 0.0f;
-    private float m_lastSyncTime = 0.0f;
     private float m_lastSendTime = 0.0f;
     // --------------------------------------------------------------------------------//
 
@@ -29,6 +28,7 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
     {
         m_prevPos = transform.position;
         this.m_renderer = this.GetComponent<SpriteRenderer>();
+        this.m_skeltonAni = this.GetComponent<SkeletonAnimation>();
         NetworkManager.Instance().AddNetworkEnemyMoveEventListener(this);
     }
 
@@ -47,6 +47,10 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
         x = y = z = 0.0f;
         bool flip = false;
         bool ck = false;
+
+        Vector3 drPos = Vector3.zero;
+        Vector3 targetPos = Vector3.zero;
+
         for (int i = 0; i < obj.Count; i++)
         {
             // 이름이 다르다면 패스
@@ -57,6 +61,8 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
                 z = obj[i].GetField("Z").f;
                 flip = obj[i].GetField("Dir");
                 ck = true;
+                JSONObject v = obj[i].GetField(NetworkManager.DIRVECTOR);
+                drPos = new Vector3(v.GetField("X").f , v.GetField("Y").f , v.GetField("Z").f);
                 break;
             }
         }
@@ -68,25 +74,32 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
         Vector3 newPos = new Vector3(x, y);
 
         float distance = Vector3.Distance(transform.position, newPos);
-        if (m_renderer != null)
-            this.m_renderer.flipX = flip;
 
-        if(distance <= 0)
+        targetPos = drPos;
+
+        if (m_skeltonAni != null)
         {
-            return;
+            if (m_skeltonAni.skeleton.flipX != flip)
+            {
+                m_skeltonAni.skeleton.flipX = flip;
+                targetPos = newPos;
+            }
         }
-
-        //m_targetPos = newPos;
-
-        m_syncTime = 0.0f;
-        m_delay = Time.time - m_lastSyncTime;
-        m_lastSyncTime = Time.time;
-        transform.position = newPos;
+        else if (m_renderer != null)
+        {
+            if (m_renderer.flipX != flip)
+            {
+                m_renderer.flipX = flip;
+                targetPos = newPos;
+            }
+        }
+        m_targetPos = targetPos;
     }
 
     //-- Network Message 에 따른 이동 보간 ( 네트워크 플레이어 ) ------------------------------------//
     void NetworkMoveLerp()
     {
+        transform.position = m_targetPos;
         //m_syncTime += Time.deltaTime;
         
 
@@ -119,12 +132,12 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
         Vector3 pos = transform.position;
         float distance = Vector3.Distance(m_prevPos, pos);
         m_prevPos = transform.position;
-
         
         Vector3 velocity = (transform.position - m_prevPos) / Time.deltaTime;
         Vector3 sendPos = m_prevPos + (velocity * (Time.deltaTime - m_lastSendTime));
 
-        NetworkManager.Instance().SendEnemyMoveMessage(JSONMessageTool.ToJsonEnemyMove(m_name, sendPos.x, sendPos.y, 0, true,Vector3.zero));
+        NetworkManager.Instance().SendEnemyMoveMessage(
+            JSONMessageTool.ToJsonEnemyMove(m_name, sendPos.x, sendPos.y, 0, true,Vector3.zero));
 
     }
 }

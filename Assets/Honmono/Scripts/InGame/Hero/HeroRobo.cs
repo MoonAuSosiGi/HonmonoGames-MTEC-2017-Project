@@ -357,7 +357,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
                 m_gunAngle += 1.0f;
         }
 
-        if (Input.GetKey(KeyCode.Space) && !BitControl.Get(m_roboState, (int)ROBO_STATE.COOLTIME))
+        if (Input.GetKeyUp(KeyCode.Space) && !BitControl.Get(m_roboState, (int)ROBO_STATE.COOLTIME))
         {
             m_roboState = BitControl.Set(m_roboState, (int)ROBO_STATE.ATTACK);
             
@@ -421,16 +421,8 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         
         Vector3 pos = m_gunBone.transform.position;
 
-      //  bullet.transform.rotation = m_gunBone.transform.rotation; 
         bullet.transform.rotation = Quaternion.Euler(0.0f , 0.0f , m_gunBone.transform.rotation.eulerAngles.z -90.0f);
-        //MDebug.Log("Z " + m_gunBone.transform.rotation.eulerAngles.z + " " + m_gunAngle);
-        //if (!flip)
-        //    bullet.transform.Rotate(new Vector3(0, 0.0f, -90.0f));
-        //else
-        //    bullet.transform.Rotate(new Vector3(0, 0.0f, 90.0f));
-
-        
-
+  
         bullet.transform.position = pos;
 
 
@@ -439,7 +431,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         string n = GameManager.Instance().PLAYER.USER_NAME + "_" + m_bulletIndex;
         b.SetupBullet(n, false, Vector3.zero,0.0f,m_skletonAnimation.skeleton.flipX);
         
-        //NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(n, "myTeam_bullet", pos.x, pos.y, pos.z,flip));
+        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(n, "myTeam_bullet", pos.x, pos.y, pos.z,flip));
         m_bulletIndex++;
         
         

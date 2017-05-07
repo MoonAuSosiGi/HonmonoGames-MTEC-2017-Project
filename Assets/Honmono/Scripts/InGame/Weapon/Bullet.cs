@@ -63,7 +63,9 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
     {
         CancelInvoke();
 
-        string json = JSONMessageTool.ToJsonEnemyMove(m_bulletName , transform.position.x , transform.position.y , transform.rotation.eulerAngles.y , false,Vector3.zero, "Delete");
+        string json = JSONMessageTool.ToJsonEnemyMove(
+            m_bulletName , 
+            transform.position.x , transform.position.y , transform.rotation.eulerAngles.y , false,Vector3.zero, "Delete");
 
         MDebug.Log("동네 사람들 이생키 죽었어요 " + json);
 
@@ -114,11 +116,11 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         bool flip = false;
         bool ck = false;
         Vector3 drPos = Vector3.zero;
+   //     MDebug.Log("bullet " +json);
         for (int i = 0; i < users.Count; i++)
         {
-            if (users[i].GetField("Name").str == m_bulletName)
+            if (m_bulletName.Equals(users[i].GetField("Name").str))
             {
-               
                 x = users[i].GetField("X").f;
                 y = users[i].GetField("Y").f;
                 z = users[i].GetField("Z").f;
@@ -133,7 +135,7 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         if (!ck)
         {
             // 여기에 없다는 것은 삭제되어야 한다.
-            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder(m_bulletName , "myTeam_bullet"));
+          //  NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder(m_bulletName , "myTeam_bullet"));
             return;
         }
 
@@ -158,8 +160,13 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         Vector3 velocity = (transform.position - m_prevPos) / Time.deltaTime;
         Vector3 sendPos = m_prevPos + (velocity * (Time.deltaTime - m_lastSendTime));
 
-        NetworkManager.Instance().SendEnemyMoveMessage(JSONMessageTool.ToJsonEnemyMove(m_bulletName ,
-            pos.x , pos.y , transform.rotation.eulerAngles.z , m_filp,sendPos));
+        NetworkManager.Instance().SendEnemyMoveMessage(
+            JSONMessageTool.ToJsonEnemyMove(m_bulletName ,
+            pos.x , pos.y , 
+            transform.rotation.eulerAngles.z , 
+            m_filp,
+            sendPos));
+        
     }
 
     void OnCollisionEnter2D(Collision2D col)

@@ -256,11 +256,12 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
             }
         }
-        else if(e.msgType == NetworkManager.INTHE_STAR)
+        else if(e.msgType == NetworkManager.INTHE_STAR && (e.user + "_robo").Equals(m_userName))
         {
 
-            if(e.msg.GetField(NetworkManager.INTHE_STAR).b)
+            if (e.msg.GetField(NetworkManager.INTHE_STAR).b)
             {
+                
                 GameObject obj = CameraManager.Instance().m_inTheStar;
                 CameraManager.Instance().MoveCameraAndObject( obj,6, CameraManager.CAMERA_PLACE.STAR , gameObject);
                  m_userControlName = null;
@@ -417,7 +418,201 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     }
     //-----------------------------------------------------------------------------------------------------------------------//
 
+    //-- 오브젝트  조작 -----------------------------------------------------------------------------------------------------//
+    // :: 로봇 조종
+    void ObjectRoboDriveControlCheck()
+    {
+        if (BitControl.Get(m_curState , (int)HERO_STATE.CONTROL_DRIVE))
+        {
+            if (string.IsNullOrEmpty(GameManager.Instance().ROBO.MOVE_PLYAER))
+            {
+                NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderRobotSetting());
+            }
+            else
+            {
+                //탈출
+                NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderRobotSetting(false));
+            }
+        }
+    }
+
+    // :: 총 조종
+    void ObjectRoboGunControlCheck()
+    {
+        if (BitControl.Get(m_curState , (int)HERO_STATE.CONTROL_GUN))
+        {
+            if (string.IsNullOrEmpty(GameManager.Instance().ROBO.GUN_PLAYER))
+            {
+                NetworkManager.Instance().SendOrderMessage(
+                    JSONMessageTool.ToJsonOrderRobotGunSetting());
+            }
+            else
+            {
+                // 탈출
+                NetworkManager.Instance().SendOrderMessage(
+                JSONMessageTool.ToJsonOrderRobotGunSetting(false));
+            }
+        }
+    }
+
+    // :: 행성 나가기
+    void ObjectRoboOutDoorControlCheck()
+    {
+        if (BitControl.Get(m_curState , (int)HERO_STATE.CONTROL_OUT_DOOR))
+        {
+            MDebug.Log("가라");
+            //   if(!string.IsNullOrEmpty(GameManager.Instance().ROBO.CURRENT_PLACE))
+
+            GameObject obj = CameraManager.Instance().m_inTheStar;
+            CameraManager.Instance().MoveCameraAndObject(obj , 6 , CameraManager.CAMERA_PLACE.STAR , gameObject);
+
+            m_skletonAnimation.skeleton.SetSkin("char_01_a");
+
+        }
+    }
+
+    // :: 힐링 존 
+    void ObjectRoboHealControlCheck()
+    {
+        // 기능 구현해야함
+        if (BitControl.Get(m_curState , (int)HERO_STATE.CONTROL_HEAL))
+        {
+            m_userControlName = null;
+            m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.CONTROL_HEAL);
+        }
+    }
+
+    // :: 인벤
+    void ObjectRoboInvenControlCheck()
+    {
+        if (BitControl.Get(m_curState , (int)HERO_STATE.CONTROL_INVEN))
+        {
+            m_userControlName = null;
+            m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.CONTROL_INVEN);
+        }
+    }
+
     //-- 실 캐릭터 조작 -----------------------------------------------------------------------------------------------------//
+
+    // 수직 이동 및 점프
+    float VerticalMoveControl()
+    {
+        float moveY = 0.0f;
+        float jump = 0.0f;
+        if (Input.GetKey(KeyCode.W))
+        {
+            if (BitControl.Get(m_curState , (int)HERO_STATE.LADDER))
+            {
+                moveY = m_moveSpeed * Time.deltaTime;
+                m_rigidBody.gravityScale = 0.0f;
+                m_rigidBody.velocity = Vector2.zero;
+
+                m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.JUMP);
+                m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.JUMP_FALL);
+            }
+            else if (!BitControl.Get(m_curState , (int)HERO_STATE.JUMP)
+                && !BitControl.Get(m_curState , (int)HERO_STATE.JUMP_FALL))
+            {
+                // 특정 오브젝트 밟자마자 (점프 안끝났는데) 점프하는 경우 방지
+                if (m_rigidBody.velocity.y <= 0.0f)
+                {
+                    m_curState = BitControl.Set(m_curState , (int)HERO_STATE.JUMP);
+                    jump = m_jumpPower;
+                }
+
+            }
+        }
+
+        if (Input.GetKey(KeyCode.S))
+        {
+
+            if (BitControl.Get(m_curState , (int)HERO_STATE.LADDER))
+            {
+                moveY = -m_moveSpeed * Time.deltaTime;
+                m_rigidBody.gravityScale = 0.0f;
+                m_rigidBody.velocity = Vector2.zero;
+
+                m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.JUMP);
+                m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.JUMP_FALL);
+            }
+            else
+            {
+                //딱히 하는거 없음
+            }
+        }
+        return (BitControl.Get(m_curState,(int)HERO_STATE.JUMP)) ? jump  : moveY;
+    }
+
+    // 가로 이동
+    float HorizontalMoveControl()
+    {
+        float moveX = 0.0f;
+
+        if (Input.GetKey(KeyCode.A))
+        {
+            m_curState = BitControl.Set(m_curState , (int)HERO_STATE.MOVE);
+
+            moveX = -m_moveSpeed * Time.deltaTime;
+
+            this.m_skletonAnimation.skeleton.flipX = false;
+            //this.GetComponent<SpriteRenderer>().flipX = false;
+        }
+
+
+
+        if (Input.GetKey(KeyCode.D))
+        {
+            m_curState = BitControl.Set(m_curState , (int)HERO_STATE.MOVE);
+            moveX = m_moveSpeed * Time.deltaTime;
+
+            this.m_skletonAnimation.skeleton.flipX = true;
+
+        }
+        return moveX;
+    }
+
+    //특정 오브젝트 조작시
+    void ObjectControl()
+    {
+        // 특정 컨트롤 조작시에 조작키를 눌렀을 때 
+        if (Input.GetKeyUp(KeyCode.R))
+        {
+            int state = -1;
+
+            switch (m_userControlName)
+            {
+                case "ROBOT_HEAL": state = (int)HERO_STATE.CONTROL_HEAL; break;
+                case "ROBOT_DRIVE": state = (int)HERO_STATE.CONTROL_DRIVE; break;
+                case "ROBOT_INVEN": state = (int)HERO_STATE.CONTROL_INVEN; break;
+                case "ROBOT_GUN": state = (int)HERO_STATE.CONTROL_GUN; break;
+                case "ROBOT_OUT_DOOR": state = (int)HERO_STATE.CONTROL_OUT_DOOR; break;
+                case "ROBOT_STATUSVIEW":
+                    // 얘는 걍 UI 띄우면 된다
+                    break;
+            }
+            SoundManager.Instance().PlaySound(m_interaction);
+            if (state > 0)
+                m_curState = BitControl.Set(m_curState , state);
+
+            // 실제 오브젝트 작동
+            //로봇 조종 체크
+            ObjectRoboDriveControlCheck();
+
+            //로봇 총 조작 체크
+            ObjectRoboGunControlCheck();
+
+            //행성 나가기 체크
+            ObjectRoboOutDoorControlCheck();
+
+            // 힐링 존 체크
+            ObjectRoboHealControlCheck();
+
+            // 인벤 체크
+            ObjectRoboInvenControlCheck();
+        }
+    }
+
+    // 중력이 적용되는 곳에서의 컨트롤 
     void Control()
     {
         Vector2 pos = transform.position;
@@ -429,133 +624,27 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         float jump = 0.0f;
 
         // 특정 컨트롤을 다루고 있는 상태가 아닐 경우
-        if(GetMoveAbleCheck())
+      //  if(GetMoveAbleCheck())
         {
-            if (Input.GetKey(KeyCode.A))
-            {
-                m_curState = BitControl.Set(m_curState, (int)HERO_STATE.MOVE);
+            // 이동에 관련된 처리를 하는 녀석들 float 
 
-                moveX = -m_moveSpeed * Time.deltaTime;
+            // 가로이동
+            moveX = HorizontalMoveControl();
 
-                this.m_skletonAnimation.skeleton.flipX = false;
-                //this.GetComponent<SpriteRenderer>().flipX = false;
-            }
+            // 점프 및 수직 이동
+            if (BitControl.Get(m_curState , (int)HERO_STATE.LADDER))
+                moveY = VerticalMoveControl();
+            else
+                jump = VerticalMoveControl();
 
-
-
-            if (Input.GetKey(KeyCode.D))
-            {
-                m_curState = BitControl.Set(m_curState, (int)HERO_STATE.MOVE);
-                moveX = m_moveSpeed * Time.deltaTime;
-
-                this.m_skletonAnimation.skeleton.flipX = true;
-
-            }
-
-            if (Input.GetKey(KeyCode.W))
-            {
-                // 요부분에서 사다리를 체크함
-
-                if(m_userControlName == "LADDER")
-                {
-                    m_curState = BitControl.Set(m_curState, (int)HERO_STATE.LADDER);
-                    m_rigidBody.gravityScale = 0.0f;
-                }
-
-                if (BitControl.Get(m_curState, (int)HERO_STATE.LADDER))
-                {
-                    moveY = m_moveSpeed * Time.deltaTime;
-                }
-                else if (!BitControl.Get(m_curState, (int)HERO_STATE.JUMP)
-                    && !BitControl.Get(m_curState, (int)HERO_STATE.JUMP_FALL))
-                {
-                    // 특정 오브젝트 밟자마자 (점프 안끝났는데) 점프하는 경우 방지
-                    if (m_rigidBody.velocity.y <= 0.0f)
-                    {
-                        m_curState = BitControl.Set(m_curState, (int)HERO_STATE.JUMP);
-                        jump = m_jumpPower;
-                    }
-
-                }
-            }
-
-            if (Input.GetKey(KeyCode.S))
-            {
-                // 요부분에서 사다리를 체크함
-                if (m_userControlName == "LADDER")
-                {
-                    m_curState = BitControl.Set(m_curState, (int)HERO_STATE.LADDER);
-                    m_rigidBody.gravityScale = 0.0f;
-                }
-
-                if (BitControl.Get(m_curState, (int)HERO_STATE.LADDER))
-                {
-                    moveY = -m_moveSpeed * Time.deltaTime;
-                }
-                else
-                {
-                    //딱히 하는거 없음
-                }
-            }
         }
-        else
+     //   else
         {
-            // 특정 컨트롤 조작시
-            if(Input.GetKeyUp(KeyCode.R))
-            {
-                //탈출
-                if(BitControl.Get(m_curState,(int)HERO_STATE.CONTROL_DRIVE))
-                   NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderRobotSetting(false));
-
-                if (BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_GUN))
-                    NetworkManager.Instance().SendOrderMessage(
-                        JSONMessageTool.ToJsonOrderRobotGunSetting(false));
-
-                // 기능 구현해야함
-                if (BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_HEAL))
-                {
-                    m_userControlName = null;
-                    m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.CONTROL_HEAL);
-                }
-                if (BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_INVEN))
-                {
-                    m_userControlName = null;
-                    m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.CONTROL_INVEN);
-                }
-                if ( BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_OUT_DOOR))
-                {
-                 //   if(!string.IsNullOrEmpty(GameManager.Instance().ROBO.CURRENT_PLACE))
-                        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonInTheStar(true));
-                    m_userControlName = null;
-                    //m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.CONTROL_OUT_DOOR);
-
-                }
-
-            }
+            // 특정 컨트롤을 다루고 있는 상태가 아닌 경우에만 이게 가능 
+            ObjectControl();
         }
 
-        
-        // 상호작용 키
-        if (Input.GetKeyUp(KeyCode.R) && GetMoveAbleCheck())
-        {
-            
-            // 이걸 누른 시점에 충돌이 되어있을 경우에만 처리를 한다
-            int state = -1;
-            switch(m_userControlName)
-            {
-                case "ROBOT_HEAL":          state = (int)HERO_STATE.CONTROL_HEAL;     break;
-                case "ROBOT_DRIVE":         state = (int)HERO_STATE.CONTROL_DRIVE;    break;
-                case "ROBOT_INVEN":         state = (int)HERO_STATE.CONTROL_INVEN;    break;
-                case "ROBOT_GUN":           state = (int)HERO_STATE.CONTROL_GUN;      break;
-                case "ROBOT_OUT_DOOR":      state = (int)HERO_STATE.CONTROL_OUT_DOOR; break;
-                case "ROBOT_STATUSVIEW":
-                    // 얘는 걍 UI 띄우면 된다
-                    break;
-            }
-            SoundManager.Instance().PlaySound(m_interaction);
-            if(state > 0)
-                m_curState = BitControl.Set(m_curState, state);
-        }
+       
 
         // 이동 애니메이션 체크
         if (!BitControl.Get(m_curState,(int)HERO_STATE.LADDER) && (BitControl.Get(m_curState, (int)HERO_STATE.MOVE) && 
@@ -620,26 +709,6 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
                 }
                 this.transform.Translate(new Vector3(moveX, moveY));
             }
-
-            //로봇 조종모드
-            if(BitControl.Get(m_curState,(int)HERO_STATE.CONTROL_DRIVE))
-            {
-                if (string.IsNullOrEmpty(GameManager.Instance().ROBO.MOVE_PLYAER))
-                {
-                    NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderRobotSetting());
-                }
-            }
-            //로봇 총 조작 모드
-            if (BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_GUN))
-            {
-                if (string.IsNullOrEmpty(GameManager.Instance().ROBO.GUN_PLAYER))
-                {
-                    NetworkManager.Instance().SendOrderMessage(
-                        JSONMessageTool.ToJsonOrderRobotGunSetting());
-                }
-            }
-
-
         }
         Debug.DrawLine(pos, new Vector3(pos.x,pos.y - GetComponent<BoxCollider2D>().bounds.size.y,0.0f),Color.red);
         //MoveSend();
@@ -745,15 +814,21 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 //        MoveSend();
     }
 
+   
 
     // -- 상호작용 체크용 -----------------------------------------------------------//
     bool GetMoveAbleCheck()
     {
-        return !(BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_DRIVE) ||
-                BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_GUN) ||
-                BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_HEAL) ||
-                BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_INVEN) ||
-                BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_OUT_DOOR));
+        return !(m_userControlName == "ROBOT_HEAL" ||
+                m_userControlName == "ROBOT_DRIVE" ||
+                m_userControlName == "ROBOT_INVEN" ||
+                m_userControlName == "ROBOT_GUN" ||
+                m_userControlName == "ROBOT_OUT_DOOR");
+        //return !(BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_DRIVE) ||
+        //        BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_GUN) ||
+        //        BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_HEAL) ||
+        //        BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_INVEN) ||
+        //        BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_OUT_DOOR));
     }
 
 
@@ -810,7 +885,12 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     //사다리용
     void OnTriggerEnter2D(Collider2D col)
     {
-        if (!string.IsNullOrEmpty(col.transform.tag))
+        MDebug.Log("Enter " + col.tag);
+        if(col.transform.tag.Equals("LADDER"))
+        {
+            m_curState = BitControl.Set(m_curState , (int)HERO_STATE.LADDER);
+        }
+        else if (!string.IsNullOrEmpty(col.transform.tag))
             m_userControlName = col.transform.tag;
 
         
@@ -818,26 +898,28 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
     void OnTriggerStay2D(Collider2D col)
     {
-        if (!string.IsNullOrEmpty(col.transform.tag))
+        if (!col.transform.tag.Equals("LADDER") && !string.IsNullOrEmpty(col.transform.tag))
             m_userControlName = col.transform.tag;
 
         if (col.transform.tag == "LADDER" &&
             (BitControl.Get(m_curState, (int)HERO_STATE.JUMP) ||
             BitControl.Get(m_curState, (int)HERO_STATE.JUMP_FALL)))
         {
-            m_rigidBody.gravityScale = 0.0f;
-            m_rigidBody.velocity = Vector3.zero;
+       //     m_rigidBody.gravityScale = 0.0f;
+            //m_rigidBody.velocity = Vector3.zero;
          //   m_rigidBody.angularVelocity = 0.0f;
-            m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.JUMP);
-            m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.JUMP_FALL);
-            m_curState = BitControl.Set(m_curState, (int)HERO_STATE.LADDER);
+            //m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.JUMP);
+            //m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.JUMP_FALL);
+            //m_curState = BitControl.Set(m_curState, (int)HERO_STATE.LADDER);
         }
     }
 
     void OnTriggerExit2D(Collider2D col)
     {
+        MDebug.Log("Exit " + col.tag);
         if (!string.IsNullOrEmpty(col.transform.tag))
             m_userControlName = null;
+
         if (col.tag == "LADDER" && BitControl.Get(m_curState,(int)HERO_STATE.LADDER))
         {
             m_rigidBody.gravityScale = 1.0f;

@@ -19,4 +19,5 @@ public class BitControl {
         int mask = ~(1 << idx);
         return num & mask;
     }
+
 }

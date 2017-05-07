@@ -272,11 +272,11 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         }
 
 
-        if (Input.GetKey(KeyCode.Space) && !BitControl.Get(m_roboState , (int)ROBO_STATE.COOLTIME))
-        {
-            SoundManager.Instance().PlaySound(m_laser1);
-            m_roboState = BitControl.Set(m_roboState , (int)ROBO_STATE.ATTACK);
-        }
+        //if (Input.GetKey(KeyCode.Space) && !BitControl.Get(m_roboState , (int)ROBO_STATE.COOLTIME))
+        //{
+        //    SoundManager.Instance().PlaySound(m_laser1);
+        //    m_roboState = BitControl.Set(m_roboState , (int)ROBO_STATE.ATTACK);
+        //}
 
         if (BitControl.Get(m_roboState , (int)ROBO_STATE.ATTACK))
         {
@@ -359,6 +359,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
 
         if (Input.GetKeyUp(KeyCode.Space) && !BitControl.Get(m_roboState, (int)ROBO_STATE.COOLTIME))
         {
+            SoundManager.Instance().PlaySound(m_laser1);
             m_roboState = BitControl.Set(m_roboState, (int)ROBO_STATE.ATTACK);
             
         }
@@ -407,7 +408,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     {
         if(BitControl.Get(m_roboState, (int)ROBO_STATE.COOLTIME))//trackEntry.animation.name == ANI_ATTACK)
         {
-            MDebug.Log("Cool Time ");
+       
             m_roboState = BitControl.Clear(m_roboState, (int)ROBO_STATE.COOLTIME);
             //m_effectAnimator.gameObject.SetActive(true);
             //m_effectAnimator.Play("Robo_attackEffect");

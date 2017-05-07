@@ -56,6 +56,7 @@ public static class JSONMessageTool  {
         obj.AddField("Y" , y);
         obj.AddField("Z" , z);
         obj.AddField(NetworkManager.DIR , dir);
+        obj.AddField("Status" , status);
 
         JSONObject dirObj = new JSONObject();
         dirObj.AddField("X" , vec.x);

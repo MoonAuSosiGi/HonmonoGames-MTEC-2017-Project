@@ -418,16 +418,15 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     void FireBullet()
     {
         bool flip = m_skletonAnimation.skeleton.flipX;
-        GameObject bullet = BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_HERO_DEF);
+        Bullet b = BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_HERO_DEF);
         
         Vector3 pos = m_gunBone.transform.position;
 
-        bullet.transform.rotation = Quaternion.Euler(0.0f , 0.0f , m_gunBone.transform.rotation.eulerAngles.z -90.0f);
+        b.transform.rotation = Quaternion.Euler(0.0f , 0.0f , m_gunBone.transform.rotation.eulerAngles.z -90.0f);
   
-        bullet.transform.position = pos;
+        b.transform.position = pos;
 
 
-        Bullet b = bullet.GetComponent<Bullet>();
         // 네트워크 식별 이름
         string n = GameManager.Instance().PLAYER.USER_NAME + "_" + m_bulletIndex;
         b.SetupBullet(n, false, Vector3.zero,0.0f,m_skletonAnimation.skeleton.flipX);

@@ -27,8 +27,8 @@ public class PatternB : PatternState
             //  BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_BOSS1_P1);
             // 총알은 2.5초에 걸쳐 플레이어에게 도착함
             // 총알의 계산은 총알에서 하도록 함
-            GameObject bullet = BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_BOSS1_P1);
-            Bullet b = bullet.GetComponent<Bullet>();
+            Bullet b = BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_BOSS1_P1);
+            
             Vector3 dir = hero.transform.position - me.transform.position;
             dir.Normalize();
             float distance = Vector3.Distance(hero.transform.position, me.transform.position);
@@ -38,7 +38,7 @@ public class PatternB : PatternState
             b.transform.position = me.transform.parent.position;
             Vector3 pos = me.transform.position;
             b.transform.position = pos;
-            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(name, "boss1_bullet", pos.x, pos.y, b.transform.rotation.eulerAngles.y, bullet.GetComponent<SpriteRenderer>().flipX));
+            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(name, "boss1_bullet", pos.x, pos.y, b.transform.rotation.eulerAngles.y, b.GetComponent<SpriteRenderer>().flipX));
             m_tick = 0.0f;
             Animator ani = me.GetComponent<Stage1BOSS>().m_attackEffect;
             ani.Play("boss_shotEffect");

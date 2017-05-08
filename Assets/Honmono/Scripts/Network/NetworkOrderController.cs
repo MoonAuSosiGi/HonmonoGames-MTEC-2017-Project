@@ -59,8 +59,7 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                             if (e.targetName.IndexOf(GameManager.Instance().PLAYER.USER_NAME) >= 0)
                                 return;
 
-                            GameObject obj2 = BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_BOSS1_P1);
-                            Bullet bullet = obj2.GetComponent<Bullet>();
+                            Bullet bullet = BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_BOSS1_P1);
                             //   MDebug.Log("Target " + e.targetName);
                             bullet.SetupBullet(e.targetName , true , Vector3.zero);
 
@@ -76,8 +75,8 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                         {
                             if (e.targetName.IndexOf(GameManager.Instance().PLAYER.USER_NAME) >= 0)
                                 return;
-                            GameObject obj = BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_HERO_DEF);
-                            Bullet bullet = obj.GetComponent<Bullet>();
+                            Bullet bullet = BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_HERO_DEF);
+                           
                             //   MDebug.Log("Target " + e.targetName);
                             bullet.SetupBullet(e.targetName , true , Vector3.zero);
 

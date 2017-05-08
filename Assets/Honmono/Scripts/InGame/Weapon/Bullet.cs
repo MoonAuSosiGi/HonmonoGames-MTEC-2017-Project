@@ -18,6 +18,10 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
     public float BULLET_SPEED { get { return m_moveSpeed; } set { m_moveSpeed = value; } }
     private bool m_filp = false;
 
+    private bool m_alive = false;
+
+    public bool ALIVE { get { return m_alive; } set { m_alive = value; } }
+
     // -- 네트워크 ------------------------------------------------------------------------- //
     private Vector3 m_prevPos = Vector3.zero;
     private Vector3 m_targetPos = Vector3.zero;
@@ -34,6 +38,8 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
     // Update is called once per frame
     void Update()
     {
+        if (!m_alive)
+            return;
 
         if (!m_isNetworkObject)
         {
@@ -62,14 +68,6 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
     void DeleteBullet()
     {
         CancelInvoke();
-
-        string json = JSONMessageTool.ToJsonEnemyMove(
-            m_bulletName , 
-            transform.position.x , transform.position.y , transform.rotation.eulerAngles.y , false,Vector3.zero, "Delete");
-
-        MDebug.Log("동네 사람들 이생키 죽었어요 " + json);
-
-        NetworkManager.Instance().SendEnemyMoveMessage(json);
         NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder(m_bulletName , "myTeam_bullet"));
         BulletManager.Instance().RemoveBullet(this);
     }
@@ -93,7 +91,7 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         if (m_isNetworkObject)
         {
             this.GetComponent<Rigidbody2D>().simulated = false;
-            NetworkManager.Instance().AddNetworkEnemyMoveEventListener(this);
+      //      NetworkManager.Instance().AddNetworkEnemyMoveEventListener(this);
             //   InvokeRepeating("MoveSend", 0.0f, 1.0f / 60.0f);
             
 
@@ -154,6 +152,8 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
 
     void MoveSend()
     {
+        if (m_isNetworkObject)
+            return;
         Vector3 pos = transform.position;
         m_prevPos = transform.position;
 
@@ -165,7 +165,8 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
             pos.x , pos.y , 
             transform.rotation.eulerAngles.z , 
             m_filp,
-            sendPos));
+            sendPos,
+            (m_alive) ? null : "Delete"));
         
     }
 
@@ -200,7 +201,7 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
             {
                 GameObject obj = MapManager.Instance().AddObject(GamePath.EFFECT);
                 obj.transform.position = col.transform.position;
-                GameObject.Destroy(gameObject);
+                // 주금
             }
         }
         else
@@ -215,7 +216,7 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
                 
                 GameObject obj = MapManager.Instance().AddObject(GamePath.EFFECT);
                 obj.transform.position = col.transform.position;
-                GameObject.Destroy(gameObject);
+                // 주금
             }
         }
         

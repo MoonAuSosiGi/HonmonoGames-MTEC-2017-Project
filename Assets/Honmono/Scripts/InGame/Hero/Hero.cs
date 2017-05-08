@@ -12,6 +12,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     public enum HERO_STATE
     {
         IDLE = 0,
+        ATTACK = 1,
         LADDER = 2,
         MOVE = 3,
         JUMP = 4,
@@ -94,6 +95,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     private float m_lastSendTime = 0.0f;
     // state
     private int m_prevState = 0;
+    //private float m_delay = 0.0f;
 
     Vector3 m_recvPrevPos = Vector3.zero;
     Vector3 m_veloCity = Vector3.zero;
@@ -269,6 +271,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
                 //m_skletonAnimation.initialSkinName = "char_01_a";
                 m_skletonAnimation.skeleton.SetSkin("char_01_a");
+                m_skletonAnimation.skeleton.SetToSetupPose();
             }
             else
             {
@@ -306,13 +309,16 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
         if(m_isMe)
             m_rigidBody.gravityScale = (m_inSpace) ? 0.0f : 1.0f;
-        m_skletonAnimation.state.Event += HandleEvent;
+        m_skletonAnimation.state.Complete += CompleteAnimation;
 
         // 네트워크 이벤트 옵저버 등록
         NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
         NetworkManager.Instance().AddNetworkMoveEventListener(this);
 
         m_skletonAnimation.state.SetAnimation(0, ANI_IDLE, true);
+
+        m_skletonAnimation.state.Data.SetMix(ANI_MOVE , ANI_IDLE , 0.25f);
+        m_skletonAnimation.state.Data.SetMix(ANI_MOVE , ANI_REPAIR , 0.6f);
     }
 
     void OnEnable()
@@ -328,25 +334,22 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
               1 , // :: Area 선택해서 날림
               false,
               m_prevPos));
-        //if (!IsInvoking("MoveSend"))
-        //     InvokeRepeating("MoveSend", 0.0f, 1.0f / 60.0f);
     }
 
     void OnDisable()
     {
         if (!m_isMe)
             return;
-        //if (IsInvoking("MoveSend"))
-        //    CancelInvoke("MoveSend");
     }
 
-    void HandleEvent(TrackEntry trackEntry, Spine.Event e)
+    void CompleteAnimation(TrackEntry trackEntry)
     {
-      
-        if (trackEntry.animation.name == ANI_MOVE)
+        if (!m_isMe)
+            return;
+
+        if (trackEntry.animation.name.Equals(ANI_REPAIR))
         {
-            
-            SoundManager.Instance().PlaySound(m_walkSound);
+            m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.ATTACK);            
         }
     }
     
@@ -409,7 +412,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
             if (BitControl.Get(m_curState, (int)HERO_STATE.MOVE))
             {
-                if (IsCurrentAnimation(ANI_IDLE))
+        //        if (IsCurrentAnimation(ANI_IDLE))
                 {
                     m_skletonAnimation.state.SetAnimation(0, ANI_MOVE, true);
                 }
@@ -467,6 +470,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             CameraManager.Instance().MoveCameraAndObject(obj , 6 , CameraManager.CAMERA_PLACE.STAR , gameObject);
 
             m_skletonAnimation.skeleton.SetSkin("char_01_a");
+            m_skletonAnimation.skeleton.SetToSetupPose();
 
         }
     }
@@ -612,6 +616,15 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         }
     }
 
+    // 공격하기
+    void AttackControl()
+    {
+        if (Input.GetKeyUp(KeyCode.Space))
+        {
+            m_curState = BitControl.Set(m_curState , (int)HERO_STATE.ATTACK);
+            m_skletonAnimation.state.SetAnimation(0 , ANI_REPAIR , false);
+        }
+    }
     // 중력이 적용되는 곳에서의 컨트롤 
     void Control()
     {
@@ -637,6 +650,9 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             else
                 jump = VerticalMoveControl();
 
+            // 공격 혹은 수리 
+            AttackControl();
+
         }
      //   else
         {
@@ -644,6 +660,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             ObjectControl();
         }
 
+        
+       
        
 
         // 이동 애니메이션 체크
@@ -705,15 +723,15 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             {
                 if (IsCurrentAnimation(ANI_IDLE))
                 {
-                    m_skletonAnimation.state.SetAnimation(0, ANI_MOVE, true);
+                    m_skletonAnimation.state.SetAnimation(0 , ANI_MOVE , true);//
                 }
                 this.transform.Translate(new Vector3(moveX, moveY));
             }
         }
         Debug.DrawLine(pos, new Vector3(pos.x,pos.y - GetComponent<BoxCollider2D>().bounds.size.y,0.0f),Color.red);
         //MoveSend();
-
-     //   if(m_delay >= (1.0f/60.0f))
+        //m_delay += Time.deltaTime;
+        //if(m_delay >= (1.0f/10.0f))
         {
             MoveSend();
             //m_delay = 0.0f;

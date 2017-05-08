@@ -30,8 +30,7 @@ public class PatternA : PatternState {
         if(m_tick >= GameSetting.BOSS1_PATTERN_A_ATTACK_COOLTIME)
         {
             //   BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_BOSS1_P1);
-            GameObject bullet = BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_BOSS1_P1);
-            Bullet b = bullet.GetComponent<Bullet>();
+            Bullet b = BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_BOSS1_P1);
             Vector3 pos = me.transform.position;
 
             b.transform.position = pos;
@@ -39,7 +38,7 @@ public class PatternA : PatternState {
             Vector3 dir = hero.transform.position - me.transform.position;
             dir.Normalize();
 
-            float distance = Vector3.Distance(hero.transform.position, me.transform.position);
+            //float distance = Vector3.Distance(hero.transform.position, me.transform.position);
             string name = GameManager.Instance().PLAYER.USER_NAME + "_boss_A_" + Monster.m_index++;
 
             b.BULLET_SPEED = 20.0f;
@@ -49,7 +48,7 @@ public class PatternA : PatternState {
             m_attack = true;
 
 
-            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(name, "boss1_bullet", pos.x, pos.y, b.transform.rotation.eulerAngles.y, bullet.GetComponent<SpriteRenderer>().flipX));
+            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(name, "boss1_bullet", pos.x, pos.y, b.transform.rotation.eulerAngles.y, b.GetComponent<SpriteRenderer>().flipX));
             // 총알은 2.5초에 걸쳐 플레이어에게 도착함
             // 총알의 계산은 총알에서 하도록 함
             m_tick = 0.0f;

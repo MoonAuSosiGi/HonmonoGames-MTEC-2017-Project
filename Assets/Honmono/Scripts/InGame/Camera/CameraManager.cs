@@ -107,7 +107,7 @@ public class CameraManager : Singletone<CameraManager>
             case CAMERA_PLACE.STAR:
                 obj = m_star1Place; colliderSize = new Vector2(25.0f , 20.0f);
                 m_targetMove.m_target = m_andObj;
-                GameManager.Instance().ROBO.transform.position = m_starPos.transform.position;
+               // GameManager.Instance().ROBO.transform.position = m_starPos.transform.position;
                 break;
             case CAMERA_PLACE.BOSS:
                 obj = m_boss; colliderSize = new Vector2(25.0f , 20.0f);

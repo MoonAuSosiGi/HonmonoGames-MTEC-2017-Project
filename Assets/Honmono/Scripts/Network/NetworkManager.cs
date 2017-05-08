@@ -375,7 +375,8 @@ public class NetworkManager : Singletone<NetworkManager>
     }
     public void RemoveNetworkEnemyMoveEventListener(NetworkMoveEventListener l)
     {
-        m_enemyMoveEventList.Remove(l);
+        if(m_enemyMoveEventList.Contains(l))
+            m_enemyMoveEventList.Remove(l);
     }
 
     void SendEnemyMoveNetworkMessage()

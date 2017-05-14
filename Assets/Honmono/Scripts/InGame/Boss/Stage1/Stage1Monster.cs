@@ -29,7 +29,7 @@ public class Stage1Monster : Monster {
         m_robo = GameManager.Instance().ROBO;
         m_skletonAnimation = this.GetComponent<SkeletonAnimation>();
         this.m_skletonAnimation.state.SetAnimation(0, ANI_IDLE, true);
-        m_pattern = new MonsterPattern(m_skletonAnimation);
+        m_pattern = new MonsterPattern(m_skletonAnimation , null , null , null);
     }
 
 

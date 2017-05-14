@@ -6,13 +6,9 @@ using Spine.Unity;
 
 public class PatternNormal : PatternState
 {
-    public PatternNormal(SkeletonAnimation ani) : base(ani) { }
+    public PatternNormal(SkeletonAnimation ani , string moveAni , string attackAni,string aiTarget) : base(ani , moveAni , attackAni,aiTarget) { }
     private bool m_attack = false;
 
-    public override bool GetAttack()
-    {
-        return m_attack;
-    }
 
     public override float Attack(GameObject hero,GameObject me, int index)
     {

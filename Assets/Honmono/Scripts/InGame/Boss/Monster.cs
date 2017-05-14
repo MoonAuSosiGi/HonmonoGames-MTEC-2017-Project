@@ -28,6 +28,10 @@ public class Monster : MonoBehaviour {
 
     protected SkeletonAnimation m_skeletonAnimation = null;
 
+
+    protected string m_name = null;
+    public string MONSTER_NAME { get { return m_name; } set { m_name = value; } }
+
     // --------------------------------------------------------------------------------------------//
     // -- 스파인 애니메이션용 -------------------------------------------------------//
     protected bool IsCurrentAnimation(int i ,string ani)

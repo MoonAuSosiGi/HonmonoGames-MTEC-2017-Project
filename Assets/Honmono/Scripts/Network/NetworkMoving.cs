@@ -54,7 +54,7 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
         for (int i = 0; i < obj.Count; i++)
         {
             // 이름이 다르다면 패스
-            if (m_name == obj[i].GetField("Name").str)
+            if (m_name.Equals(obj[i].GetField("Name").str))
             {
                 x = obj[i].GetField("X").f;
                 y = obj[i].GetField("Y").f;
@@ -76,6 +76,8 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
         float distance = Vector3.Distance(transform.position, newPos);
 
         targetPos = drPos;
+
+        transform.eulerAngles = new Vector3(transform.eulerAngles.x , transform.eulerAngles.y , z);
 
         if (m_skeltonAni != null)
         {

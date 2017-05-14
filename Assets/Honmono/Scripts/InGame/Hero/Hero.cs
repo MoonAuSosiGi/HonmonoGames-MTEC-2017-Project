@@ -205,14 +205,14 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             m_curState = (int)e.msg.GetField(NetworkManager.STATE_CHANGE).i;
         }
         // 로봇 조종자            
-        else if(e.msgType == NetworkManager.ROBOT_DRIVER && m_isMe)
+        else if(e.msgType == NetworkManager.ROBOT_DRIVER)
         {
             if (e.msg.GetField(NetworkManager.ROBOT_DRIVER).b)
             {
 
                 GameManager.Instance().ROBO.MOVE_PLYAER = e.user;
 
-                if (m_userName.Equals(e.user + "_robo"))
+                if (m_isMe && m_userName.Equals(e.user + "_robo"))
                     CameraManager.Instance().MoveCamera(
                         GameManager.Instance().ROBO.gameObject, 
                         GameSetting.CAMERA_SPACE, 
@@ -220,7 +220,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             }
             else
             {
-                if (m_userName.Equals(e.user + "_robo"))
+                if (m_isMe && m_userName.Equals(e.user + "_robo"))
                 {
                     m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.CONTROL_DRIVE);
                     NetworkManager.Instance().GototheRobo();
@@ -232,14 +232,14 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
         }
         // 이녀석은 총기를 조작하는 사람
-        else if (e.msgType == NetworkManager.ROBOT_GUNNER && m_isMe)
+        else if (e.msgType == NetworkManager.ROBOT_GUNNER)
         {
 
             if (e.msg.GetField(NetworkManager.ROBOT_GUNNER).b)
             {
                 GameManager.Instance().ROBO.GUN_PLAYER = e.user;
                 
-                if(m_userName.Equals(e.user + "_robo"))
+                if(m_isMe && m_userName.Equals(e.user + "_robo"))
                     CameraManager.Instance().MoveCamera(
                         GameManager.Instance().ROBO.gameObject,
                         GameSetting.CAMERA_SPACE, 
@@ -247,7 +247,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             }
             else
             {
-                if (m_userName.Equals(e.user + "_robo"))
+                if (m_isMe && m_userName.Equals(e.user + "_robo"))
                 {
                     m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.CONTROL_GUN);
                     NetworkManager.Instance().GototheRobo();
@@ -258,29 +258,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
             }
         }
-        else if(e.msgType == NetworkManager.INTHE_STAR && (e.user + "_robo").Equals(m_userName))
-        {
-
-            if (e.msg.GetField(NetworkManager.INTHE_STAR).b)
-            {
-                
-                GameObject obj = CameraManager.Instance().m_inTheStar;
-                CameraManager.Instance().MoveCameraAndObject( obj,6, CameraManager.CAMERA_PLACE.STAR , gameObject);
-                 m_userControlName = null;
-                 m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.CONTROL_OUT_DOOR);
-
-                //m_skletonAnimation.initialSkinName = "char_01_a";
-                m_skletonAnimation.skeleton.SetSkin("char_01_a");
-                m_skletonAnimation.skeleton.SetToSetupPose();
-            }
-            else
-            {
-                NetworkManager.Instance().GototheRobo();
-                m_userControlName = null;
-                m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.CONTROL_OUT_DOOR);
-            }
-            //스타로 이동
-        }
+      
     }
     //------------------------------------------------------------------------------------------------------------------------//
 
@@ -891,10 +869,10 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     {
         if (m_prevState != m_curState)
         {
-            //if (!BitControl.Get(m_curState , (int)HERO_STATE.IDLE))
-            //NetworkManager.Instance().SendOrderMessage(
-            //    JSONMessageTool.ToJsonOrderStateValueChange(
-            //        m_userName , m_curState));
+            if (!BitControl.Get(m_curState , (int)HERO_STATE.IDLE))
+                NetworkManager.Instance().SendOrderMessage(
+                    JSONMessageTool.ToJsonOrderStateValueChange(
+                        m_userName , m_curState));
         }
     }
 

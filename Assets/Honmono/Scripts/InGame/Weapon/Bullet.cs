@@ -199,8 +199,8 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
             // 에너미
             if(col.name == "ROBO")
             {
-                GameObject obj = MapManager.Instance().AddObject(GamePath.EFFECT);
-                obj.transform.position = col.transform.position;
+                //GameObject obj = MapManager.Instance().AddObject(GamePath.EFFECT);
+                //obj.transform.position = col.transform.position;
                 // 주금
             }
         }
@@ -210,12 +210,12 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
             {
                 if (!ck)
                 {
-                    col.GetComponent<Monster>().Damage(10.0f);
-                    ck = true;
+                   // col.GetComponent<Monster>().Damage(10.0f);
+                  //  ck = true;
                 }
                 
-                GameObject obj = MapManager.Instance().AddObject(GamePath.EFFECT);
-                obj.transform.position = col.transform.position;
+                //GameObject obj = MapManager.Instance().AddObject(GamePath.EFFECT);
+                //obj.transform.position = col.transform.position;
                 // 주금
             }
         }

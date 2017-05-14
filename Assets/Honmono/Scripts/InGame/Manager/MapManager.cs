@@ -102,6 +102,22 @@ public class MapManager : Singletone<MapManager> {
         return obj;
     }
 
+    // -- 적 생성 ----------------------------------------------------------------------------------------------- //
 
 
+    public GameObject AddMonster(string prefabPath,string name,Vector3 pos)
+    {
+        GameObject monster = AddObject(prefabPath);
+
+        if(monster != null)
+        {
+            if(prefabPath.Equals(GamePath.BOSS1))
+            { 
+                monster.transform.GetChild(0).GetComponent<Stage1BOSS>().MONSTER_NAME = name;
+                monster.transform.position = pos;
+                NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(name,"boss1",pos.x,pos.y));
+            }
+        }
+        return monster;
+    }
 }

@@ -5,10 +5,9 @@ using Spine.Unity;
 
 public class PatternD : PatternState
 {
-    public PatternD(SkeletonAnimation ani) : base(ani) { }
+    public PatternD(SkeletonAnimation ani , string moveAni , string attackAni,string aiTarget) : base(ani , moveAni , attackAni,aiTarget) { }
 
     private float m_tick = 0;
-    private bool m_attack = false;
     private GameObject m_me = null;
     private GameObject m_rotate = null;
 
@@ -16,15 +15,14 @@ public class PatternD : PatternState
     private bool m_moveEffect = false;
 
     private float m_angle = 0.0f;
-    public override bool GetAttack()
-    {
-        return m_attack;
-    }
+ 
 
     public override void PatternStart()
     {
         m_skletonAnimation.state.SetAnimation(2 , "transform" , false);
-        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonAIMessageAnimation("D" , "transform" , 2 , false));
+
+        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonAIMessage(m_aiTarget ,"D","transform",false));
+
         m_skletonAnimation.state.Complete += State_Complete;
     }
 
@@ -43,19 +41,14 @@ public class PatternD : PatternState
                 m_effect = false;
                 iTween.ScaleTo(m_rotate , iTween.Hash("x" , 0.0f , "y" , 0.0f));
                 m_skletonAnimation.state.SetAnimation(2 , "move_fast_close" , true);
-
-                if (!m_me.GetComponent<Stage1BOSS>().m_networkObject)
-                {
-                    NetworkManager.Instance().SendOrderMessage(
-                        JSONMessageTool.ToJsonAIMessageAnimation("D" , "move_fast_close" , 2 , true));
-                    NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonAIMessageD_END());
-                }
+                NetworkManager.Instance().SendOrderMessage(
+                    JSONMessageTool.ToJsonAIMessage(m_aiTarget , "D" , "move_fast_close" , true));
             }
             else
             {
                 m_effect = true;
                 NetworkManager.Instance().SendOrderMessage(
-                        JSONMessageTool.ToJsonAIMessageAnimation("D" , "attack_D_in" , 2 , true));
+                    JSONMessageTool.ToJsonAIMessage(m_aiTarget , "D" , "attack_D_in" , false));
                 m_skletonAnimation.state.SetAnimation(2 , "attack_D_in" , false);
             }
             
@@ -79,11 +72,6 @@ public class PatternD : PatternState
             m_rotate.transform.position = me.transform.position;
             m_tick += Time.deltaTime;
 
-            if (!m_me.GetComponent<Stage1BOSS>().m_networkObject)
-            {
-                NetworkManager.Instance().SendOrderMessage(
-                    JSONMessageTool.ToJsonAIMessageD_Rotate(m_angle,m_rotate.transform.position));
-            }
 
             if (m_tick >= GameSetting.BOSS1_PATTERN_D_SPECIAL && !m_moveEffect)
             {
@@ -94,12 +82,6 @@ public class PatternD : PatternState
                 //m_tick = 0.0f;
                 m_skletonAnimation.state.SetAnimation(2 , "transform" , false);
                 m_skletonAnimation.state.Complete += State_Complete;
-
-                if (!m_me.GetComponent<Stage1BOSS>().m_networkObject)
-                {
-                    NetworkManager.Instance().SendOrderMessage(
-                        JSONMessageTool.ToJsonAIMessageAnimation("D" , "transform" , 2 , false));
-                }
             }
             Vector3 p = me.transform.parent.position;
             //NetworkManager.Instance().SendEnemyMoveMessage(JSONMessageTool.ToJsoinEnemyMove(m_me.GetComponent<Stage1BOSS>().m_BOSS_NAME , p.x , p.y , p.z , false));
@@ -135,10 +117,16 @@ public class PatternD : PatternState
 
     public override void Move(GameObject target, GameObject hero)
     {
-        Vector3 dir = hero.transform.position - target.transform.position;
-        dir.Normalize();
+        float distance = Vector3.Distance(target.transform.position ,
+              GameManager.Instance().ROBO.transform.position);
 
-        // 임의로 랜덤이동
-        target.transform.position += dir * GameSetting.BOSS1_SPEED * Time.deltaTime;
+        if (distance >= 15.0f)
+        {
+            Vector3 dir = hero.transform.position - target.transform.position;
+            dir.Normalize();
+
+            // 임의로 랜덤이동
+            target.transform.position += dir * GameSetting.BOSS1_SPEED * Time.deltaTime;
+        }
     }
 }

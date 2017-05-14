@@ -6,15 +6,9 @@ using Spine;
 
 public class PatternC : PatternState
 {
-    public PatternC(SkeletonAnimation ani) : base(ani) { }
+    public PatternC(SkeletonAnimation ani , string moveAni , string attackAni,string aiTarget) : base(ani , moveAni , attackAni,aiTarget) { }
     private float m_tick = 0;
 
-    private bool m_attack = false;
-
-    public override bool GetAttack()
-    {
-        return m_attack;
-    }
 
     // -- 상태 지정 ---------------------------------------------------------//
 
@@ -31,7 +25,11 @@ public class PatternC : PatternState
         m_skletonAnimation.state.SetAnimation(2 , "transform" , false);
         m_skletonAnimation.state.AddAnimation(2 , "attack_C_charge",false,0.0f);
         m_skletonAnimation.state.AddAnimation(2 , "attack_C_fire" , false , 0.0f);
-        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonAIMessageCStart());
+
+
+        NetworkManager.Instance().SendOrderMessage(
+            JSONMessageTool.ToJsonAIMessage(m_aiTarget,"C",new string[]{ "transform" , "attack_C_charge" , "attack_C_fire" }));
+
         m_skletonAnimation.state.Complete += CompleteEvent;
         base.PatternStart();
     }
@@ -51,15 +49,12 @@ public class PatternC : PatternState
 
     void CompleteEvent(TrackEntry trackEntry)
     {
-        if (trackEntry.animation.name == "attack_C_fire")
+        if (trackEntry.animation.name == "attack_C_charge")
         {
             Stage1BOSS boss = m_me.GetComponent<Stage1BOSS>();
             boss.m_laser.gameObject.SetActive(true);
             boss.m_laser.Play("boss_laser");
-            //boss.m_laser.SetInteger("laser" , 0); // 0 start 1 stop
             boss.m_laser.GetComponent<BoxCollider2D>().enabled = true;
-            MDebug.Log("LASERRRRRR R");
-            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJSonAIMessageC_LASER(true));
             //   m_skeletonAnimation.state.ClearTrack(1);
         }
     }
@@ -72,8 +67,8 @@ public class PatternC : PatternState
         boss.m_laser.gameObject.SetActive(false);
         boss.m_laser.GetComponent<BoxCollider2D>().enabled = false;
         m_skletonAnimation.state.ClearTrack(2);
-        MDebug.Log("SEEEENMDD D D DSFASD");
-        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJSonAIMessageC_LASER(false));
+
+        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonAIExitMessage(m_aiTarget,"C"));
     }
 
     public override float PreProcessedDamge()
@@ -86,10 +81,16 @@ public class PatternC : PatternState
 
     public override void Move(GameObject target, GameObject hero)
     {
-        Vector3 dir = hero.transform.position - target.transform.position;
-        dir.Normalize();
+        float distance = Vector3.Distance(target.transform.position ,
+            GameManager.Instance().ROBO.transform.position);
 
-        // 임의로 랜덤이동
-        target.transform.position += dir * GameSetting.BOSS1_SPEED * Time.deltaTime;
+        if (distance >= 15.0f)
+        {
+            Vector3 dir = hero.transform.position - target.transform.position;
+            dir.Normalize();
+
+            // 임의로 랜덤이동
+            target.transform.position += dir * GameSetting.BOSS1_SPEED * Time.deltaTime;
+        }
     }
 }

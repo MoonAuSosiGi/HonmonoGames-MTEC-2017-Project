@@ -120,7 +120,8 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
 	void Update () {
 
         m_prevState = m_roboState;
-        if (m_movePlayerName == GameManager.Instance().PLAYER.USER_NAME)
+        if (!string.IsNullOrEmpty(m_movePlayerName) &&
+            m_movePlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
         {
             Control();
             MoveSend();
@@ -128,7 +129,8 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             NetworkGunAngleLerp();
             return;
         }
-        if (m_gunPlayerName == GameManager.Instance().PLAYER.USER_NAME)
+        if (!string.IsNullOrEmpty(m_gunPlayerName) &&
+            m_gunPlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
         {
             ControlGun();
             GunAngleSend();
@@ -160,7 +162,8 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             (int)NetworkOrderController.AreaInfo.AREA_SPACE, 
             m_skletonAnimation.skeleton.flipX,
             sendPos));
-       
+        m_lastSendTime = Time.deltaTime;
+
     }
 
     // 현재 상태값 전송 (애니메이션용)
@@ -578,6 +581,8 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
 
    void OnTriggerEnter2D(Collider2D col)
     {
+        if (!m_movePlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
+            return;
         
         if(col.tag == "GO_TOTHE_STAR")
         {
@@ -587,7 +592,11 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         {
             if (!r)
             {
-                NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder("" , "boss1"));
+                MapManager.Instance().AddMonster(
+                    GamePath.BOSS1,
+                    "boss1_"+GameManager.Instance().PLAYER.USER_NAME,
+                    new Vector3(0.0f,0.0f));
+               // NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder("" , "boss1"));
                 r = true;
             }
           //  NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJSonChangeBossScene());

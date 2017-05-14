@@ -92,18 +92,15 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
 
                     case "boss1":
                         {
-                            if (e.user != GameManager.Instance().PLAYER.USER_NAME)
+                            if (e.user.Equals(GameManager.Instance().PLAYER.USER_NAME))
                                 return;
                             GameObject boss = MapManager.Instance().AddObject(GamePath.BOSS1);
-                            Vector3 p = boss.transform.position;
+                            Vector3 p = new Vector3(e.msg.GetField("X").f , e.msg.GetField("Y").f , -1.0f);
                             boss.transform.position = new Vector3(p.x, p.y, -1);
-                            // NetworkMoving moving = boss.transform.GetChild(0).gameObject.AddComponent<NetworkMoving>();
-                            Stage1BOSS b = boss.transform.GetChild(0).GetComponent<Stage1BOSS>();
-                            b.m_BOSS_NAME = e.targetName + "_boss";
-
-                            b.m_networkObject = (e.user != GameManager.Instance().PLAYER.USER_NAME);
-                            if (b.m_networkObject)
-                                b.NetworkSetup();
+                            // 보스의 경우 디자인상 기준 오브젝트 - 하위에 달려있는 형태
+                            boss.AddComponent<NetworkMoving>().NAME = e.targetName;
+                            boss.transform.GetChild(0).GetComponent<Stage1BOSS>().enabled = false;
+                            boss.transform.GetChild(0).gameObject.AddComponent<NetworkStage1BOSS>().BOSS_NAME = e.targetName;
                         }
                         break;
                     case "monster1":

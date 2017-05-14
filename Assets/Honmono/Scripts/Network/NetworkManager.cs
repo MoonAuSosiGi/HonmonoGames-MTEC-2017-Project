@@ -63,6 +63,8 @@ public class NetworkManager : Singletone<NetworkManager>
 
     // AI
     public const string AI = "ai"; // type
+    public const string AI_PATTERN_EXIT = "ai_patternExit";
+
     public const string AI_C = "aiC";
     public const string AI_C_LASER = "aiClaser";
     public const string AI_D = "aiD";
@@ -119,13 +121,13 @@ public class NetworkManager : Singletone<NetworkManager>
     private Queue<string> m_socketOrders = new Queue<string>();
     //-- 옵저버 패턴 [채팅] -------------------------------------------------------------------------------------------//
 
-    public class MessageEvent
+    public struct MessageEvent
     {
-        public string msgType = "";
-        public string user = "";
-        public string targetName = "";
-        public JSONObject msg = null;
-        public JSONObject orders = null;
+        public string msgType;// = "";
+        public string user;// = "";
+        public string targetName;// = "";
+        public JSONObject msg;// = null;
+        public JSONObject orders;// = null;
 
         public MessageEvent(string type, string user, string targetName, JSONObject orders, JSONObject msg)
         {

@@ -4,19 +4,18 @@ using UnityEngine;
 using Spine.Unity;
 using Spine;
 
-public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener, NetworkManager.NetworkMessageEventListenrer
+public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener
 {
     // -- Network ------------------------------------------------------------------//
     private Vector3 m_targetPos = Vector3.zero;
     private Vector3 m_prevPos = Vector3.zero;
-    private bool m_isNetworkObject = false;
+
     float m_syncTime = 0.0f;
     float m_delay = 0.0f;
     float m_lastSyncTime = 0.0f;
-    public string m_BOSS_NAME = null;
+    float m_lastSendTime = 0.0f;
+    float m_angle = 0.0f;
 
-
-    public bool m_networkObject = false;
     // ----------------------------------------------------------------------------//
 
     // -- 기본 정보 --------------------------------------------------------------------------------//
@@ -45,7 +44,7 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener, Net
     // 몇초동안 쉬는지
     private float m_coolTime = 0.0f;
 
-    
+
 
     // Animation 
     private const string ANI_ATTACK_A = "attack_A";
@@ -91,39 +90,43 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener, Net
     protected override void Move()
     {
         // Move 
-        string moveAni = null;
-        if (m_pattern is PatternNormal ||
-            m_pattern is PatternA ||
-            m_pattern is PatternB)
-            moveAni = ANI_AB_MOVE;
+        //string moveAni = null;
+        //if (m_pattern is PatternNormal ||
+        //    m_pattern is PatternA ||
+        //    m_pattern is PatternB)
+        //    moveAni = ANI_AB_MOVE;
 
-        if (!string.IsNullOrEmpty(moveAni))
-        {
-            CheckAndSetAnimation(0 , moveAni , true);
-            NetworkManager.Instance().SendOrderMessage(
-                  JSONMessageTool.ToJsonAIMessageAnimation("C" , moveAni , 0 , true));
-        }
+        //if (!string.IsNullOrEmpty(moveAni))
+        //{
+        //    CheckAndSetAnimation(0 , moveAni , true);
+        //    NetworkManager.Instance().SendOrderMessage(
+        //          JSONMessageTool.ToJsonAIMessageAnimation("C" , moveAni , 0 , true));
+        //}
 
-        if (m_pattern is PatternC || m_pattern is PatternD)
-            moveAni = ANI_CD_MOVE;
+        //if (m_pattern is PatternC || m_pattern is PatternD)
+        //    moveAni = ANI_CD_MOVE;
 
-        //
-        if (!string.IsNullOrEmpty(moveAni) && m_pattern is PatternC)
-        {
-            CheckAndSetAnimation(1 , moveAni , true);
-            NetworkManager.Instance().SendOrderMessage(
-                  JSONMessageTool.ToJsonAIMessageAnimation("C" , moveAni , 1 , true));
-        }
+        ////
+        //if (!string.IsNullOrEmpty(moveAni) && m_pattern is PatternC)
+        //{
+        //    CheckAndSetAnimation(1 , moveAni , true);
+        //    NetworkManager.Instance().SendOrderMessage(
+        //          JSONMessageTool.ToJsonAIMessageAnimation("C" , moveAni , 1 , true));
+        //}
 
 
+        //if (m_pattern != null)
+        //{
+        //    float distance = Vector3.Distance(transform.parent.position , GameManager.Instance().ROBO.transform.position);
+
+        //    if(distance >= 15.0f)
+        //        m_pattern.Move(transform.parent.gameObject ,
+        //            GameManager.Instance().ROBO.gameObject);
+        //}
         if (m_pattern != null)
-        {
-            float distance = Vector3.Distance(transform.parent.position , GameManager.Instance().ROBO.transform.position);
-
-            if(distance >= 15.0f)
-                m_pattern.Move(transform.parent.gameObject ,
-                    GameManager.Instance().ROBO.gameObject);
-        }
+            m_pattern.Move(
+                transform.parent.gameObject , 
+                GameManager.Instance().ROBO.gameObject);
         MoveSend();
     }
 
@@ -142,29 +145,29 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener, Net
 
     public override float Attack()
     {
-        if (m_pattern is PatternNormal)
-        {
-            CheckAndSetAnimation(1,ANI_ATTACK_A , true);
-            NetworkManager.Instance().SendOrderMessage(
-                JSONMessageTool.ToJsonAIMessageAnimation("normal" , ANI_ATTACK_A , 1 , true));
+        //if (m_pattern is PatternNormal)
+        //{
+        //    //CheckAndSetAnimation(1,ANI_ATTACK_A , true);
+        //    NetworkManager.Instance().SendOrderMessage(
+        //        JSONMessageTool.ToJsonAIMessageAnimation("normal" , ANI_ATTACK_A , 1 , true));
 
-        }
-        else if(m_pattern is PatternA)
-        {
-            CheckAndSetAnimation(1 , ANI_ATTACK_A , true);
-            NetworkManager.Instance().SendOrderMessage(
-                JSONMessageTool.ToJsonAIMessageAnimation("A" , ANI_ATTACK_A , 1 , true));
-        }
-        else if (m_pattern is PatternB)
-        {
-            CheckAndSetAnimation(1 , ANI_ATTACK_B , true);
-            NetworkManager.Instance().SendOrderMessage(
-                JSONMessageTool.ToJsonAIMessageAnimation("B" , ANI_ATTACK_B , 1 , true));
-        }
-        else if (m_pattern is PatternC)
-        {
+        //}
+        //else if(m_pattern is PatternA)
+        //{
+        //    CheckAndSetAnimation(1 , ANI_ATTACK_A , true);
+        //    NetworkManager.Instance().SendOrderMessage(
+        //        JSONMessageTool.ToJsonAIMessageAnimation("A" , ANI_ATTACK_A , 1 , true));
+        //}
+        //else if (m_pattern is PatternB)
+        //{
+        //    CheckAndSetAnimation(1 , ANI_ATTACK_B , true);
+        //    NetworkManager.Instance().SendOrderMessage(
+        //        JSONMessageTool.ToJsonAIMessageAnimation("B" , ANI_ATTACK_B , 1 , true));
+        //}
+        //else if (m_pattern is PatternC)
+        //{
 
-        }
+        //}
         return base.Attack();
     }
 
@@ -175,18 +178,18 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener, Net
         // 처음 패턴은 A다.
         m_skeletonAnimation = this.GetComponent<SkeletonAnimation>();
         
-        m_pattern = new PatternA(m_skeletonAnimation);
+        m_pattern = new PatternA(m_skeletonAnimation,ANI_AB_MOVE, ANI_ATTACK_A,m_name);
 
-        CheckAndSetAnimation(0,ANI_AB_MOVE , true); 
-      
-   //     m_skeletonAnimation.state.Complete += CompleteEvent;
+        //CheckAndSetAnimation(0,ANI_AB_MOVE , true); 
+
+        //     m_skeletonAnimation.state.Complete += CompleteEvent;
+        m_hp = 0.0f;
         
 
     }
 
     public void NetworkSetup()
     {
-        NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
         NetworkManager.Instance().AddNetworkEnemyMoveEventListener(this);
     }
     
@@ -201,19 +204,8 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener, Net
         // 방향설정
         Vector3 p = GameManager.Instance().ROBO.transform.position - transform.parent.position;
         p.Normalize();
-        float angle = (Mathf.Atan2(p.x , p.y) * Mathf.Rad2Deg);
-        transform.parent.rotation = Quaternion.Euler(0 , 0 , -angle);
-
-
-        if (m_networkObject)
-        {
-            m_syncTime += Time.deltaTime;
-
-            //네트워크 보간(테스트 완료 - 로컬 )
-            if (m_delay > 0)
-                transform.position = Vector3.Lerp(transform.position , m_targetPos , m_syncTime / m_delay);
-            return;
-        }
+        m_angle = (Mathf.Atan2(p.x , p.y) * Mathf.Rad2Deg);
+        transform.parent.rotation = Quaternion.Euler(0 , 0 , -m_angle);
             
 
         if (m_pattern != null)
@@ -225,7 +217,7 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener, Net
             // 광폭화 모드가 아니라면 광폭화 모드다 !!!!
             if(!(m_pattern is PatternD))
             {
-                m_pattern = new PatternD(m_skeletonAnimation);
+                m_pattern = new PatternD(m_skeletonAnimation,ANI_CD_MOVE,null, m_name);
             }
             
         }
@@ -309,7 +301,7 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener, Net
             //기본 공격!!
 
             if (!(m_pattern is PatternNormal))
-                m_pattern = new PatternNormal(m_skeletonAnimation);
+                m_pattern = new PatternNormal(m_skeletonAnimation,ANI_AB_MOVE,ANI_ATTACK_A, m_name);
         }
 
         return true;
@@ -328,7 +320,7 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener, Net
 
         // 이 시간 동안에는 패턴 A로 공격한다
         if (!(m_pattern is PatternA))
-            m_pattern = new PatternA(m_skeletonAnimation);
+            m_pattern = new PatternA(m_skeletonAnimation,ANI_AB_MOVE,ANI_ATTACK_A, m_name);
 
         return true;
     }
@@ -345,7 +337,7 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener, Net
 
         // 이 시간 동안에는 패턴 B로 공격한다
         if (!(m_pattern is PatternB))
-            m_pattern = new PatternB(m_skeletonAnimation);
+            m_pattern = new PatternB(m_skeletonAnimation,ANI_AB_MOVE,ANI_ATTACK_B, m_name);
 
         return true;
     }
@@ -364,7 +356,7 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener, Net
 
         // 이 시간 동안에는 패턴 C로 공격한다
         if (!(m_pattern is PatternC))
-            m_pattern = new PatternC(m_skeletonAnimation);
+            m_pattern = new PatternC(m_skeletonAnimation,ANI_CD_MOVE,ANI_ATTACK_C, m_name);
 
         return true;
     }
@@ -395,68 +387,25 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener, Net
     // ----------------------------------------------------------------------------------//
     void MoveSend()
     {
-        Vector3 pos = transform.parent.position;
+        Vector3 pos = transform.position;
         float distance = Vector3.Distance(m_prevPos , pos);
-        m_prevPos = transform.parent.position;
-        //    MDebug.Log(t);
-        if (distance <= 0)
-            return;
-        
-        NetworkManager.Instance().SendEnemyMoveMessage(JSONMessageTool.ToJsonEnemyMove(m_BOSS_NAME ,
-            pos.x , pos.y , transform.rotation.eulerAngles.z , false,Vector3.zero));
+        m_prevPos = transform.position;
+
+        Vector3 velocity = (transform.position - m_prevPos) / Time.deltaTime;
+        Vector3 sendPos = m_prevPos + (velocity * (Time.deltaTime - m_lastSendTime));
+        //dirPos.Normalize();
+
+
+        NetworkManager.Instance().SendEnemyMoveMessage(
+            JSONMessageTool.ToJsonEnemyMove(m_name ,
+            pos.x , pos.y ,
+            -m_angle,
+            m_skeletonAnimation.skeleton.flipX ,
+            sendPos));
+        m_lastSendTime = Time.deltaTime;
     }
 
-    public void ReceiveNetworkMessage(NetworkManager.MessageEvent e)
-    {
-        switch(e.msgType)
-        {
-            case NetworkManager.AI:
-                CheckAndSetAnimation((int)e.msg.GetField(NetworkManager.AI_ANI_INDEX).i ,
-                    e.msg.GetField(NetworkManager.AI_ANI_NAME).str , e.msg.GetField(NetworkManager.AI_ANI_LOOP));
-                break;
-            case NetworkManager.AI_C:
-                if (IsCurrentAnimation(2,"transform"))
-                    return;
-                m_skeletonAnimation.state.SetAnimation(2 , "transform" , false);
-                m_skeletonAnimation.state.AddAnimation(2 , "attack_C_charge" , false , 0.0f);
-                m_skeletonAnimation.state.AddAnimation(2 , "attack_C_fire" , false , 0.0f);
-                break;
-            case NetworkManager.AI_C_LASER:
-                MDebug.Log("LASER ");
-                if(e.msg.GetField(NetworkManager.AI_C_LASER).b)
-                {
-                    m_laser.gameObject.SetActive(true);
-                    m_laser.Play("boss_laser");
-                    m_laser.GetComponent<BoxCollider2D>().enabled = true;
-                }
-                else
-                {                    
-                    m_laser.SetInteger("laser" , 1);
-                    m_laser.Play("Wait");
-                    m_laser.gameObject.SetActive(false);
-                    m_laser.GetComponent<BoxCollider2D>().enabled = false;
-                    m_skeletonAnimation.state.ClearTrack(2);
-                }
-                break;
 
-            case NetworkManager.AI_D_ROTATE:
-                Vector3 pos = m_patternDRotate.transform.position;
-                m_patternDRotate.gameObject.SetActive(true);
-                m_patternDRotate.transform.position = new Vector3(e.msg.GetField("X").f , e.msg.GetField("Y").f , pos.z);
-                transform.parent.position = m_patternDRotate.transform.position;
-                m_patternDRotate.transform.Rotate(0.0f , 0.0f , e.msg.GetField(NetworkManager.AI_D_ROTATE).f);
-                break;
-            case NetworkManager.AI_D_END:
-                {
-                    iTween.ScaleTo(m_patternDRotate , iTween.Hash("x" , 0.0f , "y" , 0.0f));
-                    m_skeletonAnimation.state.SetAnimation(2 , "move_fast_close" , true);
-                }
-                break;
-                
-
-        }
-
-    }
 
     void NetworkManager.NetworkMoveEventListener.ReceiveMoveEvent(JSONObject json)
     {
@@ -468,15 +417,21 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener, Net
         float x = 0.0f, y = 0.0f, z = 0.0f;
         bool flip = false;
         bool ck = false;
+        Vector3 drPos = Vector3.zero;
+
+        Vector3 targetPos = Vector3.zero;
+
         for (int i = 0; i < users.Count; i++)
         {
-            if (users[i].GetField("Name").str == m_BOSS_NAME)
+            if (users[i].GetField("Name").str.Equals(m_name))
             {
                 x = users[i].GetField("X").f;
                 y = users[i].GetField("Y").f;
                 z = users[i].GetField("Z").f;
                 flip = users[i].GetField(NetworkManager.DIR).b;
                 ck = true;
+                JSONObject v = obj[i].GetField(NetworkManager.DIRVECTOR);
+                drPos = new Vector3(v.GetField("X").f , v.GetField("Y").f , v.GetField("Z").f);
                 break;
             }
         }
@@ -494,17 +449,12 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener, Net
 
             transform.rotation = Quaternion.Euler(0 , 0 , z);
         }
-        if (distance <= 0)
-        {
-            ////    this.m_animator.SetBool("Move", false);
-            //        return;
-        }
 
 
         m_syncTime = 0.0f;
         m_delay = Time.time - m_lastSyncTime;
         m_lastSyncTime = Time.time;
-        m_targetPos = newPos; //* m_delay;
+        m_targetPos = drPos; //* m_delay;
                               // transform.position = newPos;
 
     }

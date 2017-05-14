@@ -102,55 +102,48 @@ public static class JSONMessageTool  {
         return obj.ToString();
     }
 
-    // Animation 동기화용
-    public static string ToJsonAIMessageAnimation(string patternName,string aniName,int index,bool loop)
+
+    // -----------------------------------------------------------------------------------------------------------------//
+    // AI MESSAGE
+    public static string ToJsonAIMessage(string aiTargetName,string aiPatternName,string animationName,bool aniloop)
     {
-        JSONObject obj = GetDefJSON("" , NetworkManager.AI);
+        JSONObject obj = GetDefJSON(aiTargetName , NetworkManager.AI_ANI_NAME);
         JSONObject msg = obj.GetField(NetworkManager.ORDERS)[0].GetField(NetworkManager.MSG);
-        msg.AddField(NetworkManager.AI_PATTERN_NAME , patternName);
-        msg.AddField(NetworkManager.AI_ANI_NAME , aniName);
-        msg.AddField(NetworkManager.AI_ANI_INDEX , index);
-        msg.AddField(NetworkManager.AI_ANI_LOOP , loop);
-        
+        msg.AddField(NetworkManager.AI_PATTERN_NAME , aiPatternName);
+        msg.AddField(NetworkManager.AI_ANI_NAME , animationName);
+        msg.AddField(NetworkManager.AI_ANI_LOOP , aniloop);
+
         return obj.ToString();
     }
 
-    public static string ToJsonAIMessageCStart()
+    // AI MESSAGE
+    public static string ToJsonAIMessage(string aiTargetName , string aiPatternName , string[] animationNames)
     {
-        JSONObject obj = GetDefJSON("" , NetworkManager.AI_C);
+        JSONObject obj = GetDefJSON(aiTargetName , NetworkManager.AI_ANI_NAME);
         JSONObject msg = obj.GetField(NetworkManager.ORDERS)[0].GetField(NetworkManager.MSG);
-        msg.AddField(NetworkManager.AI_PATTERN_NAME , "C");
+        msg.AddField(NetworkManager.AI_PATTERN_NAME , aiPatternName);
+
+        JSONObject aniNames = new JSONObject();
+        foreach(string ani in animationNames)
+            aniNames.Add(ani);
+
+        msg.AddField(NetworkManager.AI_ANI_NAME , aniNames);
 
         return obj.ToString();
     }
 
-
-
-    public static string ToJsonAIMessageD_Rotate(float rotate,Vector3 pos)
+    public static string ToJsonAIExitMessage(string aiTargetName,string aiPatternName)
     {
-        JSONObject obj = GetDefJSON("" , NetworkManager.AI_D_ROTATE);
+        JSONObject obj = GetDefJSON(aiTargetName , NetworkManager.AI_PATTERN_EXIT);
         JSONObject msg = obj.GetField(NetworkManager.ORDERS)[0].GetField(NetworkManager.MSG);
-        msg.AddField(NetworkManager.AI_PATTERN_NAME , "D");
-        msg.AddField(NetworkManager.AI_D_ROTATE , rotate);
-        msg.AddField("X" , pos.x);
-        msg.AddField("Y" , pos.y);
+        msg.AddField(NetworkManager.AI_PATTERN_NAME , aiPatternName);
+
         return obj.ToString();
     }
 
-    // CLASER
-    public static string ToJSonAIMessageC_LASER(bool laserEnable)
-    {
-        JSONObject obj = GetDefJSON("" , NetworkManager.AI_C_LASER);
-        obj.GetField(NetworkManager.ORDERS)[0].GetField(NetworkManager.MSG).AddField(NetworkManager.AI_C_LASER , laserEnable);
-        return obj.ToString();
-    }
+    // ----------------------------------------------------------------------------------------------------------------//
 
-    // D effect
-    public static string ToJsonAIMessageD_END()
-    {
-        JSONObject obj = GetDefJSON("" , NetworkManager.AI_D_END);
-        return obj.ToString();
-    }
+  
 
     // Place Change
     public static string ToJsonOrderPlaceChange(string place)
@@ -324,16 +317,21 @@ public static class JSONMessageTool  {
         return obj.ToString();
     }
 
-    public static string ToJsonCreateOrder(string targetName,string createObj)
+    public static string ToJsonCreateOrder(string targetName , string createObj , float x = 0.0f , float y = 0.0f)
     {
         JSONObject obj = GetDefJSON(targetName,NetworkManager.CREATE);
 
         JSONObject obj2 = new JSONObject();
         obj2.AddField(NetworkManager.CREATE_TARGET, createObj);
+        JSONObject msg = obj.GetField(NetworkManager.ORDERS)[0].GetField(NetworkManager.MSG);
+        msg.AddField("X" , x);
+        msg.AddField("Y" , y);
 
         obj.GetField(NetworkManager.ORDERS)[0]
            .GetField(NetworkManager.MSG)
            .AddField(NetworkManager.CREATE, obj2);
+        
+
         return obj.ToString();
     }
 

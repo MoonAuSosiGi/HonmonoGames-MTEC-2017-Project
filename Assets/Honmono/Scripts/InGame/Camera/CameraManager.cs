@@ -116,7 +116,7 @@ public class CameraManager : Singletone<CameraManager>
                 break;
         }
 
-        if (m_place == CAMERA_PLACE.STAR ||  m_place == CAMERA_PLACE.BOSS)
+        if ( m_place == CAMERA_PLACE.BOSS)
         {
             m_targetMove.m_test = true;
         }

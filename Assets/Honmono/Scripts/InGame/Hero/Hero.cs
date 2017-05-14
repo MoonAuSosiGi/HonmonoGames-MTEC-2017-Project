@@ -441,7 +441,6 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     {
         if (BitControl.Get(m_curState , (int)HERO_STATE.CONTROL_OUT_DOOR))
         {
-            MDebug.Log("가라");
             //   if(!string.IsNullOrEmpty(GameManager.Instance().ROBO.CURRENT_PLACE))
 
             GameObject obj = CameraManager.Instance().m_inTheStar;

@@ -33,7 +33,7 @@ public class GameManager : Singletone<GameManager> {
     {
         Application.runInBackground = true;
         Screen.SetResolution(m_resoluation.width, m_resoluation.height,false);
-        PopupManager.Instance().AddPopup("LoginPopup");
+        
         //PopupManager.Instance().AddPopup("NetworkConnectPopup");
     }
 

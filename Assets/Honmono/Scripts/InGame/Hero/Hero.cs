@@ -441,16 +441,53 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     {
         if (BitControl.Get(m_curState , (int)HERO_STATE.CONTROL_OUT_DOOR))
         {
-            //   if(!string.IsNullOrEmpty(GameManager.Instance().ROBO.CURRENT_PLACE))
+            GameObject target = null;
+            int cameraSize = 6;
+            CameraManager.CAMERA_PLACE place = CameraManager.CAMERA_PLACE.ROBO_IN;
+            string func = "";
 
-            GameObject obj = CameraManager.Instance().m_inTheStar;
-            CameraManager.Instance().MoveCameraAndObject(obj , 6 , CameraManager.CAMERA_PLACE.STAR , gameObject);
+            switch (CameraManager.Instance().PLACE)
+            {
+                case CameraManager.CAMERA_PLACE.ROBO_IN:
+                    target = CameraManager.Instance().m_inTheStar;
+                    
+                    
+                    place = CameraManager.CAMERA_PLACE.STAR;
+                    func = "RobotOutEnd";
+                    
+                    break;
+                case CameraManager.CAMERA_PLACE.STAR:
+                    target = CameraManager.Instance().m_robotPlace;
+                    
+                    cameraSize = 4;
+                    place = CameraManager.CAMERA_PLACE.ROBO_IN;
+                    this.GetComponent<Rigidbody2D>().gravityScale = 0.0f;
+                    func = "RobotInEnd";
+                    break;
 
-            m_skletonAnimation.skeleton.SetSkin("char_01_a");
-            m_skletonAnimation.skeleton.SetToSetupPose();
+            }
+            
+            CameraManager.Instance().MoveCameraAndObject(target , cameraSize , place , gameObject,gameObject,func,false);
+
+
 
         }
     }
+    // ::::: 행성 관련 메소드
+    void RobotOutEnd()
+    {
+        m_skletonAnimation.skeleton.SetSkin("char_01_a");
+        m_skletonAnimation.skeleton.SetToSetupPose();
+    }
+    //들어올때
+    void RobotInEnd()
+    {
+        m_skletonAnimation.skeleton.SetSkin("char_01");
+        m_skletonAnimation.skeleton.SetToSetupPose();
+        m_curState = BitControl.Set(m_curState , (int)HERO_STATE.LADDER);
+    }
+
+    // ::::::::::::::::::::::::::::
 
     // :: 힐링 존 
     void ObjectRoboHealControlCheck()

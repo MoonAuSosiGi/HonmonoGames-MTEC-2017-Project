@@ -22,6 +22,14 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
 
     public bool ALIVE { get { return m_alive; } set { m_alive = value; } }
 
+    public enum BULLET_TARGET
+    {
+        PLAYER,
+        ENEMY
+    }
+
+    private BULLET_TARGET m_curTarget = BULLET_TARGET.PLAYER;
+
     // -- 네트워크 ------------------------------------------------------------------------- //
     private Vector3 m_prevPos = Vector3.zero;
     private Vector3 m_targetPos = Vector3.zero;
@@ -85,8 +93,12 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
             m_bulletDir = dir;
             float angle = (Mathf.Atan2(m_bulletDir.x , m_bulletDir.y) * Mathf.Rad2Deg);// + 45.0f;
             transform.rotation = Quaternion.Euler(0.0f , 0.0f , angle);
+            m_curTarget = BULLET_TARGET.ENEMY;
         }
-        
+        else
+        {
+            m_curTarget = BULLET_TARGET.PLAYER;
+        }
 
         if (m_isNetworkObject)
         {
@@ -172,14 +184,7 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
 
     void OnCollisionEnter2D(Collision2D col)
     {
-        if (m_isNetworkObject)
-            return;
-        MDebug.Log("얘 삭제되었음");
-
-        if (col.transform.name == "ROBO")
-        {
-
-        }
+        
 
         //일단 최종 좌표를 던져본다.
 
@@ -190,7 +195,22 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
 
     void OnTriggerEnter2D(Collider2D col)
     {
-      //  MDebug.Log("이거다 " + col.transform.name);
+        if (m_isNetworkObject)
+            return;
+
+        //맵 바깥쪽에 도착했다.
+        if (col.transform.tag.Equals("OUTLINE"))
+        {
+            BulletManager.Instance().RemoveBullet(this);
+        }
+        else if(col.transform.tag.Equals("ENEMY"))
+        {
+            Monster mon = col.GetComponent<Monster>();
+            mon.Damage(1.0f);
+
+            BulletManager.Instance().RemoveBullet(this);
+        }
+        
     }
     void OnTriggerStay2D(Collider2D col)
     {

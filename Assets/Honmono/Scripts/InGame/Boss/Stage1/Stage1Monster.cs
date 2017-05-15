@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Spine.Unity;
 
-public class Stage1Monster : Monster {
+public class Stage1Monster : Monster
+{
 
     // -- 기본 정보 --------------------------------------------------------//
     private HeroRobo m_robo = null;
@@ -28,14 +29,14 @@ public class Stage1Monster : Monster {
     {
         m_robo = GameManager.Instance().ROBO;
         m_skletonAnimation = this.GetComponent<SkeletonAnimation>();
-        this.m_skletonAnimation.state.SetAnimation(0, ANI_IDLE, true);
+        this.m_skletonAnimation.state.SetAnimation(0 , ANI_IDLE , true);
         m_pattern = new MonsterPattern(m_skletonAnimation , null , null , null);
     }
 
 
     void Update()
     {
-        if(FindMoveAbleCheck())
+        if (FindMoveAbleCheck())
             Move();
         if (!AttackAbleCheck())
             return;
@@ -44,23 +45,23 @@ public class Stage1Monster : Monster {
             return;
 
         SetCoolTime(Attack());
-        
+
     }
 
     public override float Attack()
     {
-        this.m_skletonAnimation.state.SetAnimation(0,ANI_ATTACK, false);
-        this.m_skletonAnimation.state.AddAnimation(0, ANI_IDLE,true,0.0f);
+        this.m_skletonAnimation.state.SetAnimation(0 , ANI_ATTACK , false);
+        this.m_skletonAnimation.state.AddAnimation(0 , ANI_IDLE , true , 0.0f);
         return base.Attack();
     }
 
     protected override void Move()
     {
         if (m_pattern != null)
-            m_pattern.Move(gameObject,m_robo.gameObject);
+            m_pattern.Move(gameObject , m_robo.gameObject);
 
         if (m_skletonAnimation.state.GetCurrent(0).animation.name == ANI_IDLE)
-            this.m_skletonAnimation.state.SetAnimation(0, ANI_MOVE, true);
+            this.m_skletonAnimation.state.SetAnimation(0 , ANI_MOVE , true);
 
         if (m_robo.transform.position.x < transform.position.x)
             m_skletonAnimation.skeleton.flipX = false;
@@ -73,7 +74,7 @@ public class Stage1Monster : Monster {
     {
         base.Damage(damage);
 
-        if(m_hp <= 0.0f)
+        if (m_hp <= 0.0f)
         {
             GameObject obj = MapManager.Instance().AddObject(GamePath.EFFECT);
             obj.transform.position = transform.position;
@@ -87,7 +88,7 @@ public class Stage1Monster : Monster {
         Vector3 roboPos = m_robo.transform.position;
         Vector3 pos = transform.position;
 
-        if(Vector3.Distance(roboPos,pos) <= GameSetting.MONSTER_ATTACK_DISTANCE)
+        if (Vector3.Distance(roboPos , pos) <= GameSetting.MONSTER_ATTACK_DISTANCE)
         {
             return true;
         }
@@ -100,7 +101,7 @@ public class Stage1Monster : Monster {
         Vector3 roboPos = m_robo.transform.position;
         Vector3 pos = transform.position;
 
-        if (Vector3.Distance(roboPos, pos) <= GameSetting.MONSTER_FIND_DISTANCE)
+        if (Vector3.Distance(roboPos , pos) <= GameSetting.MONSTER_FIND_DISTANCE)
         {
             return true;
         }
@@ -129,7 +130,31 @@ public class Stage1Monster : Monster {
 
             m_coolTimeTick += Time.deltaTime;
             return true;
-        }
+        } 
 
+    }
+    //-------------------------------------------------------------------------------//
+
+    void OnTriggerEnter2D(Collider2D col)
+    {
+        switch(col.tag)
+        {
+            case "Player":
+                HeroRobo robo = col.GetComponent<HeroRobo>();
+
+                if(robo != null)
+                {
+                    // 로봇이 아닌 경우다 
+                    Hero hero = col.GetComponent<Hero>();
+                }
+                else
+                {
+                    //로봇인 경우 
+                    robo.Damage(1.0f); // 임시값 
+                }
+                
+                break;
+
+        }
     }
 }

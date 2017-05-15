@@ -56,8 +56,12 @@ public class LoginPopup : MonoBehaviour {
 
     void LoginGO()
     {
+        
+        CameraManager.Instance().MoveCamera(
+            CameraManager.Instance().m_gameStart , 10.0f , CameraManager.CAMERA_PLACE.GAME_START,
+            Camera.main.gameObject,"TitleEnd");
         m_socketCheck = false;
-        PopupManager.Instance().AddPopup("CharacterSelectPopup");
+        
         PopupManager.Instance().ClosePopup(gameObject);
     }
 

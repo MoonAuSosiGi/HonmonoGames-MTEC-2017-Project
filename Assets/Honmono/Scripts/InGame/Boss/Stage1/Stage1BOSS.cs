@@ -179,11 +179,7 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener
         m_skeletonAnimation = this.GetComponent<SkeletonAnimation>();
         
         m_pattern = new PatternA(m_skeletonAnimation,ANI_AB_MOVE, ANI_ATTACK_A,m_name);
-
-        //CheckAndSetAnimation(0,ANI_AB_MOVE , true); 
-
-        //     m_skeletonAnimation.state.Complete += CompleteEvent;
-        m_hp = 0.0f;
+        
         
 
     }

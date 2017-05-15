@@ -34,6 +34,8 @@ public class CameraManager : Singletone<CameraManager>
     }
     private CAMERA_PLACE m_place = CAMERA_PLACE.GAME_START;
 
+    public CAMERA_PLACE PLACE { get { return m_place; } }
+
     public GameObject m_playerIntheROBO = null;
     public GameObject m_playerROBO = null;
     public GameObject m_playerIntheSPACE = null;
@@ -51,6 +53,12 @@ public class CameraManager : Singletone<CameraManager>
 
     public GameObject m_bossROBO = null;
     public GameObject m_starPos = null;
+
+    public GameObject m_Title = null;
+
+    private GameObject m_funcTarget = null;
+    private string m_func = null;
+    private bool m_showEnd = true;
     //---------------------------------------------------------------//
 
     void Awake()
@@ -59,26 +67,35 @@ public class CameraManager : Singletone<CameraManager>
         m_targetMove = this.GetComponent<TargetMoveCamera>();
     }
 
-    
+
     // 이동 !
-    public void MoveCamera(GameObject targetPos, float cameraSize,CAMERA_PLACE place)
+    public void MoveCamera(GameObject targetPos , float cameraSize , CAMERA_PLACE place , GameObject targetFunc = null , string func = null,bool showEnd = true)
     {
+        Camera.main.orthographic = true;
+        
         m_targetMove.enabled = false;
         m_targetSize = cameraSize;
         m_targetPos = targetPos.transform.position;
         SetCameraPlace(place);
+
+        m_funcTarget = targetFunc;
+        m_func = func;
+        m_showEnd = showEnd;
         CameraHide();
     }
 
     public void MoveCameraAndObject(GameObject targetPos,float cameraSize,CAMERA_PLACE place,
-        GameObject andObj)
+        GameObject andObj, GameObject targetFunc = null , string func = null,bool showEnd = true)
     {
         m_targetMove.enabled = false;
         m_targetSize = cameraSize;
         m_targetPos = targetPos.transform.position;
         m_andObj = andObj;
         SetCameraPlace(place);
-        
+
+        m_funcTarget = targetFunc;
+        m_func = func;
+        m_showEnd = showEnd;
         CameraHide();
         
     }
@@ -92,7 +109,8 @@ public class CameraManager : Singletone<CameraManager>
         switch (m_place)
         {
             case CAMERA_PLACE.GAME_START:
-                obj = m_gameStart; colliderSize = new Vector2(25.0f, 20.0f);
+                //obj = m_gameStart; 
+                colliderSize = new Vector2(25.0f, 20.0f);
                 m_targetMove.m_target = m_playerROBO;
                 break;
             case CAMERA_PLACE.ROBO_IN:
@@ -135,7 +153,7 @@ public class CameraManager : Singletone<CameraManager>
     {
         this.GetComponent<BoxCollider2D>().enabled = false;
         iTween.ValueTo(gameObject, iTween.Hash(
-            "from", m_startSize, "to", 0.1f,
+            "from", m_startSize, "to", 0.01f,
             "easeType", TWEEN_EASETYPE,
             "onupdatetarget", gameObject,
             "onupdate", "CameraTweenUpdate",
@@ -164,15 +182,32 @@ public class CameraManager : Singletone<CameraManager>
         this.GetComponent<BoxCollider2D>().enabled = true;
         m_startSize = m_targetSize;
 
-      
-        m_targetMove.enabled = true;
+        if (m_funcTarget != null && m_showEnd)
+            m_funcTarget.SendMessage(m_func , SendMessageOptions.DontRequireReceiver);
+
+        if (m_place != CAMERA_PLACE.GAME_START)
+            m_targetMove.enabled = true;
+
+        m_funcTarget = null;
+        m_func = null;
     }
 
     private void CameraHideEnd()
     {
         CameraShow();
-       // Invoke("CameraShow", 0.5f);
+        // Invoke("CameraShow", 0.5f);
+        
+
         transform.position = new Vector3(m_targetPos.x, m_targetPos.y, transform.position.z);
+
+        if (m_funcTarget != null && !m_showEnd)
+            m_funcTarget.SendMessage(m_func , SendMessageOptions.DontRequireReceiver);
+
+        if (m_place == CAMERA_PLACE.GAME_START)
+        {
+            
+            m_Title.SetActive(false);
+        }
 
         // 이동해야함
         if (m_andObj != null)

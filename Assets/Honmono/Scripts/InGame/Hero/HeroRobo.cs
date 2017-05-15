@@ -621,4 +621,17 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             m_controllName = col.tag;
         }
     }
+
+    // -- 데미지 상호작용 --------------------------------------------------------------------------------------//
+    public void Damage(float damage)
+    {
+        this.m_hp -= damage;
+
+        // 이곳에서 구멍 이펙트 생성 
+
+        if(m_hp <= 0.0f)
+        {
+            m_hp = 0.0f;
+        }
+    }
 }

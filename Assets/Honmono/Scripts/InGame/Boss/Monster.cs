@@ -64,6 +64,7 @@ public class Monster : MonoBehaviour {
         if (m_pattern == null)
             return;
         // 그전의 방어력 경감 효과가 있는 상태인지 체크
+        
         float per = m_pattern.PreProcessedDamge();
 
         m_hp -= (damage * per);

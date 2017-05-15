@@ -36,7 +36,7 @@ public class CharacterSelectPopup : MonoBehaviour {
 
     public AudioClip m_swipe = null;
     public AudioClip m_selectFinish = null;
-
+    private bool m_aniPlay = false;
     //-------------------------------------------------------------------------------------//
 
     public void CharacterSelectButton()
@@ -48,17 +48,13 @@ public class CharacterSelectPopup : MonoBehaviour {
 
     //-------------------------------------------------------------------------------------//
     // Use this for initialization
-
-    void Awake()
-    {
-        m_leftStart = m_Left.transform.position;
-        m_centerStart = m_Center.transform.position;
-        m_rightStart = m_Right.transform.position;
-    }
+    
     void Start () {
         m_leftStart = m_Left.transform.position;
         m_centerStart = m_Center.transform.position;
         m_rightStart = m_Right.transform.position;
+        MDebug.Log("l " + m_leftStart + " c " + m_centerStart + " r " + m_rightStart);
+
         m_sprLeft = m_Left.GetComponent<SkeletonGraphic>();
         m_sprCenter = m_Center.GetComponent<SkeletonGraphic>();
         m_sprRight = m_Right.GetComponent<SkeletonGraphic>();
@@ -74,36 +70,36 @@ public class CharacterSelectPopup : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+        
 
-        if (Input.GetKeyUp(KeyCode.LeftArrow) && (iTween.Count(m_Left) == 0 && iTween.Count(m_Center)==0 && iTween.Count(m_Right)==0))
-            LeftMove();
-        else if (Input.GetKeyUp(KeyCode.RightArrow) && (iTween.Count(m_Left) == 0 && iTween.Count(m_Center) == 0 && iTween.Count(m_Right) == 0))
-            RightMove();
-
-
-        if(iTween.Count(m_Left) == 0 && iTween.Count(m_Center) == 0 && iTween.Count(m_Right) == 0)
-        {
-            m_sprLeft = m_Left.GetComponent<SkeletonGraphic>();
-            m_sprCenter = m_Center.GetComponent<SkeletonGraphic>();
-            m_sprRight = m_Right.GetComponent<SkeletonGraphic>();
-        }
-
+        if (Input.GetKeyUp(KeyCode.LeftArrow) && iTween.Count(m_Left) == 0 && iTween.Count(m_Center) == 0 && iTween.Count(m_Right) == 0)
+            LeftButton();
+        else if (Input.GetKeyUp(KeyCode.RightArrow) && iTween.Count(m_Left) == 0 && iTween.Count(m_Center) == 0 && iTween.Count(m_Right) == 0)
+            RightButton();
 
     }
 
 
     //-- 캐릭터 이동 ---------------------------------------------------------------------//
 
-    private void LeftButton()
+    public void LeftButton()
     {
+        m_leftStart = m_Left.transform.position;
+        m_centerStart = m_Center.transform.position;
+        m_rightStart = m_Right.transform.position;
         SoundManager.Instance().PlaySound(m_swipe);
-        LeftMove();
+        if (!m_aniPlay)
+            LeftMove();
     }
 
-    private void RightButton()
+    public void RightButton()
     {
+        m_leftStart = m_Left.transform.position;
+        m_centerStart = m_Center.transform.position;
+        m_rightStart = m_Right.transform.position;
         SoundManager.Instance().PlaySound(m_swipe);
-        RightMove();
+        if (!m_aniPlay)
+            RightMove();
     }
 
     private void LeftMove()
@@ -119,34 +115,36 @@ public class CharacterSelectPopup : MonoBehaviour {
     {
         m_Right.transform.SetSiblingIndex(1);
         m_Left.transform.SetSiblingIndex(2);
-        Tween(m_Left, m_Center.transform.position, "left_c");
-        Tween(m_Center, m_Right.transform.position, "center_r");
-        Tween(m_Right, m_Left.transform.position, "right_l");
+        Tween(m_Left, m_Center.GetComponent<RectTransform>().position, "left_c");
+        Tween(m_Center, m_Right.GetComponent<RectTransform>().position, "center_r");
+        Tween(m_Right, m_Left.GetComponent<RectTransform>().position, "right_l");
     }
 
     //-----------------------------------------------------------------------------------//
 
     private void Tween(GameObject obj,Vector3 target,string dir)
     {
+        m_aniPlay = true;
+
         iTween.MoveTo(obj, iTween.Hash("x", target.x,"y",target.y,
             "easetype","easeOutQuart", 
             "oncompletetarget", gameObject,
             "oncomplete", "TweenEnd", 
             "oncompleteparams",dir));
     }
-
+    int test = 0;
     private void TweenEnd(string info)
     {
         string[] infos = info.Split('_');
 
-        m_Center.transform.position = m_centerStart;
-        m_Left.transform.position = m_leftStart;
-        m_Right.transform.position = m_rightStart;
-
-        MDebug.Log("t " + infos);
+        test++;
+        if (test >= 3)
+            m_aniPlay = false;
+        
         if(infos[0] == "left")
         {
-            if(infos[1] == "r")
+            m_Left.GetComponent<RectTransform>().position = m_leftStart;
+            if (infos[1] == "r")
             {
                 // TODO 추후 캐릭터 추가시 여기서 바꿈 CENTER 로 바꿔야함
             }
@@ -157,8 +155,10 @@ public class CharacterSelectPopup : MonoBehaviour {
         }
         else if (infos[0] == "center")
         {
+            m_Center.GetComponent<RectTransform>().position = m_centerStart;
             if (infos[1] == "r")
             {
+                
                 // TODO 추후 캐릭터 추가시 여기서 바꿈 left 로 바꿔야함
             }
             else
@@ -168,6 +168,7 @@ public class CharacterSelectPopup : MonoBehaviour {
         }
         else if (infos[0] == "right")
         {
+            m_Right.GetComponent<RectTransform>().position = m_rightStart;
             if (infos[1] == "l")
             {
                 // TODO 추후 캐릭터 추가시 여기서 바꿈 CENTER 로 바꿔야함

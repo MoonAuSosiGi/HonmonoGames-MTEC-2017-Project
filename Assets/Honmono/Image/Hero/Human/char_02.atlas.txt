@@ -1,0 +1,62 @@
+
+char_02.png
+size: 512,256
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+플젝_백인_0004_head
+  rotate: false
+  xy: 2, 57
+  size: 172, 191
+  orig: 172, 191
+  offset: 0, 0
+  index: -1
+플젝_백인_0005_L_arm
+  rotate: false
+  xy: 289, 133
+  size: 45, 115
+  orig: 45, 115
+  offset: 0, 0
+  index: -1
+플젝_백인_0006_R_foot
+  rotate: false
+  xy: 112, 30
+  size: 46, 25
+  orig: 46, 25
+  offset: 0, 0
+  index: -1
+플젝_백인_0007_L_foot
+  rotate: false
+  xy: 379, 223
+  size: 46, 25
+  orig: 46, 25
+  offset: 0, 0
+  index: -1
+플젝_백인_0008_L_leg
+  rotate: true
+  xy: 176, 64
+  size: 43, 81
+  orig: 43, 81
+  offset: 0, 0
+  index: -1
+플젝_백인_0009_body
+  rotate: false
+  xy: 176, 109
+  size: 111, 139
+  orig: 111, 139
+  offset: 0, 0
+  index: -1
+플젝_백인_0010_R_arm
+  rotate: true
+  xy: 2, 2
+  size: 53, 108
+  orig: 53, 108
+  offset: 0, 0
+  index: -1
+플젝_백인_0011_R_leg
+  rotate: false
+  xy: 336, 176
+  size: 41, 72
+  orig: 41, 72
+  offset: 0, 0
+  index: -1

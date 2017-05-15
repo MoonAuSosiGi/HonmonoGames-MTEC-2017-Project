@@ -9,6 +9,9 @@
 /[Bb]uilds/
 /Assets/AssetStoreTools*
 
+### 유료 애셋 ###
+/Assets/Camera Filter Pack/
+
 # Visual Studio 2015 cache directory
 /.vs/
 

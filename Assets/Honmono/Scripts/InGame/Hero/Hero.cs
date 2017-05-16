@@ -37,6 +37,10 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
     // 기본 정보 --------------------------------------------------------------------------------------//
 
+    private int m_hp = 10;
+
+    public int HP { get { return m_hp; } set { m_hp = value; } }
+
     // sound
     public AudioClip m_walkSound = null;
     public AudioClip m_interaction = null;
@@ -77,6 +81,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     private string m_userName = "";
 
     private string m_userControlName = "";
+    private GameObject m_damagePointFix = null;
 
     //기존 위치
     Vector3 m_prevPos = Vector3.zero;
@@ -328,6 +333,11 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         if (trackEntry.animation.name.Equals(ANI_REPAIR))
         {
             m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.ATTACK);            
+            
+            if(m_damagePointFix != null)
+            {
+                m_damagePointFix.GetComponent<RoboDamagePoint>().DamageFix();
+            }
         }
     }
     
@@ -918,6 +928,12 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     void OnTriggerEnter2D(Collider2D col)
     {
         MDebug.Log("Enter " + col.tag);
+
+        if(col.tag.Equals("DAMAGE_POINT"))
+        {
+            m_damagePointFix = col.gameObject;
+        }
+
         if(col.transform.tag.Equals("LADDER"))
         {
             m_curState = BitControl.Set(m_curState , (int)HERO_STATE.LADDER);
@@ -949,6 +965,10 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     void OnTriggerExit2D(Collider2D col)
     {
         MDebug.Log("Exit " + col.tag);
+
+        if (m_damagePointFix != null && m_damagePointFix.Equals(col.gameObject))
+            m_damagePointFix = null;
+
         if (!string.IsNullOrEmpty(col.transform.tag))
             m_userControlName = null;
 
@@ -972,9 +992,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         {
           
         }
-
         
-
         // 부딪친 대상이 지형일 경우와 오브젝트일 경우가 있다.
         // 지형일 경우
         // 점프 중인지 체크
@@ -992,20 +1010,6 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         }
     }
 
-    void OnCollisionStay2D(Collision2D col)
-    {
-
-        //    MDebug.Log("Collision Stay");
-    }
-
-    void OnCollisionExit2D(Collision2D col)
-    {
-        // TEST 중복으로 나가지는 경우 우선권을 어디서 갖는가
-        if (col.transform.tag == m_userControlName)
-            m_userControlName = null;
-    }
-
-
     bool OrderCheckAndReturn()
     {
         return (m_userName == NetworkOrderController.ORDER_NAME);
@@ -1018,5 +1022,12 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             GameManager.Instance().PLAYER.STATUS,
             GameManager.Instance().PLAYER.USER_NAME,
             false));
+    }
+
+    public void Damage(int damage)
+    {
+        m_hp -= damage;
+
+       
     }
 }

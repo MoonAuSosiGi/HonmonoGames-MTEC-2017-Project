@@ -6,11 +6,23 @@ using Spine.Unity;
 
 public class MonsterPattern : PatternState
 {
-    public MonsterPattern(SkeletonAnimation ani , string moveAni , string attackAni,string aiTarget) : base(ani , moveAni , attackAni,aiTarget) { }
-    private bool m_attack = false;
+    float m_tick = 0.0f;
+
+    public MonsterPattern(SkeletonAnimation ani , string moveAni , string attackAni,string aiTarget) : base(ani , moveAni , attackAni,aiTarget)
+    {
+    }
+
 
     public override float Attack(GameObject hero, GameObject me, int index)
     {
+        //m_tick += Time.deltaTime;
+
+        //if(m_tick >= 1000.0f)
+        //{
+            m_skletonAnimation.state.SetAnimation(0 , m_attackAni , false);
+        //    m_tick = 0.0f;
+        //}
+        
         return 1.0f;
     }
 
@@ -21,6 +33,8 @@ public class MonsterPattern : PatternState
 
         // 임의로 랜덤이동
         target.transform.position += dir * Time.deltaTime;
+
+        //m_skletonAnimation.state.SetAnimation(0 , m_moveAni , true);
     }
 
     public override float PreProcessedDamge()

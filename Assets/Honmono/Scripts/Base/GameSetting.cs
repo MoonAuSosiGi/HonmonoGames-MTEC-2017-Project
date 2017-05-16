@@ -24,7 +24,7 @@ public static class GameSetting  {
     // -- 주인공 관련 값 ( 로봇 ) -----------------------------------------------------//
     public const float HERO_ROBO_SPEED = 6.0f;
     public const float HERO_ROBO_BULLET_SPEED = 10.0f;
-    public const float HERO_ROBO_MAX_HP = 1000.0f;
+    public const int HERO_ROBO_MAX_HP = 100;
 
     // -- 보스 패턴에 관련된 세팅값 ---------------------------------------------------//
 

@@ -41,6 +41,11 @@ public class CharacterSelectPopup : MonoBehaviour {
 
     public void CharacterSelectButton()
     {
+        
+    }
+
+    public void ReturnButton()
+    {
         SoundManager.Instance().PlaySound(m_selectFinish);
         PopupManager.Instance().AddPopup("LobbyPopup");
         PopupManager.Instance().ClosePopup(gameObject);

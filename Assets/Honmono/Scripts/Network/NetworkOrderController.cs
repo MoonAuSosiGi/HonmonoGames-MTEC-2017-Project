@@ -54,6 +54,16 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                     .GetField(NetworkManager.CREATE)
                     .GetField(NetworkManager.CREATE_TARGET).str)
                 {
+                    case "DamagePoint":
+                        if (e.targetName.IndexOf(GameManager.Instance().PLAYER.USER_NAME) >= 0)
+                            return;
+                        GameObject dp = MapManager.Instance().AddObject(GamePath.DAMAGE_POINT);
+                        JSONObject dpJson = e.orders.GetField(NetworkManager.MSG).GetField(NetworkManager.CREATE);
+                        dp.transform.position = new Vector3(dpJson.GetField("X").f , dpJson.GetField("Y").f , -1.0f);
+                        RoboDamagePoint dps =  dp.GetComponent<RoboDamagePoint>();
+                        dps.name = e.targetName;
+                        dps.NETWORK_OBJECT = true;
+                        break;
                     case "boss1_bullet":
                         {
                             if (e.targetName.IndexOf(GameManager.Instance().PLAYER.USER_NAME) >= 0)

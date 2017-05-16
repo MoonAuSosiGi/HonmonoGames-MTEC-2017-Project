@@ -23,6 +23,8 @@ public class Monster : MonoBehaviour {
     [SerializeField]
     protected float m_moveSpeed = 3.0f; // 이동속도
 
+    protected int m_power = 1; // 공격력
+
 
     public static  int m_index = 0;
 
@@ -32,6 +34,13 @@ public class Monster : MonoBehaviour {
     protected string m_name = null;
     public string MONSTER_NAME { get { return m_name; } set { m_name = value; } }
 
+    protected GameObject m_attackTarget = null;
+
+    // -- 네트워크용 ------------------------------------------------------------------------------//
+    private Vector3 m_targetPos = Vector3.zero;
+    private Vector3 m_prevPos = Vector3.zero;
+    float m_lastSendTime = 0.0f;
+    protected float m_angle = 0.0f;
     // --------------------------------------------------------------------------------------------//
     // -- 스파인 애니메이션용 -------------------------------------------------------//
     protected bool IsCurrentAnimation(int i ,string ani)
@@ -80,5 +89,48 @@ public class Monster : MonoBehaviour {
     }
 
     // -------------------------------------------------------------------------------------------//
+
+    protected void MoveSend()
+    {
+        Vector3 pos = transform.position;
+        float distance = Vector3.Distance(m_prevPos , pos);
+        m_prevPos = transform.position;
+
+        Vector3 velocity = (transform.position - m_prevPos) / Time.deltaTime;
+        Vector3 sendPos = m_prevPos + (velocity * (Time.deltaTime - m_lastSendTime));
+        //dirPos.Normalize();
+
+
+        NetworkManager.Instance().SendEnemyMoveMessage(
+            JSONMessageTool.ToJsonEnemyMove(m_name ,
+            pos.x , pos.y ,
+            -m_angle ,
+            m_skeletonAnimation.skeleton.flipX ,
+            sendPos));
+        m_lastSendTime = Time.deltaTime;
+    }
+
+    void OnTriggerEnter2D(Collider2D col)
+    {
+        switch (col.tag)
+        {
+            case "Player":
+                m_attackTarget = col.gameObject;
+                break;
+
+        }
+    }
+    void OnTriggerExit2D(Collider2D col)
+    {
+
+        switch (col.tag)
+        {
+            case "Player":
+                if (m_attackTarget == col.gameObject)
+                    m_attackTarget = null;
+                break;
+
+        }
+    }
 
 }

@@ -66,11 +66,15 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     // -- 총 본 
     public GameObject m_gunBone = null;
 
-    private float m_hp = 100.0f;
+    private int m_hp = GameSetting.HERO_ROBO_MAX_HP;
 
     private string m_controllName = null;
 
-    public float HP { get { return m_hp; } set { m_hp = value; } }
+    public int HP { get { return m_hp; } set { m_hp = value; } }
+
+    // -- Damge Object ------------------------------//
+    public GameObject m_DamageAnchor = null;
+    public List<GameObject> m_DamageAnchorList = new List<GameObject>();
     //-----------------------------------------------//
     
     private SkeletonAnimation m_skletonAnimation = null;
@@ -91,8 +95,23 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     private float m_delay_angle = 0.0f;
     private float m_lastSyncTimeAngle = 0.0f;
     // --------------------------------------------------------------------------------//
+    // HUD
+    public GameObject m_hpHUD = null;
+    private List<GameUI.HPUpdateEvent> m_hpReceieveList = new List<GameUI.HPUpdateEvent>();
+    public void AddHPUpdateEvent(GameUI.HPUpdateEvent recv)
+    {
+        if (!m_hpReceieveList.Contains(recv))
+            m_hpReceieveList.Add(recv);
+    }
 
-    
+    void UpdateHp()
+    {
+        foreach (GameUI.HPUpdateEvent recv in m_hpReceieveList)
+            recv.HPUpdate(m_hp , GameSetting.HERO_ROBO_MAX_HP);
+    }
+
+    // --------------------------------------------------------------------------------//
+
     void Awake()
     {
         GameManager.Instance().HeroRoboSetup(this);
@@ -113,12 +132,23 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         //  LightRangeUp();
         m_skletonAnimation.state.Complete += AttackEndCheckEvent;
 
-
+        for(int i = 0; i < m_DamageAnchor.transform.childCount; i++)
+        {
+            m_DamageAnchorList.Add(m_DamageAnchor.transform.GetChild(i).gameObject);
+        }
+        AddHPUpdateEvent(m_hpHUD.GetComponent<RoboHUD>());
     }
 	
 	// Update is called once per frame
 	void Update () {
 
+        // 한명이라도 조작하고 있으면 HUD 를 띄움
+        if (!string.IsNullOrEmpty(m_movePlayerName) || !string.IsNullOrEmpty(m_gunPlayerName))
+        {
+            m_hpHUD.SetActive(true);
+        }
+        else
+            m_hpHUD.SetActive(false);
         m_prevState = m_roboState;
         if (!string.IsNullOrEmpty(m_movePlayerName) &&
             m_movePlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
@@ -245,18 +275,6 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         else
             m_armBone.transform.rotation = Quaternion.Euler(0 , 0 , -m_gunAngle);
 
-
-        if (Input.GetKey(KeyCode.W))
-        {
-            if (m_gunAngle - 1.0f > -360.0f)
-                m_gunAngle -= 1.0f;
-
-        }
-        if (Input.GetKey(KeyCode.S))
-        {
-            if (m_gunAngle + 1.0f < 360.0f)
-                m_gunAngle += 1.0f;
-        }
 
         if(Input.GetKey(KeyCode.G))
         {
@@ -623,15 +641,36 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     }
 
     // -- 데미지 상호작용 --------------------------------------------------------------------------------------//
-    public void Damage(float damage)
+    public void Damage(int damage)
     {
         this.m_hp -= damage;
 
         // 이곳에서 구멍 이펙트 생성 
-
-        if(m_hp <= 0.0f)
+        if(m_hp % 5 == 0)
         {
-            m_hp = 0.0f;
+            // 5이상 데미지를 받을 때마다 생성
+            DamagePointCreate();
         }
+
+        if(m_hp <= 0)
+        {
+            m_hp = 0;
+        }
+        UpdateHp();
+
+    }
+
+    // 특정 데미지 이상 받았을 때만 호출
+    void DamagePointCreate()
+    {
+        
+        int index = UnityEngine.Random.Range(0 , m_DamageAnchorList.Count);
+        
+        GameObject obj = MapManager.Instance().AddObject(GamePath.DAMAGE_POINT);
+        obj.transform.parent = m_DamageAnchorList[index].transform.parent;
+        obj.transform.position = m_DamageAnchorList[index].transform.position;
+        MDebug.Log("생성 " + obj.transform.position +" " + m_DamageAnchorList[index].transform.position);
+
+
     }
 }

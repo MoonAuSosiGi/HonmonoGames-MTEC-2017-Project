@@ -4,17 +4,11 @@ using UnityEngine;
 using Spine.Unity;
 using Spine;
 
-public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener
+public class Stage1BOSS : Monster
 {
     // -- Network ------------------------------------------------------------------//
-    private Vector3 m_targetPos = Vector3.zero;
-    private Vector3 m_prevPos = Vector3.zero;
-
-    float m_syncTime = 0.0f;
-    float m_delay = 0.0f;
-    float m_lastSyncTime = 0.0f;
-    float m_lastSendTime = 0.0f;
-    float m_angle = 0.0f;
+   
+    
 
     // ----------------------------------------------------------------------------//
 
@@ -89,44 +83,7 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener
 
     protected override void Move()
     {
-        // Move 
-        //string moveAni = null;
-        //if (m_pattern is PatternNormal ||
-        //    m_pattern is PatternA ||
-        //    m_pattern is PatternB)
-        //    moveAni = ANI_AB_MOVE;
-
-        //if (!string.IsNullOrEmpty(moveAni))
-        //{
-        //    CheckAndSetAnimation(0 , moveAni , true);
-        //    NetworkManager.Instance().SendOrderMessage(
-        //          JSONMessageTool.ToJsonAIMessageAnimation("C" , moveAni , 0 , true));
-        //}
-
-        //if (m_pattern is PatternC || m_pattern is PatternD)
-        //    moveAni = ANI_CD_MOVE;
-
-        ////
-        //if (!string.IsNullOrEmpty(moveAni) && m_pattern is PatternC)
-        //{
-        //    CheckAndSetAnimation(1 , moveAni , true);
-        //    NetworkManager.Instance().SendOrderMessage(
-        //          JSONMessageTool.ToJsonAIMessageAnimation("C" , moveAni , 1 , true));
-        //}
-
-
-        //if (m_pattern != null)
-        //{
-        //    float distance = Vector3.Distance(transform.parent.position , GameManager.Instance().ROBO.transform.position);
-
-        //    if(distance >= 15.0f)
-        //        m_pattern.Move(transform.parent.gameObject ,
-        //            GameManager.Instance().ROBO.gameObject);
-        //}
-        if (m_pattern != null)
-            m_pattern.Move(
-                transform.parent.gameObject , 
-                GameManager.Instance().ROBO.gameObject);
+        base.Move();
         MoveSend();
     }
 
@@ -142,34 +99,7 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener
             GameObject.Destroy(gameObject);
         }
     }
-
-    public override float Attack()
-    {
-        //if (m_pattern is PatternNormal)
-        //{
-        //    //CheckAndSetAnimation(1,ANI_ATTACK_A , true);
-        //    NetworkManager.Instance().SendOrderMessage(
-        //        JSONMessageTool.ToJsonAIMessageAnimation("normal" , ANI_ATTACK_A , 1 , true));
-
-        //}
-        //else if(m_pattern is PatternA)
-        //{
-        //    CheckAndSetAnimation(1 , ANI_ATTACK_A , true);
-        //    NetworkManager.Instance().SendOrderMessage(
-        //        JSONMessageTool.ToJsonAIMessageAnimation("A" , ANI_ATTACK_A , 1 , true));
-        //}
-        //else if (m_pattern is PatternB)
-        //{
-        //    CheckAndSetAnimation(1 , ANI_ATTACK_B , true);
-        //    NetworkManager.Instance().SendOrderMessage(
-        //        JSONMessageTool.ToJsonAIMessageAnimation("B" , ANI_ATTACK_B , 1 , true));
-        //}
-        //else if (m_pattern is PatternC)
-        //{
-
-        //}
-        return base.Attack();
-    }
+    
 
  
 
@@ -182,11 +112,6 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener
         
         
 
-    }
-
-    public void NetworkSetup()
-    {
-        NetworkManager.Instance().AddNetworkEnemyMoveEventListener(this);
     }
     
     void Update()
@@ -359,100 +284,9 @@ public class Stage1BOSS : Monster , NetworkManager.NetworkMoveEventListener
 
 
     // -- 전투 관련 -------------------------------------------------------------------   //
-    void OnCollisionEnter2D(Collision2D col)
-    {
-        //로직 TODO
-        // 닿은 대상의 이름으로 판별
-        // 로봇의 총알
-        //   - 총알 삭제 명령
-        //   - 몬스터 데미지 명령
-        //   - 몬스터 데미지 애니메이션 명령
-     
-    }
-
-    void OnCollisionStay2D(Collision2D col)
-    {
-        //    MDebug.Log("Collision Stay");
-    }
-
-    void OnCollisionExit2D(Collision2D col)
-    {
-        //  MDebug.Log("Collision Exit");
-    }
+   
 
     // ----------------------------------------------------------------------------------//
-    void MoveSend()
-    {
-        Vector3 pos = transform.position;
-        float distance = Vector3.Distance(m_prevPos , pos);
-        m_prevPos = transform.position;
-
-        Vector3 velocity = (transform.position - m_prevPos) / Time.deltaTime;
-        Vector3 sendPos = m_prevPos + (velocity * (Time.deltaTime - m_lastSendTime));
-        //dirPos.Normalize();
-
-
-        NetworkManager.Instance().SendEnemyMoveMessage(
-            JSONMessageTool.ToJsonEnemyMove(m_name ,
-            pos.x , pos.y ,
-            -m_angle,
-            m_skeletonAnimation.skeleton.flipX ,
-            sendPos));
-        m_lastSendTime = Time.deltaTime;
-    }
-
-
-
-    void NetworkManager.NetworkMoveEventListener.ReceiveMoveEvent(JSONObject json)
-    {
-        JSONObject obj = json;
-        JSONObject users = obj.GetField("Enemies");
-
-        //{"Enemies":[{"UserName":"test","x":-3.531799,"y":-0.02999991,"z":0,"dir":0}]}
-
-        float x = 0.0f, y = 0.0f, z = 0.0f;
-        bool flip = false;
-        bool ck = false;
-        Vector3 drPos = Vector3.zero;
-
-        Vector3 targetPos = Vector3.zero;
-
-        for (int i = 0; i < users.Count; i++)
-        {
-            if (users[i].GetField("Name").str.Equals(m_name))
-            {
-                x = users[i].GetField("X").f;
-                y = users[i].GetField("Y").f;
-                z = users[i].GetField("Z").f;
-                flip = users[i].GetField(NetworkManager.DIR).b;
-                ck = true;
-                JSONObject v = obj[i].GetField(NetworkManager.DIRVECTOR);
-                drPos = new Vector3(v.GetField("X").f , v.GetField("Y").f , v.GetField("Z").f);
-                break;
-            }
-        }
-
-        Vector3 newPos = new Vector3(x , y , -1.0f);
-
-        float distance = Vector3.Distance(transform.parent.position , newPos);
-        //this.m_renderer.flipX = flip;
-
-        if (!ck)
-            return;
-
-        if (z > transform.rotation.eulerAngles.z)
-        {
-
-            transform.rotation = Quaternion.Euler(0 , 0 , z);
-        }
-
-
-        m_syncTime = 0.0f;
-        m_delay = Time.time - m_lastSyncTime;
-        m_lastSyncTime = Time.time;
-        m_targetPos = drPos; //* m_delay;
-                              // transform.position = newPos;
-
-    }
-
+    
+    
 }

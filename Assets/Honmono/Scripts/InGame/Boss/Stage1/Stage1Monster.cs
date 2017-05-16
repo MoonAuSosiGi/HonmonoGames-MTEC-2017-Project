@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Spine.Unity;
 
-public class Stage1Monster : Monster
+public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenrer
 {
 
     // -- 기본 정보 --------------------------------------------------------//
@@ -18,55 +18,94 @@ public class Stage1Monster : Monster
     // 몇초동안 쉬는지
     private float m_coolTime = 0.0f;
 
-    private SkeletonAnimation m_skletonAnimation = null;
     private const string ANI_ATTACK = "attack";
     private const string ANI_IDLE = "idle";
     private const string ANI_MOVE = "move";
+
+    private bool m_isNetworkObject = false;
 
     // ---------------------------------------------------------------------//
 
     void Start()
     {
         m_robo = GameManager.Instance().ROBO;
-        m_skletonAnimation = this.GetComponent<SkeletonAnimation>();
-        this.m_skletonAnimation.state.SetAnimation(0 , ANI_IDLE , true);
-        m_pattern = new MonsterPattern(m_skletonAnimation , null , null , null);
+        m_skeletonAnimation = this.GetComponent<SkeletonAnimation>();
+        this.m_skeletonAnimation.state.SetAnimation(0 , ANI_IDLE , true);
+        
+        
     }
 
+    bool NetworkObjectCheck()
+    {
+        if(!string.IsNullOrEmpty(NetworkOrderController.ORDER_NAME))
+        {
+            if (m_pattern != null)
+                return true;
+            
+            m_name = NetworkOrderController.ORDER_NAME + "monster" + "_" + this.GetHashCode();
+            m_pattern = new MonsterPattern(m_skeletonAnimation , ANI_MOVE , ANI_ATTACK , m_name);
+            m_skeletonAnimation.state.Complete += State_Complete;
+
+            if (!NetworkOrderController.ORDER_NAME.Equals(GameManager.Instance().PLAYER.USER_NAME))
+                m_isNetworkObject = true;
+            return true;
+        }
+        return false;
+    }
+
+    private void State_Complete(Spine.TrackEntry trackEntry)
+    {
+        if (trackEntry.animation.name.Equals(ANI_ATTACK))
+        {
+            m_skeletonAnimation.state.SetAnimation(0 , ANI_MOVE , true);
+            if (m_attackTarget != null)
+            {
+                HeroRobo robo = m_attackTarget.GetComponent<HeroRobo>();
+
+                if(robo != null)
+                    robo.Damage(m_power);
+                else
+                {
+                    Hero hero = m_attackTarget.GetComponent<Hero>();
+
+                    if (hero != null)
+                        hero.Damage(m_power); 
+                }
+            }
+            
+        }
+    }
 
     void Update()
     {
+        if (!NetworkObjectCheck())
+            return;
+       
         if (FindMoveAbleCheck())
             Move();
-        if (!AttackAbleCheck())
-            return;
+
         // 쿨타임 중이면 아~~무것도 안함
         if (CoolTime())
             return;
 
+        if (!AttackAbleCheck())
+            return;
         SetCoolTime(Attack());
 
     }
 
-    public override float Attack()
-    {
-        this.m_skletonAnimation.state.SetAnimation(0 , ANI_ATTACK , false);
-        this.m_skletonAnimation.state.AddAnimation(0 , ANI_IDLE , true , 0.0f);
-        return base.Attack();
-    }
+
 
     protected override void Move()
     {
         if (m_pattern != null)
             m_pattern.Move(gameObject , m_robo.gameObject);
-
-        if (m_skletonAnimation.state.GetCurrent(0).animation.name == ANI_IDLE)
-            this.m_skletonAnimation.state.SetAnimation(0 , ANI_MOVE , true);
+        
 
         if (m_robo.transform.position.x < transform.position.x)
-            m_skletonAnimation.skeleton.flipX = false;
+            m_skeletonAnimation.skeleton.flipX = false;
         else
-            m_skletonAnimation.skeleton.flipX = true;
+            m_skeletonAnimation.skeleton.flipX = true;
         base.Move();
     }
 
@@ -134,25 +173,27 @@ public class Stage1Monster : Monster
 
     }
     //-------------------------------------------------------------------------------//
-
-    void OnTriggerEnter2D(Collider2D col)
+    public void ReceiveNetworkMessage(NetworkManager.MessageEvent e)
     {
-        switch(col.tag)
+        switch (e.msgType)
         {
-            case "Player":
-                HeroRobo robo = col.GetComponent<HeroRobo>();
+            case NetworkManager.AI_ANI_NAME:
+                {
+                    if (e.targetName.Equals(m_name))
+                    {
 
-                if(robo != null)
-                {
-                    // 로봇이 아닌 경우다 
-                    Hero hero = col.GetComponent<Hero>();
+                        switch (e.msg.GetField(NetworkManager.AI_PATTERN_NAME).str)
+                        {
+                            //A 패턴과 B패턴은 단순 이동 / 공격 애니메이션 처리만 함
+                            case "Monster":
+                                m_skeletonAnimation.state.SetAnimation(0 ,
+                                    e.msg.GetField(NetworkManager.AI_ANI_NAME).str ,
+                                    e.msg.GetField(NetworkManager.AI_ANI_LOOP).b);
+                                break;
+                        }
+
+                    }
                 }
-                else
-                {
-                    //로봇인 경우 
-                    robo.Damage(1.0f); // 임시값 
-                }
-                
                 break;
 
         }

@@ -101,6 +101,15 @@ public class MapManager : Singletone<MapManager> {
         this.m_objectList.Add(obj);
         return obj;
     }
+    // -- 오브젝트 제거 -------------------------------------------------------------------------------------------//
+    public void RemoveObject(GameObject obj)
+    {
+        if(m_objectList.Contains(obj))
+        {
+            m_objectList.Remove(obj);
+            GameObject.Destroy(obj);
+        }
+    }
 
     // -- 적 생성 ----------------------------------------------------------------------------------------------- //
 

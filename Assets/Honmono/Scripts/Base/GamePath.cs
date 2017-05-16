@@ -20,4 +20,5 @@ public static class GamePath {
 
     public static string EFFECT = ENEMY + "EFFECT";
 
+    public static string DAMAGE_POINT = PREFABS + "Player/DamagePoint";
 }

@@ -39,8 +39,6 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
 
     void NetworkManager.NetworkMoveEventListener.ReceiveMoveEvent(JSONObject json)
     {
-        if (NetworkOrderController.ORDER_NAME == GameManager.Instance().PLAYER.USER_NAME)
-            return;
         JSONObject obj = json.GetField("Enemies");
 
         float x, y, z;
@@ -77,13 +75,13 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
 
         targetPos = drPos;
 
-        transform.eulerAngles = new Vector3(transform.eulerAngles.x , transform.eulerAngles.y , z);
+        transform.eulerAngles = new Vector3(0,0 , z);
 
         if (m_skeltonAni != null)
         {
             if (m_skeltonAni.skeleton.flipX != flip)
             {
-                m_skeltonAni.skeleton.flipX = flip;
+       //         m_skeltonAni.skeleton.flipX = flip;
                 targetPos = newPos;
             }
         }
@@ -123,10 +121,10 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
 
     void Update()
     {
-        if (NetworkOrderController.ORDER_NAME != GameManager.Instance().PLAYER.USER_NAME)
+     //   if (NetworkOrderController.ORDER_NAME != GameManager.Instance().PLAYER.USER_NAME)
             NetworkMoveLerp();
-        else
-            MoveSend();
+     //   else
+     //       MoveSend();
     }
 
     void MoveSend()

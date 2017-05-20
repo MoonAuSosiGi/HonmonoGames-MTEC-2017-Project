@@ -54,12 +54,25 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                     .GetField(NetworkManager.CREATE)
                     .GetField(NetworkManager.CREATE_TARGET).str)
                 {
+                    case "effect":
+                        {
+                            if (e.targetName.IndexOf(m_orderName) >= 0)
+                                return;
+                            JSONObject json = e.msg;
+                            GameObject effect = MapManager.Instance().AddObject(
+                                GamePath.EFFECT , new Vector3(json.GetField("X").f , json.GetField("Y").f , -1.0f));
+                        }
+
+                        break;
+
                     case "DamagePoint":
                         if (e.targetName.IndexOf(GameManager.Instance().PLAYER.USER_NAME) >= 0)
                             return;
-                        GameObject dp = MapManager.Instance().AddObject(GamePath.DAMAGE_POINT);
-                        JSONObject dpJson = e.orders.GetField(NetworkManager.MSG).GetField(NetworkManager.CREATE);
-                        dp.transform.position = new Vector3(dpJson.GetField("X").f , dpJson.GetField("Y").f , -1.0f);
+                        JSONObject dpJson = e.msg;
+                        GameObject dp = MapManager.Instance().AddObject(
+                            GamePath.DAMAGE_POINT, new Vector3(
+                                dpJson.GetField("X").f , dpJson.GetField("Y").f , -1.0f));
+                        
                         RoboDamagePoint dps =  dp.GetComponent<RoboDamagePoint>();
                         dps.name = e.targetName;
                         dps.NETWORK_OBJECT = true;
@@ -70,10 +83,10 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                                 return;
 
                             Bullet bullet = BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_BOSS1_P1);
-                            //   MDebug.Log("Target " + e.targetName);
+                            //   MDebug.Log("Target " + e.targetName);  
                             bullet.SetupBullet(e.targetName , true , Vector3.zero);
 
-                            JSONObject json = e.orders.GetField(NetworkManager.MSG).GetField(NetworkManager.CREATE);
+                            JSONObject json = e.msg;
 
                             Vector3 pos = new Vector3(json.GetField("X").f , json.GetField("Y").f , -1.0f);
                             //bullet.GetComponent<SpriteRenderer>().flipX = e.orders.GetField(NetworkManager.MSG).GetField(NetworkManager.DIR).b;
@@ -104,29 +117,28 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                         {
                             if (e.user.Equals(GameManager.Instance().PLAYER.USER_NAME))
                                 return;
-                            GameObject boss = MapManager.Instance().AddObject(GamePath.BOSS1);
                             Vector3 p = new Vector3(e.msg.GetField("X").f , e.msg.GetField("Y").f , -1.0f);
-                            boss.transform.position = new Vector3(p.x, p.y, -1);
-                            // 보스의 경우 디자인상 기준 오브젝트 - 하위에 달려있는 형태
-                            boss.AddComponent<NetworkMoving>().NAME = e.targetName;
-                            boss.transform.GetChild(0).GetComponent<Stage1BOSS>().enabled = false;
-                            boss.transform.GetChild(0).gameObject.AddComponent<NetworkStage1BOSS>().BOSS_NAME = e.targetName;
+                            GameObject boss = MapManager.Instance().AddObject(GamePath.BOSS1, new Vector3(p.x , p.y , -1));
+                            boss.transform.eulerAngles = Vector3.zero;
+                            //boss.gameObject.AddComponent<NetworkMoving>().NAME = e.targetName;
+                            boss.GetComponent<Stage1BOSS>().enabled = false;
+                            boss.gameObject.AddComponent<NetworkStage1BOSS>().BOSS_NAME = e.targetName;
+                            
                         }
                         break;
                     case "monster1":
                         {
-                            GameObject boss = MapManager.Instance().AddObject(GamePath.MONSTER1);
-                            Vector3 p = boss.transform.position;
-                            boss.transform.position = new Vector3(p.x, p.y, -1);
+                            Vector3 p = new Vector3(e.msg.GetField("X").f , e.msg.GetField("Y").f , -1.0f);
+                            GameObject boss = MapManager.Instance().AddObject(GamePath.MONSTER1, new Vector3(p.x , p.y , -1));
+                            
                             NetworkMoving moving = boss.AddComponent<NetworkMoving>();
                             moving.NAME = e.targetName + "_monster1";
                         }
                         break;
                     case "monster2":
                         {
-                            GameObject boss = MapManager.Instance().AddObject(GamePath.MONSTER2);
-                            Vector3 p = boss.transform.position;
-                            boss.transform.position = new Vector3(p.x, p.y, -1);
+                            Vector3 p = new Vector3(e.msg.GetField("X").f , e.msg.GetField("Y").f , -1.0f);
+                            GameObject boss = MapManager.Instance().AddObject(GamePath.MONSTER2, new Vector3(p.x , p.y , -1));
                             NetworkMoving moving = boss.AddComponent<NetworkMoving>();
                             moving.NAME = e.targetName + "_monster2";
                         }
@@ -176,7 +188,7 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                 switch (e.orders.GetField(NetworkManager.MSG).GetField(NetworkManager.REMOVE).str)
                 {
                     case "myTeam_bullet":
-                        BulletManager.Instance().RemoveBullet(removeTarget);
+                      //  BulletManager.Instance().RemoveBullet(removeTarget);
 
                         break;
                 }

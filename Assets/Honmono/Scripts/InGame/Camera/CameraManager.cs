@@ -30,7 +30,9 @@ public class CameraManager : Singletone<CameraManager>
         ROBO_IN,
         STAGE1,
         STAR,
-        BOSS
+        BOSS,
+        TUTORIAL_PLAYERMOVE,
+        TUTORIAL_ROBO
     }
     private CAMERA_PLACE m_place = CAMERA_PLACE.GAME_START;
 
@@ -41,20 +43,30 @@ public class CameraManager : Singletone<CameraManager>
     public GameObject m_playerIntheSPACE = null;
     
 
+    // 게임 시작 위치로 갈 때 사용
     public GameObject m_gameStart = null;
+    public GameObject m_boss = null;
+    public GameObject m_boss1Place = null;
+
+    // Place 붙은 것들은 background 검출용
     public GameObject m_robotPlace = null;
     public GameObject m_stage1Place = null;
-    public GameObject m_star1Place = null;
-    public GameObject m_boss = null;
+    public GameObject m_star1Place = null;    
 
     public GameObject m_inTheStar = null;
     public GameObject m_andObj = null;
 
-
-    public GameObject m_bossROBO = null;
+    
     public GameObject m_starPos = null;
 
     public GameObject m_Title = null;
+
+    public GameObject m_TutorialPlayerBG = null;
+    public GameObject m_TutorialPlayerPos = null;
+
+    public GameObject m_TutorialROBOBG = null;
+    public GameObject m_TutorialROBOPos = null;
+    public GameObject m_tutorobo = null;
 
     private GameObject m_funcTarget = null;
     private string m_func = null;
@@ -128,9 +140,18 @@ public class CameraManager : Singletone<CameraManager>
                // GameManager.Instance().ROBO.transform.position = m_starPos.transform.position;
                 break;
             case CAMERA_PLACE.BOSS:
-                obj = m_boss; colliderSize = new Vector2(25.0f , 20.0f);
-                GameManager.Instance().ROBO.transform.position = m_bossROBO.transform.position;
+                obj = m_boss1Place; colliderSize = new Vector2(25.0f , 20.0f);
                 m_targetPos = m_boss.transform.position;
+                break;
+            case CAMERA_PLACE.TUTORIAL_PLAYERMOVE:
+                obj = m_TutorialPlayerBG;
+                m_targetMove.m_target = m_TutorialPlayerPos;
+                m_targetPos = m_TutorialPlayerPos.transform.position;
+                break;
+            case CAMERA_PLACE.TUTORIAL_ROBO:
+                obj = m_TutorialROBOBG;
+                m_targetMove.m_target = m_tutorobo;
+                m_targetPos = m_TutorialROBOPos.transform.position;
                 break;
         }
 
@@ -214,6 +235,7 @@ public class CameraManager : Singletone<CameraManager>
         {
             Vector3 pos = transform.position;
             m_andObj.transform.position = new Vector3(pos.x , pos.y , -1.0f);
+            m_andObj = null;
         }
 
     }

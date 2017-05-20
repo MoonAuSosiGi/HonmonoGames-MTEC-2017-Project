@@ -58,36 +58,12 @@ public class MapManager : Singletone<MapManager> {
 
     }
 
-    public void GameStart()
-    {
 
-        // 더이상 여기서 플레이어를 처리하지 않음
-        //m_users[0].gameObject.SetActive(true);
-
-        //m_robo.gameObject.SetActive(true);
-
-        //CameraManager.Instance().MoveCamera(m_robo.gameObject);
-        
-    }
-
-   
-
-    //prefab을 부르는 마법의 함수
-    public void SetupMap(string prefabPath)
-    {
-        // TODO prefab 생성
-
-        // 리밋 배경 가져오기
-
-        // 리밋 배경을 통한 영역 세팅
-        this.m_backgroundHalfWidth = this.m_limitBackground.GetComponent<SpriteRenderer>().bounds.size.x / 2.0f;
-        this.m_backgroundHalfHeight = this.m_limitBackground.GetComponent<SpriteRenderer>().bounds.size.y / 2.0f;
-    }
-
+  
 
     // -- 오브젝트 생성 -------------------------------------------------------------------------------------------//
 
-    public GameObject AddObject(string prefabPath)
+    public GameObject AddObject(string prefabPath,Vector2 pos)
     {
         // prefab 주소를 넘기면 자동으로 불러옴
 
@@ -97,6 +73,7 @@ public class MapManager : Singletone<MapManager> {
         GameObject prefab = Resources.Load(prefabPath) as GameObject;
         GameObject obj = GameObject.Instantiate(prefab);
         obj.transform.parent = transform;
+        obj.transform.position = pos;
 
         this.m_objectList.Add(obj);
         return obj;
@@ -116,15 +93,15 @@ public class MapManager : Singletone<MapManager> {
 
     public GameObject AddMonster(string prefabPath,string name,Vector3 pos)
     {
-        GameObject monster = AddObject(prefabPath);
+        GameObject monster = AddObject(prefabPath,pos);
 
         if(monster != null)
         {
             if(prefabPath.Equals(GamePath.BOSS1))
             { 
-                monster.transform.GetChild(0).GetComponent<Stage1BOSS>().MONSTER_NAME = name;
-                monster.transform.position = pos;
-                NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(name,"boss1",pos.x,pos.y));
+                monster.GetComponent<Stage1BOSS>().MONSTER_NAME = name;
+                
+                NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(name,"boss1",pos.x,pos.y,pos.z));
             }
         }
         return monster;

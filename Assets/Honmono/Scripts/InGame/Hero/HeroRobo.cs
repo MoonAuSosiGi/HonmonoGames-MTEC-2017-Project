@@ -15,6 +15,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         COOLTIME = 9,
         INTHESTAR=10
     }
+    public bool m_tutorial = false;
 
     //------------------------------------------------//
     //Character 기본 정보
@@ -114,9 +115,12 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
 
     void Awake()
     {
+        if (m_tutorial)
+            return;
         GameManager.Instance().HeroRoboSetup(this);
 
         //리시버 등록
+        
         NetworkManager.Instance().AddNetworkEnemyMoveEventListener(this);
         NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
     }
@@ -139,8 +143,24 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         AddHPUpdateEvent(m_hpHUD.GetComponent<RoboHUD>());
     }
 	
-	// Update is called once per frame
-	void Update () {
+    void TuToEnd()
+    {
+        PopupManager.Instance().AddPopup("LobbyPopup");
+        transform.parent.gameObject.SetActive(false);
+    }
+    // Update is called once per frame
+    void Update () {
+
+        if(m_tutorial)
+        {
+            Control();
+
+            if(Input.GetKey(KeyCode.K))
+            {
+                CameraManager.Instance().MoveCamera(gameObject , 10 , CameraManager.CAMERA_PLACE.GAME_START,gameObject,"TuToEnd",false);
+            }
+            return;
+        }
 
         // 한명이라도 조작하고 있으면 HUD 를 띄움
         if (!string.IsNullOrEmpty(m_movePlayerName) || !string.IsNullOrEmpty(m_gunPlayerName))
@@ -293,12 +313,6 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         }
 
 
-        //if (Input.GetKey(KeyCode.Space) && !BitControl.Get(m_roboState , (int)ROBO_STATE.COOLTIME))
-        //{
-        //    SoundManager.Instance().PlaySound(m_laser1);
-        //    m_roboState = BitControl.Set(m_roboState , (int)ROBO_STATE.ATTACK);
-        //}
-
         if (BitControl.Get(m_roboState , (int)ROBO_STATE.ATTACK))
         {
             m_skletonAnimation.state.SetAnimation(0 , ANI_ATTACK , false);
@@ -320,23 +334,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             m_engineAnimator.SetInteger("play" , 0);
             //m_roboState = BitControl.Set(m_roboState, (int)ROBO_STATE.IDLE);
         }
-
-
-        // TODO 추후 MapManager 에서 가져오는 형태로 바꿀것
-        TargetMoveCamera camera = Camera.main.GetComponent<TargetMoveCamera>();
-        Vector3 backPos = camera.BACKGROUND_POS;
-        float leftCheck = backPos.x - camera.BACKGROUND_HALF_WIDTH;
-        float rightCheck = backPos.x + camera.BACKGROUND_HALF_WIDTH;
-        float upCheck = backPos.y + camera.BACKGROUND_HALF_HEIGHT;
-        float downCheck = backPos.x - camera.BACKGROUND_HALF_HEIGHT;
-
-        
-        //float w = (m_skletonAnimation.skeleton.flipX) ? m_skletonAnimation.skeleton.data.width / 2.0f : -m_skletonAnimation.skeleton.data.width / 2.0f;
-        //float h = (movey >= 0) ? -m_skletonAnimation.skeleton.data.height / 2.0f : m_skletonAnimation.skeleton.data.height / 2.0f;
-        //if (pos.x + movex + w <= leftCheck)     movex = 0.0f;
-        //if (pos.x + movex + w >= rightCheck)    movex = 0.0f;
-        //if (pos.y + movey >= upCheck + h)       movey = 0.0f;
-        //if (pos.y + movey <= downCheck + h)     movey = 0.0f;
+      
 
         if (m_roboState == (int)ROBO_STATE.IDLE) //BitControl.Get(m_roboState, (int)ROBO_STATE.IDLE))
         {
@@ -586,12 +584,9 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             m_delay_angle = Time.time - m_lastSyncTimeAngle;
             m_lastSyncTimeAngle = Time.time;
         }
-        else if(e.msgType == NetworkManager.PLACE_CHANGE)
-                GameManager.Instance().ROBO.CURRENT_PLACE = e.msg.GetField(NetworkManager.PLACE_CHANGE).str;
-        
-        else if(e.msgType == NetworkManager.BOSS_SCENE_MOVE)
+        else if(e.msgType == NetworkManager.HP_UPDATE)
         {
-            CameraManager.Instance().MoveCamera(gameObject , 10.0f , CameraManager.CAMERA_PLACE.BOSS);
+
         }
     }
 
@@ -599,7 +594,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
 
    void OnTriggerEnter2D(Collider2D col)
     {
-        if (!m_movePlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
+        if (m_movePlayerName == null || !m_movePlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
             return;
         
         if(col.tag == "GO_TOTHE_STAR")
@@ -610,14 +605,10 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         {
             if (!r)
             {
-                MapManager.Instance().AddMonster(
-                    GamePath.BOSS1,
-                    "boss1_"+GameManager.Instance().PLAYER.USER_NAME,
-                    new Vector3(0.0f,0.0f));
-               // NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder("" , "boss1"));
+                CameraManager.Instance().MoveCameraAndObject(gameObject , 10 , CameraManager.CAMERA_PLACE.BOSS , gameObject);
                 r = true;
             }
-          //  NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJSonChangeBossScene());
+          
         }
     }
     bool r = false;
@@ -646,9 +637,9 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         this.m_hp -= damage;
 
         // 이곳에서 구멍 이펙트 생성 
-        if(m_hp % 5 == 0)
+        if(m_hp % 10 == 0)
         {
-            // 5이상 데미지를 받을 때마다 생성
+            // 10이상 데미지를 받을 때마다 생성
             DamagePointCreate();
         }
 
@@ -660,17 +651,24 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
 
     }
 
+    public void Heal(int heal)
+    {
+        this.m_hp += heal;
+
+        if (this.m_hp >= GameSetting.HERO_MAX_HP)
+            this.m_hp = GameSetting.HERO_ROBO_MAX_HP;
+
+        UpdateHp();
+    }
+
     // 특정 데미지 이상 받았을 때만 호출
     void DamagePointCreate()
-    {
-        
+    {   
         int index = UnityEngine.Random.Range(0 , m_DamageAnchorList.Count);
         
-        GameObject obj = MapManager.Instance().AddObject(GamePath.DAMAGE_POINT);
+        GameObject obj = MapManager.Instance().AddObject(
+            GamePath.DAMAGE_POINT, m_DamageAnchorList[index].transform.position);
         obj.transform.parent = m_DamageAnchorList[index].transform.parent;
-        obj.transform.position = m_DamageAnchorList[index].transform.position;
-        MDebug.Log("생성 " + obj.transform.position +" " + m_DamageAnchorList[index].transform.position);
-
 
     }
 }

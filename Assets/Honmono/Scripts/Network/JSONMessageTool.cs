@@ -317,7 +317,7 @@ public static class JSONMessageTool  {
         return obj.ToString();
     }
 
-    public static string ToJsonCreateOrder(string targetName , string createObj , float x = 0.0f , float y = 0.0f)
+    public static string ToJsonCreateOrder(string targetName , string createObj , float x = 0.0f , float y = 0.0f,float z = 0.0f)
     {
         JSONObject obj = GetDefJSON(targetName,NetworkManager.CREATE);
 
@@ -326,6 +326,7 @@ public static class JSONMessageTool  {
         JSONObject msg = obj.GetField(NetworkManager.ORDERS)[0].GetField(NetworkManager.MSG);
         msg.AddField("X" , x);
         msg.AddField("Y" , y);
+        msg.AddField("Z" , z);
 
         obj.GetField(NetworkManager.ORDERS)[0]
            .GetField(NetworkManager.MSG)
@@ -341,10 +342,13 @@ public static class JSONMessageTool  {
 
         JSONObject obj2 = new JSONObject();
         obj2.AddField(NetworkManager.CREATE_TARGET, createObj);
-        obj2.AddField("X", x);
-        obj2.AddField("Y", y);
-        obj2.AddField("Z", z);
+
         obj2.AddField(NetworkManager.DIR, dir);
+
+        JSONObject msg = obj.GetField(NetworkManager.ORDERS)[0].GetField(NetworkManager.MSG);
+        msg.AddField("X" , x);
+        msg.AddField("Y" , y);
+        msg.AddField("Z" , z);
 
         obj.GetField(NetworkManager.ORDERS)[0]
             .GetField(NetworkManager.MSG)

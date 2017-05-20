@@ -76,7 +76,7 @@ public class PatternD : PatternState
             if (m_tick >= GameSetting.BOSS1_PATTERN_D_SPECIAL && !m_moveEffect)
             {
 
-                me.transform.parent.position = GameManager.Instance().ROBO.transform.position;
+                me.transform.position = GameManager.Instance().ROBO.transform.position;
                 
                 m_moveEffect = true;
                 //m_tick = 0.0f;

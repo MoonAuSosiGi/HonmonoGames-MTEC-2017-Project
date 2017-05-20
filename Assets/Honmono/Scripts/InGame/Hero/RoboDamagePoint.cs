@@ -50,6 +50,9 @@ public class RoboDamagePoint : MonoBehaviour,NetworkManager.NetworkMessageEventL
             // Destroy
             if (m_isNetworkObject)
                 NetworkManager.Instance().RemoveNetworkOrderMessageEventListener(this);
+            else
+                GameManager.Instance().ROBO.Heal(10);
+            
             MapManager.Instance().RemoveObject(gameObject);
             return;
         }

@@ -102,8 +102,15 @@ public class TargetMoveCamera : MonoBehaviour {
         this.m_backgroundHalfWidth = 0.0f;
         this.m_backgroundHalfHeight = 0.0f;
 
+        
+
         switch(obj.transform.childCount)
         {
+            case 0:
+                SpriteRenderer s = obj.GetComponent<SpriteRenderer>();
+                m_backgroundHalfWidth = s.bounds.size.x;
+                m_backgroundHalfHeight = s.bounds.size.y;
+                break;
             case 1:
             case 2:
                 for (int i = 0; i < obj.transform.childCount; i++)

@@ -24,6 +24,29 @@ public class NetworkStage1BOSS : MonoBehaviour,NetworkManager.NetworkMessageEven
     private SkeletonAnimation m_skeletonAnimation = null;
     private Stage1BOSS m_boss = null;
 
+    private NetworkMoving m_moving = null;
+    // AI 를 보고싶다
+    void OnGUI()
+    {
+        //if (m_pattern == null)
+        //    return;
+        //string txt = "";
+        //float tick = 0.0f;
+        //float coolTime = m_coolTimeTick;
+
+        //txt = m_pattern.GetType().ToString();
+        //if (m_pattern is PatternA)
+        //    tick = m_patternATick;
+        //else if (m_pattern is PatternB)
+        //    tick = m_patternBTick;
+        //else if (m_pattern is PatternC)
+        //    tick = m_patternCTick;
+        //else if (m_pattern is PatternNormal)
+        //    tick = m_attackableTick;
+
+        GUI.TextArea(new Rect(500 , 150 , 100 , 100) , "angle " + " local " + transform.eulerAngles);
+        //        GUI.TextArea(new Rect(500 , 150 , 100 , 100) , txt + " tick : " + tick + " coolTime ? : " + coolTime);
+    }
     // Use this for initialization
     void Start()
     {
@@ -63,7 +86,7 @@ public class NetworkStage1BOSS : MonoBehaviour,NetworkManager.NetworkMessageEven
             
         }
         if (trackEntry.animation.name == "attack_D_in")
-        {
+        {   
 
         }
     }
@@ -71,6 +94,11 @@ public class NetworkStage1BOSS : MonoBehaviour,NetworkManager.NetworkMessageEven
     // Update is called once per frame
     void Update()
     {
+        if (m_moving == null)
+        {
+            m_moving = this.gameObject.AddComponent<NetworkMoving>();
+            m_moving.NAME = BOSS_NAME;
+        }
 
         // 패턴 D일때만
         if (m_effect)
@@ -83,7 +111,7 @@ public class NetworkStage1BOSS : MonoBehaviour,NetworkManager.NetworkMessageEven
             if (m_tick >= GameSetting.BOSS1_PATTERN_D_SPECIAL && !m_moveEffect)
             {
 
-                transform.parent.position = GameManager.Instance().ROBO.transform.position;
+                transform.position = GameManager.Instance().ROBO.transform.position;
 
                 m_moveEffect = true;
                 //m_tick = 0.0f;

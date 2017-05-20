@@ -7,8 +7,15 @@ using Spine;
 public class Stage1BOSS : Monster
 {
     // -- Network ------------------------------------------------------------------//
-   
-    
+    private Vector3 m_targetPos = Vector3.zero;
+    private Vector3 m_prevPos = Vector3.zero;
+
+    float m_syncTime = 0.0f;
+    float m_delay = 0.0f;
+    float m_lastSyncTime = 0.0f;
+    float m_lastSendTime = 0.0f;
+    float m_angle = 0.0f;
+
 
     // ----------------------------------------------------------------------------//
 
@@ -56,35 +63,55 @@ public class Stage1BOSS : Monster
     public Animator m_laser = null;
 
     public Animator m_attackEffect = null;
+
+    
     // --------------------------------------------------------------------------------------------//
 
     // AI 를 보고싶다
-    void OnGUI()
+
+
+
+    bool NetworkObjectCheck()
     {
-        //if (m_pattern == null)
-        //    return;
-        //string txt = "";
-        //float tick = 0.0f;
-        //float coolTime = m_coolTimeTick;
-
-        //txt = m_pattern.GetType().ToString();
-        //if (m_pattern is PatternA)
-        //    tick = m_patternATick;
-        //else if (m_pattern is PatternB)
-        //    tick = m_patternBTick;
-        //else if (m_pattern is PatternC)
-        //    tick = m_patternCTick;
-        //else if (m_pattern is PatternNormal)
-        //    tick = m_attackableTick;
+        if (!string.IsNullOrEmpty(NetworkOrderController.ORDER_NAME))
+        {
+            m_name = NetworkOrderController.ORDER_NAME + "monster" + "_" + this.GetHashCode();
 
 
-        //GUI.TextArea(new Rect(500 , 150 , 100 , 100) , txt + " tick : " + tick + " coolTime ? : " + coolTime);
+            if (!NetworkOrderController.ORDER_NAME.Equals(GameManager.Instance().PLAYER.USER_NAME))
+            {
+                this.enabled = false;
+                this.gameObject.AddComponent<NetworkMoving>().NAME = m_name;
+                this.gameObject.AddComponent<NetworkStage1BOSS>().BOSS_NAME = m_name;
+            }
+            return true;
+        }
+        return false;
     }
 
     protected override void Move()
     {
         base.Move();
         MoveSend();
+    }
+    protected void MoveSend()
+    {
+        Vector3 pos = transform.position;
+        float distance = Vector3.Distance(m_prevPos , pos);
+        m_prevPos = transform.position;
+
+        Vector3 velocity = (transform.position - m_prevPos) / Time.deltaTime;
+        Vector3 sendPos = m_prevPos + (velocity * (Time.deltaTime - m_lastSendTime));
+        //dirPos.Normalize();
+
+
+        NetworkManager.Instance().SendEnemyMoveMessage(
+            JSONMessageTool.ToJsonEnemyMove(m_name ,
+            pos.x , pos.y ,
+            transform.eulerAngles.z,
+            m_skeletonAnimation.skeleton.flipX ,
+            sendPos));
+        m_lastSendTime = Time.deltaTime;
     }
 
     public override void Damage(float damage)
@@ -94,8 +121,8 @@ public class Stage1BOSS : Monster
         if(m_hp <=0.0f)
         {
             //CameraManager.Instance().MoveCamera(null , 10.0f , CameraManager.CAMERA_PLACE.STAGE1);
-            GameObject obj = MapManager.Instance().AddObject(GamePath.EFFECT);
-            obj.transform.position = transform.position;
+            //GameObject obj = MapManager.Instance().AddObject(GamePath.EFFECT,tr);
+            //obj.transform.position = transform.position;
             GameObject.Destroy(gameObject);
         }
     }
@@ -116,17 +143,20 @@ public class Stage1BOSS : Monster
     
     void Update()
     {
-
-
-        if (NetworkOrderController.ORDER_NAME != GameManager.Instance().PLAYER.USER_NAME
-            && NetworkOrderController.ORDER_SPACE == 0)
+        if (!NetworkObjectCheck())
             return;
+
         
         // 방향설정
-        Vector3 p = GameManager.Instance().ROBO.transform.position - transform.parent.position;
+        Vector3 p = GameManager.Instance().ROBO.transform.position - transform.position;
         p.Normalize();
         m_angle = (Mathf.Atan2(p.x , p.y) * Mathf.Rad2Deg);
-        transform.parent.rotation = Quaternion.Euler(0 , 0 , -m_angle);
+        m_angle = -m_angle - 85.0f;
+        transform.eulerAngles = new Vector3(0 , 0 ,m_angle);
+
+        Vector2 p2 = new Vector2(transform.position.x - 10.0f , transform.position.y);
+        
+        Debug.DrawLine(transform.position , p2 , Color.red);
             
 
         if (m_pattern != null)

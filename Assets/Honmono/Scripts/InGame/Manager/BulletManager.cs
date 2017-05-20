@@ -12,16 +12,21 @@ public class BulletManager : Singletone<BulletManager> {
 
     //-----------------------------------//
     // 총알 리스트ㅡ
-    [SerializeField]
-    private List<Bullet> m_bulletList = new List<Bullet>();
+    
+    List<Bullet> m_bulletList = new List<Bullet>();
+    List<Bullet> m_BossbulletList = new List<Bullet>();
     private int m_bulletIndex = 0;
+    private int m_bossBulletIndex = 0;
+
+    public GameObject m_heroBulletPool = null;
+    public GameObject m_BossBulletPool = null;
     //----------------------------------//
 
     void Start()
     {
-        for(int i = 0; i < transform.childCount; i++)
+        for(int i = 0; i < m_heroBulletPool.transform.childCount; i++)
         {
-            m_bulletList.Add(transform.GetChild(i).GetComponent<Bullet>());
+            m_bulletList.Add(m_heroBulletPool.transform.GetChild(i).GetComponent<Bullet>());
             NetworkManager.Instance().AddNetworkEnemyMoveEventListener(m_bulletList[i]);
         }
 
@@ -34,27 +39,20 @@ public class BulletManager : Singletone<BulletManager> {
 
         switch(type)
         {
-            case BULLET_TYPE.B_HERO_DEF: path = GamePath.WEAPON_BULLET_DEF; break;
-            case BULLET_TYPE.B_BOSS1_P1: path = GamePath.WEAPON_BULLET_BOSS; break;
+            case BULLET_TYPE.B_HERO_DEF: //path = GamePath.WEAPON_BULLET_DEF; break;
+                {
+                  return AddBulletHero();
+                }
+            case BULLET_TYPE.B_BOSS1_P1:
+                {
+                    path = GamePath.WEAPON_BULLET_BOSS;
+                    return AddBulletBoss1(path);
+                }
         }
 
-        if (path == null)
-            return null;
-
-
-        //GameObject obj = Resources.Load(path) as GameObject;
-        //GameObject bullet = GameObject.Instantiate(obj);
-        //m_bulletList.Add(bullet.GetComponent<Bullet>());
-        Bullet bullet = m_bulletList[m_bulletIndex++];
-        bullet.transform.parent = transform;
-        bullet.gameObject.SetActive(true);
-        bullet.ALIVE = true;
-
-        if (m_bulletIndex >= m_bulletList.Count)
-        {
-            m_bulletIndex = 0;
-        }
-        return bullet;
+        
+       
+        return null;
     }
 
     public void RemoveBullet(Bullet bullet)
@@ -67,14 +65,24 @@ public class BulletManager : Singletone<BulletManager> {
         //GameObject.Destroy(bullet.gameObject);
     }
 
-    public void RemoveBullet(string bulletName)
+    public void RemoveBullet(string bulletName,Bullet.BULLET_TARGET b)
     {
         Bullet target = null;
-        foreach(Bullet bullet in m_bulletList)
+        List<Bullet> list = null;
+        if( b == Bullet.BULLET_TARGET.PLAYER)
         {
-            if(bullet != null)
+            list = m_bulletList;
+        }
+        else if( b == Bullet.BULLET_TARGET.ENEMY)
+        {
+            list = m_BossbulletList;
+        }
+
+        foreach (Bullet bullet in list)
+        {
+            if (bullet != null)
             {
-                if(bullet.BULLET_NAME == bulletName)
+                if (bullet.BULLET_NAME == bulletName)
                 {
                     target = bullet;
                     break;
@@ -82,10 +90,62 @@ public class BulletManager : Singletone<BulletManager> {
             }
         }
 
-        if(target != null)
+
+        if (target != null)
         {
             RemoveBullet(target);
         }
     }
-    
+
+    Bullet AddBulletHero()
+    {
+        Bullet bullet = m_bulletList[m_bulletIndex++];
+        bullet.transform.parent = transform;
+        bullet.gameObject.SetActive(true);
+        bullet.ALIVE = true;
+
+        if (m_bulletIndex >= m_bulletList.Count)
+        {
+            m_bulletIndex = 0;
+        }
+        return bullet;
+    }
+
+    Bullet AddBulletBoss1(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return null;
+
+        Bullet ck = null;
+
+        //시나리오
+        //가용한 총알이 있는지 체크
+        for(int i = 0; i < m_BossbulletList.Count; i++)
+        {
+            if (!m_BossbulletList[i].ALIVE)
+            {
+                ck = m_BossbulletList[i];
+                ck.gameObject.SetActive(true);
+                ck.ALIVE = true;
+                break;
+            }
+        } 
+
+        if(ck == null)
+        {
+            GameObject obj = Resources.Load(path) as GameObject;
+            GameObject bullet = GameObject.Instantiate(obj);
+            Bullet b = bullet.GetComponent<Bullet>();
+            bullet.SetActive(true);
+            b.ALIVE = true;
+            b.transform.parent = m_BossBulletPool.transform;
+            m_BossbulletList.Add(b);
+            return b;
+        }
+        else
+        {
+            return ck;
+        }
+    }
+
 }

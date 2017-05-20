@@ -19,7 +19,7 @@ public static class GameSetting  {
     
     // -- 주인공 관련 값 ( 휴먼 ) -----------------------------------------------------//
     public const float HERO_MOVE_SPEED = 6.0f;
-    public const float HERO_MAX_HP = 100.0f;
+    public const float HERO_MAX_HP = 100;
 
     // -- 주인공 관련 값 ( 로봇 ) -----------------------------------------------------//
     public const float HERO_ROBO_SPEED = 6.0f;

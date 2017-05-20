@@ -29,8 +29,8 @@ public class NetworkManager : Singletone<NetworkManager>
     public const string STATE_CHANGE = "state_change";
     public const string SOCKET_OPEN = "socket_open";
     public const string GUN_ANGLE_CHANGE = "gun_angle_change";
+    public const string HP_UPDATE = "hpupdate";
 
-    public const string BOSS_SCENE_MOVE = "boss_scene_move";
 
     //connect
     public const string USER_CONNECT = "user_connect";
@@ -51,8 +51,7 @@ public class NetworkManager : Singletone<NetworkManager>
     public const string CRASH_NAME1 = "crashname1";
     public const string CRASH_NAME2 = "crashname2";
 
-    //place Change
-    public const string PLACE_CHANGE = "place_change";
+
     //create order
     public const string CREATE_TARGET = "create_target";
 

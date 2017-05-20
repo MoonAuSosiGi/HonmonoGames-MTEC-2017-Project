@@ -31,7 +31,7 @@ public class PatternA : PatternState {
             {
                 Bullet b = BulletManager.Instance().AddBullet(BulletManager.BULLET_TYPE.B_BOSS1_P1);
                 Vector3 pos = m_monster.transform.position;
-
+                
                 b.transform.position = pos;
 
                 Vector3 dir = m_hero.transform.position - m_monster.transform.position;
@@ -39,7 +39,7 @@ public class PatternA : PatternState {
                 string name = GameManager.Instance().PLAYER.USER_NAME + "_boss_A_" + Monster.m_index++;
 
                 b.BULLET_SPEED = 20.0f;
-                b.transform.position = m_monster.transform.parent.position;
+                b.transform.position = m_monster.transform.position;
                 b.SetupBullet(name , false , dir);
 
                 NetworkManager.Instance().SendOrderMessage(

@@ -115,8 +115,8 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
 
         if (m_hp <= 0.0f)
         {
-            GameObject obj = MapManager.Instance().AddObject(GamePath.EFFECT);
-            obj.transform.position = transform.position;
+            MapManager.Instance().AddObject(GamePath.EFFECT,transform.position);
+
             GameObject.Destroy(gameObject);
         }
     }

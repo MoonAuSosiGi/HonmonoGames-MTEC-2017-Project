@@ -91,8 +91,8 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         if(m_bulletName.IndexOf("boss")>=0)
         {
             m_bulletDir = dir;
-            float angle = (Mathf.Atan2(m_bulletDir.x , m_bulletDir.y) * Mathf.Rad2Deg);// + 45.0f;
-            transform.rotation = Quaternion.Euler(0.0f , 0.0f , angle);
+            //float angle = (Mathf.Atan2(m_bulletDir.x , m_bulletDir.y) * Mathf.Rad2Deg);// + 45.0f;
+            //transform.rotation = Quaternion.Euler(0.0f , 0.0f , angle);
             m_curTarget = BULLET_TARGET.ENEMY;
         }
         else
@@ -182,16 +182,6 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         
     }
 
-    void OnCollisionEnter2D(Collision2D col)
-    {
-        
-
-        //일단 최종 좌표를 던져본다.
-
-
-
-        // DeleteBullet();
-    }
 
     void OnTriggerEnter2D(Collider2D col)
     {
@@ -203,44 +193,41 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         {
             BulletManager.Instance().RemoveBullet(this);
         }
-        else if(col.transform.tag.Equals("ENEMY"))
-        {
-            Monster mon = col.GetComponent<Monster>();
-            mon.Damage(1.0f);
-
-            BulletManager.Instance().RemoveBullet(this);
-        }
-        
-    }
-    void OnTriggerStay2D(Collider2D col)
-    {
-        if(m_isNetworkObject &&  (m_bulletName.IndexOf("boss") >= 0))
-        {
-            // 에너미
-            if(col.name == "ROBO")
-            {
-                //GameObject obj = MapManager.Instance().AddObject(GamePath.EFFECT);
-                //obj.transform.position = col.transform.position;
-                // 주금
-            }
-        }
         else
         {
-            if (col.tag == "ENEMY")
+            if (col.transform.tag.Equals("ENEMY") && m_curTarget == BULLET_TARGET.PLAYER)
             {
-                if (!ck)
-                {
-                   // col.GetComponent<Monster>().Damage(10.0f);
-                  //  ck = true;
-                }
-                
-                //GameObject obj = MapManager.Instance().AddObject(GamePath.EFFECT);
-                //obj.transform.position = col.transform.position;
-                // 주금
+                Monster mon = col.GetComponent<Monster>();
+                mon.Damage(1.0f);
+
+                BulletManager.Instance().RemoveBullet(this);
             }
+            else if(col.transform.tag.Equals("Player") && m_curTarget == BULLET_TARGET.ENEMY)
+            {
+                // 데미지 받는 처리 
+                //Vector3 bulletPos = transform.position;
+                //Vector3 targetPos = col.transform.position;
+                //Vector3 createPos = Vector3.zero;
+                MapManager.Instance().AddObject(GamePath.EFFECT , transform.position);
+
+                HeroRobo robo = col.GetComponent<HeroRobo>();
+                if(robo != null)
+                {
+                    robo.Damage(1);
+                }
+                else
+                {
+                    Hero hero = col.GetComponent<Hero>();
+                    if(hero != null)
+                    {
+                        hero.Damage(1);
+                    }
+                }
+                  
+            }
+                
         }
         
     }
-
-    bool ck = false;
+   
 }

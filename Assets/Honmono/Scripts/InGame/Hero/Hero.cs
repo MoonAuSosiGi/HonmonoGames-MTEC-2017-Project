@@ -49,7 +49,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     public AudioClip m_robotEnter = null;
     public AudioClip m_robotExit = null;
 
-
+    // 튜토리얼?
+    public bool m_tutorial = false;
 
     // 우주공간?
     public bool m_inSpace = true;
@@ -203,7 +204,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     {
 
         // 상태 체인지
-        if (e.msgType == NetworkManager.STATE_CHANGE && e.targetName + "_robo" != m_userName)
+        if (e.msgType == NetworkManager.STATE_CHANGE && (e.targetName).Equals(m_userName))
         {
             if (m_isMe)
                 return;
@@ -283,20 +284,21 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     // Use this for initialization
     void Start()
     {
-        TimeSpan t = new TimeSpan(DateTime.Now.Ticks);
-        //TimeSpan a = new TimeSpan(t);
-        MDebug.Log(t.ToString());
-            
+
         // 움직였을 때만 패킷을 전송해야 한다. 그러기 위한 디스턴스 판별용 포지션 적용
         m_prevPos = transform.position;
 
-        if(m_isMe)
+        if (m_isMe)
             m_rigidBody.gravityScale = (m_inSpace) ? 0.0f : 1.0f;
         m_skletonAnimation.state.Complete += CompleteAnimation;
 
         // 네트워크 이벤트 옵저버 등록
-        NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
-        NetworkManager.Instance().AddNetworkMoveEventListener(this);
+        if (!m_tutorial)
+        {
+            NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
+            NetworkManager.Instance().AddNetworkMoveEventListener(this);
+        }
+        
 
         m_skletonAnimation.state.SetAnimation(0, ANI_IDLE, true);
 
@@ -306,7 +308,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
     void OnEnable()
     {
-        if (!m_isMe)
+        if (!m_isMe || m_tutorial)
             return;
         Vector3 pos = transform.position;
         float area = (float)((m_inSpace) ? (int)NetworkOrderController.AreaInfo.AREA_SPACE : (int)NetworkOrderController.AreaInfo.AREA_ROBOT);
@@ -376,7 +378,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     {
         if (m_curState == (int)HERO_STATE.IDLE)
         {
-            CheckAndSetAnimation(ANI_IDLE, true);
+            CheckAndSetAnimation(ANI_IDLE , true);
+            //m_skletonAnimation.state.SetAnimation(0,ANI_IDLE, true);
         }
         else
         {
@@ -402,7 +405,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             {
         //        if (IsCurrentAnimation(ANI_IDLE))
                 {
-                    m_skletonAnimation.state.SetAnimation(0, ANI_MOVE, true);
+                    CheckAndSetAnimation(ANI_MOVE , true);
+                    //m_skletonAnimation.state.SetAnimation(0, ANI_MOVE, true);
                 }
             }
         }
@@ -460,8 +464,6 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             {
                 case CameraManager.CAMERA_PLACE.ROBO_IN:
                     target = CameraManager.Instance().m_inTheStar;
-                    
-                    
                     place = CameraManager.CAMERA_PLACE.STAR;
                     func = "RobotOutEnd";
                     
@@ -652,6 +654,14 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     // 중력이 적용되는 곳에서의 컨트롤 
     void Control()
     {
+        if(Input.GetKey(KeyCode.Y) && m_tutorial)
+        {
+            transform.gameObject.SetActive(false);
+            Camera.main.GetComponent<TargetMoveCamera>().m_test = true;
+            return;
+        }
+
+
         Vector2 pos = transform.position;
 
         //상황 설정
@@ -756,10 +766,11 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         //MoveSend();
         //m_delay += Time.deltaTime;
         //if(m_delay >= (1.0f/10.0f))
-        {
+
+        if (!m_tutorial)
             MoveSend();
-            //m_delay = 0.0f;
-        }
+        //m_delay = 0.0f;
+
     }
 
 
@@ -915,7 +926,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     {
         if (m_prevState != m_curState)
         {
-            if (!BitControl.Get(m_curState , (int)HERO_STATE.IDLE))
+           // if (!BitControl.Get(m_curState , (int)HERO_STATE.IDLE))
                 NetworkManager.Instance().SendOrderMessage(
                     JSONMessageTool.ToJsonOrderStateValueChange(
                         m_userName , m_curState));

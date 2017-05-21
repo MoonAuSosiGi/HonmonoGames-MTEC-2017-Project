@@ -308,8 +308,15 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
     void OnEnable()
     {
+        if (!m_isMe)
+            transform.GetChild(0).GetComponent<TextMesh>().text = USERNAME.Split('_')[0];
+
+
         if (!m_isMe || m_tutorial)
             return;
+
+        if(m_isMe)
+            transform.GetChild(0).GetComponent<TextMesh>().text = GameManager.Instance().PLAYER.USER_NAME;
         Vector3 pos = transform.position;
         float area = (float)((m_inSpace) ? (int)NetworkOrderController.AreaInfo.AREA_SPACE : (int)NetworkOrderController.AreaInfo.AREA_ROBOT);
         NetworkManager.Instance().SendMoveMessage(

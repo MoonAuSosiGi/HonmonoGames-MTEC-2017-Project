@@ -26,7 +26,6 @@ public class PlayerInfo {
     public PLAYER_STATUS STATUS { get { return m_status; } }
     public string USER_NAME {
         set {
-            MDebug.Log("user NAme !! " + value);
             m_UserName = value;  } get { return m_UserName; } }
     public int NETWORK_INDEX { set { m_NetworkIndex = value; } get { return m_NetworkIndex; } }
 

@@ -30,6 +30,7 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
     {
         m_robo = GameManager.Instance().ROBO;
         m_skeletonAnimation = this.GetComponent<SkeletonAnimation>();
+        m_hp = 5;
         this.m_skeletonAnimation.state.SetAnimation(0 , ANI_IDLE , true);
         
         
@@ -109,11 +110,11 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
         base.Move();
     }
 
-    public override void Damage(float damage)
+    public override void Damage(int damage)
     {
         base.Damage(damage);
 
-        if (m_hp <= 0.0f)
+        if (m_hp <= 0)
         {
             MapManager.Instance().AddObject(GamePath.EFFECT,transform.position);
 

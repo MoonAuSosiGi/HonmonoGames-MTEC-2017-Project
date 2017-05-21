@@ -23,30 +23,8 @@ public class NetworkStage1BOSS : MonoBehaviour,NetworkManager.NetworkMessageEven
 
     private SkeletonAnimation m_skeletonAnimation = null;
     private Stage1BOSS m_boss = null;
-
-    private NetworkMoving m_moving = null;
-    // AI 를 보고싶다
-    void OnGUI()
-    {
-        //if (m_pattern == null)
-        //    return;
-        //string txt = "";
-        //float tick = 0.0f;
-        //float coolTime = m_coolTimeTick;
-
-        //txt = m_pattern.GetType().ToString();
-        //if (m_pattern is PatternA)
-        //    tick = m_patternATick;
-        //else if (m_pattern is PatternB)
-        //    tick = m_patternBTick;
-        //else if (m_pattern is PatternC)
-        //    tick = m_patternCTick;
-        //else if (m_pattern is PatternNormal)
-        //    tick = m_attackableTick;
-
-        GUI.TextArea(new Rect(500 , 150 , 100 , 100) , "angle " + " local " + transform.eulerAngles);
-        //        GUI.TextArea(new Rect(500 , 150 , 100 , 100) , txt + " tick : " + tick + " coolTime ? : " + coolTime);
-    }
+    private int m_hp = 100;
+    
     // Use this for initialization
     void Start()
     {
@@ -54,6 +32,7 @@ public class NetworkStage1BOSS : MonoBehaviour,NetworkManager.NetworkMessageEven
         m_skeletonAnimation = this.GetComponent<SkeletonAnimation>();
         m_skeletonAnimation.state.Complete += State_Complete;
         NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
+        this.transform.GetChild(3).GetComponent<TextMesh>().text = "BOSS hp : " + m_hp + "/100";
     }
 
     private void State_Complete(Spine.TrackEntry trackEntry)
@@ -94,11 +73,6 @@ public class NetworkStage1BOSS : MonoBehaviour,NetworkManager.NetworkMessageEven
     // Update is called once per frame
     void Update()
     {
-        if (m_moving == null)
-        {
-            m_moving = this.gameObject.AddComponent<NetworkMoving>();
-            m_moving.NAME = BOSS_NAME;
-        }
 
         // 패턴 D일때만
         if (m_effect)
@@ -128,6 +102,14 @@ public class NetworkStage1BOSS : MonoBehaviour,NetworkManager.NetworkMessageEven
     {
         switch (e.msgType)
         {
+            case NetworkManager.HP_UPDATE:
+                {
+                    if (!e.targetName.Equals("boss1"))
+                        return;
+                    m_hp = (int)e.msg.GetField(NetworkManager.HP_UPDATE).i;
+                    this.transform.GetChild(3).GetComponent<TextMesh>().text = "BOSS hp : " + m_hp + "/100";
+                }
+                break;
             case NetworkManager.AI_ANI_NAME:
                 {
                     if (e.targetName.Equals(m_bossName))

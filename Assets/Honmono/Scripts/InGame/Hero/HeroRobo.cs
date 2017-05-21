@@ -296,23 +296,6 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             m_armBone.transform.rotation = Quaternion.Euler(0 , 0 , -m_gunAngle);
 
 
-        if(Input.GetKey(KeyCode.G))
-        {
-            if(BitControl.Get(m_roboState,(int)ROBO_STATE.INTHESTAR))
-            {
-                NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderPlaceChange(""));
-            }
-            else
-            {
-                if(m_controllName == "GO_TOTHE_STAR")
-                {
-                    m_roboState = BitControl.Set(m_roboState , (int)ROBO_STATE.INTHESTAR);
-                    NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderPlaceChange("star"));
-                }
-            }
-        }
-
-
         if (BitControl.Get(m_roboState , (int)ROBO_STATE.ATTACK))
         {
             m_skletonAnimation.state.SetAnimation(0 , ANI_ATTACK , false);
@@ -586,7 +569,10 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         }
         else if(e.msgType == NetworkManager.HP_UPDATE)
         {
-
+            if (GameManager.Instance().PLAYER.USER_NAME.Equals(e.user) || !e.targetName.EndsWith("robo"))
+                return;
+            m_hp = (int)e.msg.GetField(NetworkManager.HP_UPDATE).i;
+            UpdateHp();
         }
     }
 
@@ -594,9 +580,11 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
 
    void OnTriggerEnter2D(Collider2D col)
     {
-        if (m_movePlayerName == null || !m_movePlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
+        string userName = GameManager.Instance().PLAYER.USER_NAME;
+
+        if (!userName.Equals(MOVE_PLYAER) && !userName.Equals(GUN_PLAYER))
             return;
-        
+
         if(col.tag == "GO_TOTHE_STAR")
         {
             m_controllName = col.tag;
@@ -605,7 +593,15 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         {
             if (!r)
             {
-                CameraManager.Instance().MoveCameraAndObject(gameObject , 10 , CameraManager.CAMERA_PLACE.BOSS , gameObject);
+                GameManager.Instance().CUR_PLACE = GameManager.ROBO_PLACE.BOSS_AREA;
+                CameraManager.Instance().MoveCameraAndObject(gameObject , 10 ,
+                    CameraManager.CAMERA_PLACE.BOSS , gameObject);
+
+                if(userName.Equals(MOVE_PLYAER))
+                    MapManager.Instance().AddMonster(
+                        GamePath.BOSS1 ,
+                        "boss1_" + GameManager.Instance().PLAYER.USER_NAME ,
+                        new Vector3(121.06f , 6.34f));
                 r = true;
             }
           
@@ -647,6 +643,9 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         {
             m_hp = 0;
         }
+
+        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonHPUdate("robo",m_hp));
+
         UpdateHp();
 
     }
@@ -658,6 +657,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         if (this.m_hp >= GameSetting.HERO_MAX_HP)
             this.m_hp = GameSetting.HERO_ROBO_MAX_HP;
 
+        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonHPUdate("robo",m_hp));
         UpdateHp();
     }
 

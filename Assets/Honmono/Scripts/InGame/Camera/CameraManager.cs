@@ -83,6 +83,8 @@ public class CameraManager : Singletone<CameraManager>
     // 이동 !
     public void MoveCamera(GameObject targetPos , float cameraSize , CAMERA_PLACE place , GameObject targetFunc = null , string func = null,bool showEnd = true)
     {
+        if (iTween.Count(gameObject) > 0)
+            return;
         Camera.main.orthographic = true;
         
         m_targetMove.enabled = false;
@@ -99,6 +101,8 @@ public class CameraManager : Singletone<CameraManager>
     public void MoveCameraAndObject(GameObject targetPos,float cameraSize,CAMERA_PLACE place,
         GameObject andObj, GameObject targetFunc = null , string func = null,bool showEnd = true)
     {
+        if (iTween.Count(gameObject) > 0)
+            return;
         m_targetMove.enabled = false;
         m_targetSize = cameraSize;
         m_targetPos = targetPos.transform.position;

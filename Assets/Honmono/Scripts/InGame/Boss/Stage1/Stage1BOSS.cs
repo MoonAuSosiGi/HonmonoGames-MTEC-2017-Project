@@ -9,10 +9,7 @@ public class Stage1BOSS : Monster
     // -- Network ------------------------------------------------------------------//
     private Vector3 m_targetPos = Vector3.zero;
     private Vector3 m_prevPos = Vector3.zero;
-
-    float m_syncTime = 0.0f;
-    float m_delay = 0.0f;
-    float m_lastSyncTime = 0.0f;
+    
     float m_lastSendTime = 0.0f;
     float m_angle = 0.0f;
 
@@ -75,16 +72,23 @@ public class Stage1BOSS : Monster
     {
         if (!string.IsNullOrEmpty(NetworkOrderController.ORDER_NAME))
         {
-            m_name = NetworkOrderController.ORDER_NAME + "monster" + "_" + this.GetHashCode();
+            m_name = NetworkOrderController.ORDER_NAME + "_boss_"+ this.GetHashCode();
 
 
-            if (!NetworkOrderController.ORDER_NAME.Equals(GameManager.Instance().PLAYER.USER_NAME))
+            if (GameManager.Instance().CUR_PLACE == GameManager.ROBO_PLACE.BOSS_AREA)
             {
-                this.enabled = false;
-                this.gameObject.AddComponent<NetworkMoving>().NAME = m_name;
-                this.gameObject.AddComponent<NetworkStage1BOSS>().BOSS_NAME = m_name;
+                if (!NetworkOrderController.ORDER_NAME.Equals(GameManager.Instance().PLAYER.USER_NAME))
+                {
+                    this.enabled = false;
+
+                    this.gameObject.AddComponent<NetworkMoving>().NAME = m_name;
+                    this.gameObject.AddComponent<NetworkStage1BOSS>().BOSS_NAME = m_name;
+                }
+                else
+                    m_pattern = new PatternA(m_skeletonAnimation , ANI_AB_MOVE , ANI_ATTACK_A , m_name);
+                return true;
             }
-            return true;
+            
         }
         return false;
     }
@@ -114,17 +118,20 @@ public class Stage1BOSS : Monster
         m_lastSendTime = Time.deltaTime;
     }
 
-    public override void Damage(float damage)
+    public override void Damage(int damage)
     {
         base.Damage(damage);
 
-        if(m_hp <=0.0f)
+        if(m_hp <=0)
         {
             //CameraManager.Instance().MoveCamera(null , 10.0f , CameraManager.CAMERA_PLACE.STAGE1);
             //GameObject obj = MapManager.Instance().AddObject(GamePath.EFFECT,tr);
             //obj.transform.position = transform.position;
-            GameObject.Destroy(gameObject);
+            m_pattern = null;  
         }
+        this.transform.GetChild(3).GetComponent<TextMesh>().text = "BOSS hp : " + m_hp + "/100";
+        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonHPUdate("boss1" , m_hp));
+        
     }
     
 
@@ -133,17 +140,21 @@ public class Stage1BOSS : Monster
     void Start()
     {
         // 처음 패턴은 A다.
+        m_hp = 100;
         m_skeletonAnimation = this.GetComponent<SkeletonAnimation>();
-        
-        m_pattern = new PatternA(m_skeletonAnimation,ANI_AB_MOVE, ANI_ATTACK_A,m_name);
-        
-        
+        m_pattern = new PatternA(m_skeletonAnimation , ANI_AB_MOVE , ANI_ATTACK_A , m_name);
+
+
+        this.transform.GetChild(3).GetComponent<TextMesh>().text = "BOSS hp : " + m_hp + "/100";
 
     }
     
     void Update()
     {
-        if (!NetworkObjectCheck())
+        //if (!NetworkObjectCheck())
+        //    return;
+
+        if (m_hp <= 0)
             return;
 
         

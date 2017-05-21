@@ -46,7 +46,8 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
         switch (e.msgType)
         {
             case NetworkManager.PLACE_CHANGE:
-                GameManager.Instance().ROBO.CURRENT_PLACE = e.msg.GetField(NetworkManager.PLACE_CHANGE).str;
+                GameManager.Instance().CUR_PLACE = 
+                    (GameManager.ROBO_PLACE)((int)e.msg.GetField(NetworkManager.PLACE_CHANGE).i);
                 break;
             case NetworkManager.CREATE: // 생성해라
 
@@ -103,7 +104,7 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                             //   MDebug.Log("Target " + e.targetName);
                             bullet.SetupBullet(e.targetName , true , Vector3.zero);
 
-                            JSONObject json = e.orders.GetField(NetworkManager.MSG).GetField(NetworkManager.CREATE);
+                            JSONObject json = e.msg ;
 
                             Vector3 pos = new Vector3(json.GetField("X").f , json.GetField("Y").f , -1.0f);
                             //bullet.GetComponent<SpriteRenderer>().flipX = e.orders.GetField(NetworkManager.MSG).GetField(NetworkManager.DIR).b;
@@ -120,7 +121,7 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                             Vector3 p = new Vector3(e.msg.GetField("X").f , e.msg.GetField("Y").f , -1.0f);
                             GameObject boss = MapManager.Instance().AddObject(GamePath.BOSS1, new Vector3(p.x , p.y , -1));
                             boss.transform.eulerAngles = Vector3.zero;
-                            //boss.gameObject.AddComponent<NetworkMoving>().NAME = e.targetName;
+                            boss.gameObject.AddComponent<NetworkMoving>().NAME = e.targetName;
                             boss.GetComponent<Stage1BOSS>().enabled = false;
                             boss.gameObject.AddComponent<NetworkStage1BOSS>().BOSS_NAME = e.targetName;
                             

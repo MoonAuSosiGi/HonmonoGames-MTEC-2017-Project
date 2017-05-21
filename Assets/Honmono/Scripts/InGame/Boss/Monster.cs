@@ -19,7 +19,7 @@ public class Monster : MonoBehaviour {
     [SerializeField]
     protected float m_fullHp = 100.0f;  // 풀 체력
     [SerializeField]
-    protected float m_hp = 100.0f;      // 체력
+    protected int m_hp = 100;      // 체력
     [SerializeField]
     protected float m_moveSpeed = 3.0f; // 이동속도
 
@@ -65,7 +65,7 @@ public class Monster : MonoBehaviour {
     }
 
     // 데미지를 입는 처리
-    public virtual void Damage(float damage)
+    public virtual void Damage(int damage)
     {
         if (m_pattern == null)
             return;
@@ -73,7 +73,7 @@ public class Monster : MonoBehaviour {
         
         float per = m_pattern.PreProcessedDamge();
 
-        m_hp -= (damage * per);
+        m_hp -= (int)(damage * per);
         
         // UI 가 바뀌는 처리는 일단 여기서 하지 않는다.
     }

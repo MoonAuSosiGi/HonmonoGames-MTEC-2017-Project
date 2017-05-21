@@ -47,4 +47,28 @@ public class GameManager : Singletone<GameManager> {
     {
         m_robo = robo;
     }
+
+    // -- 게임 내에서의 상황 관리용 ------------------------------------------------ //
+    // 로봇의 현재 위치를 추적한다.
+
+    public enum ROBO_PLACE
+    {
+        SPACE,
+        BOSS_AREA,
+        PLANET
+    }
+
+    private ROBO_PLACE m_curPlace = ROBO_PLACE.SPACE;
+
+    public ROBO_PLACE CUR_PLACE
+    {
+        get { return m_curPlace; }
+        set {
+            m_curPlace = value;
+            if(NetworkOrderController.ORDER_NAME.Equals(PLAYER.USER_NAME))
+                NetworkManager.Instance().SendOrderMessage(
+                    JSONMessageTool.ToJsonPlaceChange((int)m_curPlace));
+        }
+    }
+    
 }

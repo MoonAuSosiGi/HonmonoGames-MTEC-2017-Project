@@ -76,6 +76,7 @@ public class NetworkManager : Singletone<NetworkManager>
 
     //ㄱㄱ
     public const string INTHE_STAR = "intherstar";
+    public const string PLACE_CHANGE = "placechange";
 
 
     public GameObject m_chatUI = null;

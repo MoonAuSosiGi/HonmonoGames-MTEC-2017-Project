@@ -76,13 +76,6 @@ public static class JSONMessageTool  {
         return obj.ToString();
     }
 
-    //boss scene
-    public static string ToJSonChangeBossScene()
-    {
-        JSONObject obj = GetDefJSON("" , NetworkManager.BOSS_SCENE_MOVE);
-        return obj.ToString();
-    }
-
 
     public static string ToJsonMove(string name , float x , float y , float z , bool dir , Vector3 vec)
     {
@@ -143,15 +136,25 @@ public static class JSONMessageTool  {
 
     // ----------------------------------------------------------------------------------------------------------------//
 
-  
-
-    // Place Change
-    public static string ToJsonOrderPlaceChange(string place)
+    // PLACE CHANGE
+    public static string ToJsonPlaceChange(int targetPlace)
     {
         JSONObject obj = GetDefJSON("" , NetworkManager.PLACE_CHANGE);
-        obj.GetField(NetworkManager.ORDERS)[0].GetField(NetworkManager.MSG)
-            .AddField(NetworkManager.PLACE_CHANGE , place);
+        obj.GetField(NetworkManager.ORDERS)[0]
+           .GetField(NetworkManager.MSG)
+           .AddField(NetworkManager.PLACE_CHANGE , targetPlace);
         return obj.ToString();
+    }
+
+    // HP Update
+    public static string ToJsonHPUdate(string targetName,int hp)
+    {
+        JSONObject obj = GetDefJSON(targetName , NetworkManager.HP_UPDATE);
+        obj.GetField(NetworkManager.ORDERS)[0]
+            .GetField(NetworkManager.MSG)
+            .AddField(NetworkManager.HP_UPDATE , hp);
+        return obj.ToString();
+
     }
 
     // 첫 접속 후 캐릭터 생성해라!

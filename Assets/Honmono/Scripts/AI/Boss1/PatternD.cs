@@ -83,7 +83,6 @@ public class PatternD : PatternState
                 m_skletonAnimation.state.SetAnimation(2 , "transform" , false);
                 m_skletonAnimation.state.Complete += State_Complete;
             }
-            Vector3 p = me.transform.parent.position;
             //NetworkManager.Instance().SendEnemyMoveMessage(JSONMessageTool.ToJsoinEnemyMove(m_me.GetComponent<Stage1BOSS>().m_BOSS_NAME , p.x , p.y , p.z , false));
         }
     }

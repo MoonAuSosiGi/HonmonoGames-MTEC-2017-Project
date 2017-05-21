@@ -137,7 +137,7 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
                 flip = users[i].GetField(NetworkManager.DIR).b;
                 ck = true;
                 JSONObject v = users[i].GetField(NetworkManager.DIRVECTOR);
-                drPos = new Vector3(v.GetField("X").f , v.GetField("Y").f , v.GetField("Z").f);
+                drPos = new Vector3(v.GetField("X").f , v.GetField("Y").f , -1.0f);
                 break;
             }
         }
@@ -158,7 +158,7 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
 
 
 
-        m_targetPos = drPos; //* m_delay;
+        m_targetPos = new Vector3(drPos.x,drPos.y,-1.0f); //* m_delay;
                               // transform.position = newPos;
     }
 
@@ -198,9 +198,14 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
             if (col.transform.tag.Equals("ENEMY") && m_curTarget == BULLET_TARGET.PLAYER)
             {
                 Monster mon = col.GetComponent<Monster>();
-                mon.Damage(1.0f);
+                mon.Damage(1);
 
                 BulletManager.Instance().RemoveBullet(this);
+            }
+            else if(col.transform.tag.Equals("BOSS") && m_curTarget == BULLET_TARGET.PLAYER)
+            {
+                Stage1BOSS boss = col.GetComponent<Stage1BOSS>();
+                boss.Damage(1);
             }
             else if(col.transform.tag.Equals("Player") && m_curTarget == BULLET_TARGET.ENEMY)
             {

@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using Spine.Unity;
 using Spine;
+using System;
 
-public class Stage1BOSS : Monster
+public class Stage1BOSS : Monster, NetworkManager.NetworkMessageEventListenrer
 {
     // -- Network ------------------------------------------------------------------//
     private Vector3 m_targetPos = Vector3.zero;
@@ -12,8 +13,7 @@ public class Stage1BOSS : Monster
     
     float m_lastSendTime = 0.0f;
     float m_angle = 0.0f;
-
-
+    
     // ----------------------------------------------------------------------------//
 
     // -- 기본 정보 --------------------------------------------------------------------------------//
@@ -144,7 +144,7 @@ public class Stage1BOSS : Monster
         m_skeletonAnimation = this.GetComponent<SkeletonAnimation>();
         m_pattern = new PatternA(m_skeletonAnimation , ANI_AB_MOVE , ANI_ATTACK_A , m_name);
 
-
+        NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
         this.transform.GetChild(3).GetComponent<TextMesh>().text = "BOSS hp : " + m_hp + "/100";
 
     }
@@ -155,7 +155,12 @@ public class Stage1BOSS : Monster
         //    return;
 
         if (m_hp <= 0)
+        {
+            MapManager.Instance().AddObject(GamePath.EFFECT , transform.position);
+            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder(m_name , "Monster"));
             return;
+        }
+            
 
         
         // 방향설정
@@ -323,11 +328,22 @@ public class Stage1BOSS : Monster
         return true;
     }
 
+    void NetworkManager.NetworkMessageEventListenrer.ReceiveNetworkMessage(NetworkManager.MessageEvent e)
+    {
+        if(e.msgType.Equals(NetworkManager.DAMAGE))
+        {
+            if(e.targetName.Equals(m_name))
+            {
+                Damage((int)e.msg.GetField(NetworkManager.DAMAGE).i);
+            }
+        }
+    }
+
 
     // -- 전투 관련 -------------------------------------------------------------------   //
-   
+
 
     // ----------------------------------------------------------------------------------//
-    
-    
+
+
 }

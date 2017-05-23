@@ -125,6 +125,7 @@ public class TargetMoveCamera : MonoBehaviour {
                     }
 
                 }
+                MDebug.Log("TESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT");
                 break;
             case 4:
                 int index = 0;

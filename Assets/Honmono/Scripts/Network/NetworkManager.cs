@@ -30,7 +30,7 @@ public class NetworkManager : Singletone<NetworkManager>
     public const string SOCKET_OPEN = "socket_open";
     public const string GUN_ANGLE_CHANGE = "gun_angle_change";
     public const string HP_UPDATE = "hpupdate";
-
+    public const string DAMAGE = "damage";
 
     //connect
     public const string USER_CONNECT = "user_connect";
@@ -484,6 +484,8 @@ public class NetworkManager : Singletone<NetworkManager>
             GameManager.Instance().PLAYER.USER_NAME));
         SoundManager.Instance().PlayBGM(2);
         m_chatUI.SetActive(true);
+
+        GameManager.Instance().m_curSceneState = "play";
     }
 
     public void GototheRobo()

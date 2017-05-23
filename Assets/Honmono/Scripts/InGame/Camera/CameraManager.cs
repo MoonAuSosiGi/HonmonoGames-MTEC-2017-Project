@@ -12,6 +12,8 @@ public class CameraManager : Singletone<CameraManager>
     private const string TWEEN_EASETYPE = "easeInOutCirc";
     private Vector3 m_targetPos = Vector3.zero;
 
+    public GameObject m_tutoHero = null;    
+
     public bool CAMERA_ROBO_MOVE
     {
         get { return m_targetMove.enabled; }
@@ -32,9 +34,10 @@ public class CameraManager : Singletone<CameraManager>
         STAR,
         BOSS,
         TUTORIAL_PLAYERMOVE,
-        TUTORIAL_ROBO
+        TUTORIAL_ROBO,
     }
     private CAMERA_PLACE m_place = CAMERA_PLACE.GAME_START;
+    private CAMERA_PLACE m_prevPlace = CAMERA_PLACE.GAME_START;
 
     public CAMERA_PLACE PLACE { get { return m_place; } }
 
@@ -90,7 +93,13 @@ public class CameraManager : Singletone<CameraManager>
         m_targetMove.enabled = false;
         m_targetSize = cameraSize;
         m_targetPos = targetPos.transform.position;
-        SetCameraPlace(place);
+
+        // 임시코드
+        if(this.m_prevPlace == CAMERA_PLACE.BOSS)
+            SetCameraPlace(CAMERA_PLACE.BOSS);
+        else
+            SetCameraPlace(place);
+
 
         m_funcTarget = targetFunc;
         m_func = func;
@@ -119,6 +128,7 @@ public class CameraManager : Singletone<CameraManager>
     // 카메라 위치 설정을 위한 
     public void SetCameraPlace(CAMERA_PLACE place)
     {
+        m_prevPlace = this.m_place;
         this.m_place = place;
         Vector2 colliderSize = this.GetComponent<BoxCollider2D>().size;
         GameObject obj = null;
@@ -149,7 +159,7 @@ public class CameraManager : Singletone<CameraManager>
                 break;
             case CAMERA_PLACE.TUTORIAL_PLAYERMOVE:
                 obj = m_TutorialPlayerBG;
-                m_targetMove.m_target = m_TutorialPlayerPos;
+                m_targetMove.m_target = m_tutoHero;
                 m_targetPos = m_TutorialPlayerPos.transform.position;
                 break;
             case CAMERA_PLACE.TUTORIAL_ROBO:
@@ -159,11 +169,7 @@ public class CameraManager : Singletone<CameraManager>
                 break;
         }
 
-        if ( m_place == CAMERA_PLACE.BOSS)
-        {
-            m_targetMove.m_test = true;
-        }
-        else
+
             m_targetMove.m_test = false;
 
 

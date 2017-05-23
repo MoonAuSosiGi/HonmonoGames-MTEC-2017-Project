@@ -202,6 +202,14 @@ public static class JSONMessageTool  {
         return obj.ToString();
     }
 
+    public static string ToJsonDamage(string targetName,int damage)
+    {
+        JSONObject obj = GetDefJSON(targetName , NetworkManager.DAMAGE);
+        obj.GetField(NetworkManager.ORDERS)[0]
+            .GetField(NetworkManager.MSG).AddField(NetworkManager.DAMAGE , damage);
+        return obj.ToString();
+    }
+
     // 상태값 전송 - 주로 int 형 상태값
     public static string ToJsonOrderStateValueChange(string targetName, int val)
     {

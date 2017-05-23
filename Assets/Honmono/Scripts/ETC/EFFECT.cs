@@ -6,16 +6,24 @@ public class EFFECT : MonoBehaviour {
 
     private AudioSource m_source = null;
     private bool m_ani = false;
+    private bool m_network = false;
 
+    public bool NETWORKING { set { m_network = value; } }
     void Start()
     {
+        m_source = this.GetComponent<AudioSource>();
+        if (m_network == false)
+        {
+
+            return;
+        }
         Vector2 p = transform.position;
         NetworkManager.Instance().SendOrderMessage(
             JSONMessageTool.ToJsonCreateOrder(
                "eff_" + GameManager.Instance().PLAYER.USER_NAME +"_"+ this.GetHashCode() ,
                 "effect" ,
                 p.x , p.y , -1.0f));
-        m_source = this.GetComponent<AudioSource>();    
+        
     }
 
 	void Update()

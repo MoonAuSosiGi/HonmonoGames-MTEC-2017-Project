@@ -60,6 +60,7 @@ public class BulletManager : Singletone<BulletManager> {
         bullet.ALIVE = false;
         bullet.SendMessage("MoveSend");
         bullet.gameObject.SetActive(false);
+        
      //   NetworkManager.Instance().RemoveNetworkEnemyMoveEventListener(bullet);
 
         //GameObject.Destroy(bullet.gameObject);

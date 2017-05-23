@@ -27,6 +27,11 @@ public class GameManager : Singletone<GameManager> {
     private bool m_isOriginOrder = false;
     public bool ORIGIN_ORDER  {get { return m_isOriginOrder; } set { m_isOriginOrder = value; } }
 
+    // 테스트
+    public string m_curSceneState = "login";
+
+
+
     //---------------------------------------------------------------//
 
     void Start()
@@ -70,5 +75,7 @@ public class GameManager : Singletone<GameManager> {
                     JSONMessageTool.ToJsonPlaceChange((int)m_curPlace));
         }
     }
+
+    
     
 }

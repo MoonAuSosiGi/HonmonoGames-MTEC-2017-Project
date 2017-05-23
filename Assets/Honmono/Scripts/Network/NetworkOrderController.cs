@@ -57,7 +57,7 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                 {
                     case "effect":
                         {
-                            if (e.targetName.IndexOf(m_orderName) >= 0)
+                            if (e.user.Equals(GameManager.Instance().PLAYER.USER_NAME))
                                 return;
                             JSONObject json = e.msg;
                             GameObject effect = MapManager.Instance().AddObject(
@@ -123,25 +123,39 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                             boss.transform.eulerAngles = Vector3.zero;
                             boss.gameObject.AddComponent<NetworkMoving>().NAME = e.targetName;
                             boss.GetComponent<Stage1BOSS>().enabled = false;
+                            boss.GetComponent<Stage1BOSS>().MONSTER_NAME = e.targetName;
                             boss.gameObject.AddComponent<NetworkStage1BOSS>().BOSS_NAME = e.targetName;
                             
                         }
                         break;
                     case "monster1":
                         {
-                            Vector3 p = new Vector3(e.msg.GetField("X").f , e.msg.GetField("Y").f , -1.0f);
-                            GameObject boss = MapManager.Instance().AddObject(GamePath.MONSTER1, new Vector3(p.x , p.y , -1));
+                            if (e.user.Equals(GameManager.Instance().PLAYER.USER_NAME))
+                                return;
                             
-                            NetworkMoving moving = boss.AddComponent<NetworkMoving>();
-                            moving.NAME = e.targetName + "_monster1";
+                            Vector3 p = new Vector3(e.msg.GetField("X").f , e.msg.GetField("Y").f , -1.0f);
+                            GameObject m = MapManager.Instance().AddObject(GamePath.MONSTER1, new Vector3(p.x , p.y , -1));
+                            
+                            NetworkMoving moving = m.AddComponent<NetworkMoving>();
+                            m.AddComponent<NetworkMonster>().NAME = e.targetName;
+                            m.GetComponent<Stage1Monster>().enabled = false;
+                            m.GetComponent<Stage1Monster>().MONSTER_NAME = e.targetName;
+                            m.GetComponent<Stage1Monster>().NETWORKING = true;
+                            moving.NAME = e.targetName;
                         }
                         break;
                     case "monster2":
                         {
+                            if (e.user.Equals(GameManager.Instance().PLAYER.USER_NAME))
+                                return;
                             Vector3 p = new Vector3(e.msg.GetField("X").f , e.msg.GetField("Y").f , -1.0f);
-                            GameObject boss = MapManager.Instance().AddObject(GamePath.MONSTER2, new Vector3(p.x , p.y , -1));
-                            NetworkMoving moving = boss.AddComponent<NetworkMoving>();
-                            moving.NAME = e.targetName + "_monster2";
+                            GameObject m = MapManager.Instance().AddObject(GamePath.MONSTER2, new Vector3(p.x , p.y , -1));
+                            NetworkMoving moving = m.AddComponent<NetworkMoving>();
+                            m.AddComponent<NetworkMonster>().NAME = e.targetName;
+                            m.GetComponent<Stage1Monster>().MONSTER_NAME = e.targetName;
+                            m.GetComponent<Stage1Monster>().enabled = false;
+                            m.GetComponent<Stage1Monster>().NETWORKING = true;
+                            moving.NAME = e.targetName;
                         }
                         break;
                 }
@@ -162,13 +176,7 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                 }
                 else
                 {
-                    HeroRobo robo = GameManager.Instance().ROBO;
-
-                    //TODO
-                    // robo.ROBO_ISPLAYER = false;
-                 //   robo.GetComponent<NetworkMoving>().NAME = ORDER_NAME + "_robo";
                 }
-                MDebug.Log("조작자 바꿔라 " + ORDER_NAME + " " + GameManager.Instance().PLAYER.USER_NAME);
                 break;
 
             case NetworkManager.CH_ORIGINUSER_REQ:
@@ -186,11 +194,16 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                 {
                     return;
                 }
-                switch (e.orders.GetField(NetworkManager.MSG).GetField(NetworkManager.REMOVE).str)
+                switch (e.msg.GetField(NetworkManager.REMOVE).str)
                 {
                     case "myTeam_bullet":
-                      //  BulletManager.Instance().RemoveBullet(removeTarget);
-
+                        BulletManager.Instance().RemoveBullet(removeTarget,Bullet.BULLET_TARGET.PLAYER);
+                        break;
+                    case "boss1_bullet":
+                        BulletManager.Instance().RemoveBullet(removeTarget , Bullet.BULLET_TARGET.ENEMY);
+                        break;
+                    case "Monster":
+                        MapManager.Instance().RemoveObjectName(removeTarget);
                         break;
                 }
                 break;

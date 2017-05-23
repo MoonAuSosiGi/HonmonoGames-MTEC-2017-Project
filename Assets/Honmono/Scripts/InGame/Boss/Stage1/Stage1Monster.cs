@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Spine.Unity;
+using System;
 
 public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenrer
 {
@@ -24,32 +25,63 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
 
     private bool m_isNetworkObject = false;
 
+    public bool NETWORKING {  set { m_isNetworkObject = value; } }
+
+    private Vector3 m_targetPos = Vector3.zero;
+    private Vector3 m_prevPos = Vector3.zero;
+
+    float m_lastSendTime = 0.0f;
+
+    bool m_networkObjectCheck = false;
+
+    private string m_prevState = null;
+    private string m_curState = null;
+
+    private TextMesh m_text;
     // ---------------------------------------------------------------------//
 
     void Start()
     {
+        m_text = this.transform.GetChild(0).GetComponent<TextMesh>();
         m_robo = GameManager.Instance().ROBO;
         m_skeletonAnimation = this.GetComponent<SkeletonAnimation>();
         m_hp = 5;
         this.m_skeletonAnimation.state.SetAnimation(0 , ANI_IDLE , true);
-        
-        
+        m_curState = "idle";
+        m_text.text = "HP : " + m_hp;
     }
 
     bool NetworkObjectCheck()
     {
-        if(!string.IsNullOrEmpty(NetworkOrderController.ORDER_NAME))
-        {
-            if (m_pattern != null)
-                return true;
-            
-            m_name = NetworkOrderController.ORDER_NAME + "monster" + "_" + this.GetHashCode();
-            m_pattern = new MonsterPattern(m_skeletonAnimation , ANI_MOVE , ANI_ATTACK , m_name);
-            m_skeletonAnimation.state.Complete += State_Complete;
+        if (m_isNetworkObject)
+            return false;        
 
-            if (!NetworkOrderController.ORDER_NAME.Equals(GameManager.Instance().PLAYER.USER_NAME))
-                m_isNetworkObject = true;
+        if (m_networkObjectCheck)
             return true;
+        if (GameManager.Instance().m_curSceneState.Equals("play") && 
+            NetworkOrderController.ORDER_NAME.Equals(GameManager.Instance().PLAYER.USER_NAME))
+        {
+            Vector3 pos = transform.position;
+            m_name = "monster_" + GameManager.Instance().PLAYER.USER_NAME + "_" + this.GetHashCode();
+            // 미친 손을 봐야해
+            if (m_skeletonAnimation.skeletonDataAsset.name.IndexOf("mon2") >= 0)
+                NetworkManager.Instance().SendOrderMessage(
+                    JSONMessageTool.ToJsonCreateOrder(m_name , "monster1",pos.x,pos.y,-1.0f));
+            else
+                NetworkManager.Instance().SendOrderMessage(
+                    JSONMessageTool.ToJsonCreateOrder(m_name , "monster2" , pos.x , pos.y , -1.0f));
+            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderStateValueChange(m_name , m_hp));
+            MoveSend();
+
+            NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
+            m_networkObjectCheck = true;
+            m_pattern = new MonsterPattern(m_skeletonAnimation , ANI_MOVE , ANI_ATTACK , m_name);
+            return true;
+        }
+        else if(!string.IsNullOrEmpty(NetworkOrderController.ORDER_NAME) && ! string.IsNullOrEmpty(GameManager.Instance().PLAYER.USER_NAME) &&
+            !NetworkOrderController.ORDER_NAME.Equals(GameManager.Instance().PLAYER.USER_NAME))
+        {
+            GameObject.Destroy(gameObject);
         }
         return false;
     }
@@ -79,6 +111,7 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
 
     void Update()
     {
+        m_prevState = m_curState;
         if (!NetworkObjectCheck())
             return;
        
@@ -108,16 +141,62 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
         else
             m_skeletonAnimation.skeleton.flipX = true;
         base.Move();
+
+        Vector3 roboPos = m_robo.transform.position;
+        Vector3 pos = transform.position;
+
+        if(!AttackAbleCheck())
+            m_curState = "move";
+        if (m_curState != m_prevState)
+        {
+            MDebug.Log("MOVE");
+            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonAIMessage(m_name , "" , ANI_MOVE , true));
+        }
+        MoveSend();
+    }
+
+    public override float Attack()
+    {
+        m_curState = "attack";
+        if (m_curState != m_prevState)
+        {
+            MDebug.Log("ATTACK");
+            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonAIMessage(m_name , "" , ANI_ATTACK , true));
+        }
+        return base.Attack();
+    }
+
+    protected void MoveSend()
+    {
+        Vector3 pos = transform.position;
+        float distance = Vector3.Distance(m_prevPos , pos);
+        m_prevPos = transform.position;
+
+        Vector3 velocity = (transform.position - m_prevPos) / Time.deltaTime;
+        Vector3 sendPos = m_prevPos + (velocity * (Time.deltaTime - m_lastSendTime));
+        //dirPos.Normalize();
+
+
+        NetworkManager.Instance().SendEnemyMoveMessage(
+            JSONMessageTool.ToJsonEnemyMove(m_name ,
+            pos.x , pos.y ,0,
+            m_skeletonAnimation.skeleton.flipX ,
+            sendPos));
+        m_lastSendTime = Time.deltaTime;
     }
 
     public override void Damage(int damage)
     {
         base.Damage(damage);
+        m_text.text = "HP : " + m_hp;
+
+        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderStateValueChange(m_name , m_hp));
 
         if (m_hp <= 0)
         {
             MapManager.Instance().AddObject(GamePath.EFFECT,transform.position);
-
+            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder(m_name , "Monster"));
+            NetworkManager.Instance().RemoveNetworkOrderMessageEventListener(this);
             GameObject.Destroy(gameObject);
         }
     }
@@ -145,7 +224,11 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
         {
             return true;
         }
-
+        m_curState = "idle";
+        if (m_curState != m_prevState)
+        {
+            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonAIMessage(m_name , "" , ANI_IDLE , true));
+        }
         return false;
     }
 
@@ -170,33 +253,19 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
 
             m_coolTimeTick += Time.deltaTime;
             return true;
-        } 
+        }
 
     }
-    //-------------------------------------------------------------------------------//
-    public void ReceiveNetworkMessage(NetworkManager.MessageEvent e)
+
+    void NetworkManager.NetworkMessageEventListenrer.ReceiveNetworkMessage(NetworkManager.MessageEvent e)
     {
-        switch (e.msgType)
+        if(e.msgType.Equals(NetworkManager.HP_UPDATE))
         {
-            case NetworkManager.AI_ANI_NAME:
-                {
-                    if (e.targetName.Equals(m_name))
-                    {
-
-                        switch (e.msg.GetField(NetworkManager.AI_PATTERN_NAME).str)
-                        {
-                            //A 패턴과 B패턴은 단순 이동 / 공격 애니메이션 처리만 함
-                            case "Monster":
-                                m_skeletonAnimation.state.SetAnimation(0 ,
-                                    e.msg.GetField(NetworkManager.AI_ANI_NAME).str ,
-                                    e.msg.GetField(NetworkManager.AI_ANI_LOOP).b);
-                                break;
-                        }
-
-                    }
-                }
-                break;
-
+            // 데미지 입은것이 들어옴
+            if(e.targetName.Equals(m_name))
+            {
+                Damage((int)e.msg.GetField(NetworkManager.HP_UPDATE).i);
+            }
         }
     }
 }

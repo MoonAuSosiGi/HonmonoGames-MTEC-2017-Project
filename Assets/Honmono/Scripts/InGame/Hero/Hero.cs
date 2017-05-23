@@ -49,9 +49,6 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     public AudioClip m_robotEnter = null;
     public AudioClip m_robotExit = null;
 
-    // 튜토리얼?
-    public bool m_tutorial = false;
-
     // 우주공간?
     public bool m_inSpace = true;
 
@@ -293,12 +290,10 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         m_skletonAnimation.state.Complete += CompleteAnimation;
 
         // 네트워크 이벤트 옵저버 등록
-        if (!m_tutorial)
-        {
-            NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
-            NetworkManager.Instance().AddNetworkMoveEventListener(this);
-        }
-        
+
+        NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
+        NetworkManager.Instance().AddNetworkMoveEventListener(this);
+
 
         m_skletonAnimation.state.SetAnimation(0, ANI_IDLE, true);
 
@@ -312,7 +307,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             transform.GetChild(0).GetComponent<TextMesh>().text = USERNAME.Split('_')[0];
 
 
-        if (!m_isMe || m_tutorial)
+        if (!m_isMe)
             return;
 
         if(m_isMe)
@@ -661,7 +656,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     // 중력이 적용되는 곳에서의 컨트롤 
     void Control()
     {
-        if(Input.GetKey(KeyCode.Y) && m_tutorial)
+        if(Input.GetKey(KeyCode.Y))
         {
             transform.gameObject.SetActive(false);
             Camera.main.GetComponent<TargetMoveCamera>().m_test = true;
@@ -770,14 +765,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             }
         }
         Debug.DrawLine(pos, new Vector3(pos.x,pos.y - GetComponent<BoxCollider2D>().bounds.size.y,0.0f),Color.red);
-        //MoveSend();
-        //m_delay += Time.deltaTime;
-        //if(m_delay >= (1.0f/10.0f))
 
-        if (!m_tutorial)
-            MoveSend();
-        //m_delay = 0.0f;
-
+        MoveSend();
     }
 
 

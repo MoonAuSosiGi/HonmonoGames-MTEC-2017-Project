@@ -102,6 +102,12 @@ public class NetworkStage1BOSS : MonoBehaviour,NetworkManager.NetworkMessageEven
     {
         switch (e.msgType)
         {
+            case NetworkManager.DAMAGE:
+                {
+                    if (!e.targetName.Equals(m_bossName))
+                        return;
+                }
+                break;
             case NetworkManager.HP_UPDATE:
                 {
                     if (!e.targetName.Equals("boss1"))

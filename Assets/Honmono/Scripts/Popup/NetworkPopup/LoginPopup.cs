@@ -35,7 +35,7 @@ public class LoginPopup : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        SoundManager.Instance().PlayBGM(0);
+      //  SoundManager.Instance().PlayBGM(0);
 	}
 	
 	// Update is called once per frame

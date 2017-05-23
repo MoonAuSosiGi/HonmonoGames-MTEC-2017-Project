@@ -78,6 +78,13 @@ public class MapManager : Singletone<MapManager> {
         this.m_objectList.Add(obj);
         return obj;
     }
+
+    // 게임 오브젝트 넣기
+    public void AddObject(GameObject obj)
+    {
+        if (obj != null && !m_objectList.Contains(obj))
+            m_objectList.Add(obj);
+    }
     // -- 오브젝트 제거 -------------------------------------------------------------------------------------------//
     public void RemoveObject(GameObject obj)
     {
@@ -85,6 +92,21 @@ public class MapManager : Singletone<MapManager> {
         {
             m_objectList.Remove(obj);
             GameObject.Destroy(obj);
+        }
+    }
+
+    public void RemoveObjectName(string name)
+    {
+        foreach(GameObject obj in m_objectList)
+        {
+            Monster monster = obj.GetComponent<Monster>();
+
+            if(monster != null)
+            {
+                if(monster.MONSTER_NAME.Equals(name))
+                    RemoveObject(obj);
+                return;
+            }
         }
     }
 
@@ -102,6 +124,17 @@ public class MapManager : Singletone<MapManager> {
                 monster.GetComponent<Stage1BOSS>().MONSTER_NAME = name;
                 
                 NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(name,"boss1",pos.x,pos.y,pos.z));
+            }
+            else if(prefabPath.Equals(GamePath.MONSTER1))
+            {
+                monster.GetComponent<Stage1Monster>().MONSTER_NAME = name;
+                NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(name , "monster1"));
+                
+            }
+            else if (prefabPath.Equals(GamePath.MONSTER2))
+            {
+                monster.GetComponent<Stage1Monster>().MONSTER_NAME = name;
+                NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(name , "monster2"));
             }
         }
         return monster;

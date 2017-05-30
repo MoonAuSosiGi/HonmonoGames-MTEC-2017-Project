@@ -30,7 +30,9 @@ public class NetworkManager : Singletone<NetworkManager>
     public const string SOCKET_OPEN = "socket_open";
     public const string GUN_ANGLE_CHANGE = "gun_angle_change";
     public const string HP_UPDATE = "hpupdate";
+    public const string ENERGY_UPDATE = "energyup";
     public const string DAMAGE = "damage";
+    
 
     //connect
     public const string USER_CONNECT = "user_connect";
@@ -476,7 +478,8 @@ public class NetworkManager : Singletone<NetworkManager>
     {
         // 로그인 / 로비 세팅 완료되었다.
         m_robotUserList[0].gameObject.SetActive(true);
-        CameraManager.Instance().MoveCamera(m_robotUserList[0].transform.parent.gameObject,GameSetting.CAMERA_ROBO,CameraManager.CAMERA_PLACE.ROBO_IN);
+        CameraManager.Instance().MoveCamera(
+            m_robotUserList[0].transform.parent.gameObject,GameSetting.CAMERA_ROBO,CameraManager.CAMERA_PLACE.ROBO_IN);
         
         GameStartUserSetup(GameManager.Instance().PLAYER.USER_NAME);
 
@@ -490,7 +493,8 @@ public class NetworkManager : Singletone<NetworkManager>
 
     public void GototheRobo()
     {
-        CameraManager.Instance().MoveCamera(m_robotUserList[0].gameObject, GameSetting.CAMERA_ROBO, CameraManager.CAMERA_PLACE.ROBO_IN);        
+        CameraManager.Instance().MoveCamera(m_robotUserList[0].gameObject, 
+            GameSetting.CAMERA_ROBO, CameraManager.CAMERA_PLACE.ROBO_IN);        
     }
 
     void Start()

@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class GamePath {
 
-   
+    public static string TUTORIAL_FILE = "Assets/Resources/Tutorial/tutorial.json";
     public static string PREFABS = "Prefabs/";
     public static string WEAPON_BULLET_DEF = PREFABS + "Weapon/Bullet/Def_Bullet";
     public static string WEAPON_BULLET_BOSS = PREFABS + "Weapon/Bullet/Boss_Bullet";

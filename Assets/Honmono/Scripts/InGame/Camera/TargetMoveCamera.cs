@@ -23,6 +23,7 @@ public class TargetMoveCamera : MonoBehaviour {
     float m_backgroundHalfHeight = 0.0f;
 
     Vector2 m_camera_correction = Vector2.zero;
+    
 
     bool m_freezeX = false;
     bool m_freezeY = false;
@@ -56,7 +57,7 @@ public class TargetMoveCamera : MonoBehaviour {
 
             this.m_cameraHalfWdith = (Camera.main.orthographicSize * Screen.width / Screen.height);
             this.m_cameraHalfHeight = (this.m_cameraHalfWdith * Screen.height / Screen.width);
-            float targetX = targetPos.x, targetY = targetPos.y;
+            float targetX = targetPos.x, targetY = targetPos.y + 3.1f;
             //왼쪽으로 넘어가는가!?
             if (targetPos.x - this.m_cameraHalfWdith
                 <= backPos.x - this.m_backgroundHalfWidth)
@@ -76,7 +77,7 @@ public class TargetMoveCamera : MonoBehaviour {
 
             if (m_freezeX) targetX = transform.position.x;
             if (m_freezeY) targetY = transform.position.y;
-            transform.position = new Vector3(targetX , targetY , pos.z);
+            transform.position = new Vector3(targetX , targetY, pos.z);
 
             Debug.DrawLine(new Vector3(backPos.x - m_backgroundHalfWidth, backPos.y + m_backgroundHalfHeight , -1) , 
                 new Vector3(backPos.x + m_backgroundHalfWidth , backPos.y + m_backgroundHalfHeight , 0),Color.red);
@@ -125,7 +126,6 @@ public class TargetMoveCamera : MonoBehaviour {
                     }
 
                 }
-                MDebug.Log("TESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT");
                 break;
             case 4:
                 int index = 0;

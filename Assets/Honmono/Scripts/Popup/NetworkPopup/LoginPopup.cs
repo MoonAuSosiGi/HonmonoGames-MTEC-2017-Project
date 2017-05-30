@@ -30,12 +30,15 @@ public class LoginPopup : MonoBehaviour {
     private Sprite m_unlockImg = null;
 
     private bool m_socketCheck = false;
+
+    public InputField m_serverInput = null;
     //-------------------------------------------//
 
 
 	// Use this for initialization
 	void Start () {
-      //  SoundManager.Instance().PlayBGM(0);
+        //  SoundManager.Instance().PlayBGM(0);
+        m_serverInput.text = "localhost";
 	}
 	
 	// Update is called once per frame
@@ -56,7 +59,6 @@ public class LoginPopup : MonoBehaviour {
 
     void LoginGO()
     {
-        
         CameraManager.Instance().MoveCamera(
             CameraManager.Instance().m_gameStart , 10.0f , CameraManager.CAMERA_PLACE.GAME_START,
             Camera.main.gameObject,"TitleEnd");
@@ -69,7 +71,9 @@ public class LoginPopup : MonoBehaviour {
     {
         string id = m_inputID.text;
         string pwd = m_inputPWD.text;
-        
+
+        NetworkManager.Instance().SERVER_URL = m_serverInput.text;
+
         m_loading.transform.parent.gameObject.SetActive(true);
         m_loadingHide.gameObject.SetActive(false);
 

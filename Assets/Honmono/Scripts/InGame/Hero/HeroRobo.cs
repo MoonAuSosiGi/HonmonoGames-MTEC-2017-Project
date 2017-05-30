@@ -15,11 +15,10 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         COOLTIME = 9,
         INTHESTAR=10
     }
-    public bool m_tutorial = false;
 
     //------------------------------------------------//
     //Character 기본 정보
-
+    public GameObject m_energyDummyUI = null;
     //sound list
     public AudioClip m_enginePlay = null;
     public AudioClip m_parking = null;
@@ -55,6 +54,9 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     private int m_bulletIndex = 0;
     //총 각도
     private float m_gunAngle = 0.0f;
+
+    // 로봇 에너지
+    private float m_roboEnergy = 10.0f;
 
     //-- animation --//
     private const string ANI_IDLE = "idle";
@@ -95,14 +97,31 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     private float m_syncTime_angle = 0.0f;
     private float m_delay_angle = 0.0f;
     private float m_lastSyncTimeAngle = 0.0f;
+
+
     // --------------------------------------------------------------------------------//
     // HUD
     public GameObject m_hpHUD = null;
+
     private List<GameUI.HPUpdateEvent> m_hpReceieveList = new List<GameUI.HPUpdateEvent>();
+    private List<GameUI.ENERGYUpdateEvent> m_energyReceieveList = new List<GameUI.ENERGYUpdateEvent>();
+
+    public float ENERGY { get { return m_roboEnergy; }
+        set {
+            m_roboEnergy = value;
+            UpdateEnergy();
+            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonEnergyUdate("robo" , m_roboEnergy));
+        } }
     public void AddHPUpdateEvent(GameUI.HPUpdateEvent recv)
     {
         if (!m_hpReceieveList.Contains(recv))
             m_hpReceieveList.Add(recv);
+    }
+
+    public void AddEnergyUpdateEvent(GameUI.ENERGYUpdateEvent recv)
+    {
+        if (!m_energyReceieveList.Contains(recv))
+            m_energyReceieveList.Add(recv);
     }
 
     void UpdateHp()
@@ -111,12 +130,16 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             recv.HPUpdate(m_hp , GameSetting.HERO_ROBO_MAX_HP);
     }
 
+    void UpdateEnergy()
+    {
+        foreach (GameUI.ENERGYUpdateEvent recv in m_energyReceieveList)
+            recv.EnergyUpdate(m_roboEnergy);
+    }
+
     // --------------------------------------------------------------------------------//
 
     void Awake()
     {
-        if (m_tutorial)
-            return;
         GameManager.Instance().HeroRoboSetup(this);
 
         //리시버 등록
@@ -141,6 +164,9 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             m_DamageAnchorList.Add(m_DamageAnchor.transform.GetChild(i).gameObject);
         }
         AddHPUpdateEvent(m_hpHUD.GetComponent<RoboHUD>());
+        AddEnergyUpdateEvent(m_hpHUD.GetComponent<RoboHUD>());
+        UpdateHp();
+        UpdateEnergy();
     }
 	
     void TuToEnd()
@@ -150,17 +176,6 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     }
     // Update is called once per frame
     void Update () {
-
-        if(m_tutorial)
-        {
-            Control();
-
-            if(Input.GetKey(KeyCode.K))
-            {
-                CameraManager.Instance().MoveCamera(gameObject , 10 , CameraManager.CAMERA_PLACE.GAME_START,gameObject,"TuToEnd",false);
-            }
-            return;
-        }
 
         // 한명이라도 조작하고 있으면 HUD 를 띄움
         if (!string.IsNullOrEmpty(m_movePlayerName) || !string.IsNullOrEmpty(m_gunPlayerName))
@@ -173,6 +188,11 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         if (!string.IsNullOrEmpty(m_movePlayerName) &&
             m_movePlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
         {
+            if (ENERGY < 0.5f)
+                m_energyDummyUI.SetActive(true);
+            else
+                m_energyDummyUI.SetActive(false);
+
             Control();
             MoveSend();
             StateSend();
@@ -182,6 +202,10 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         if (!string.IsNullOrEmpty(m_gunPlayerName) &&
             m_gunPlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
         {
+            if (ENERGY < 0.5f)
+                m_energyDummyUI.SetActive(true);
+            else
+                m_energyDummyUI.SetActive(false);
             ControlGun();
             GunAngleSend();
             StateSend();
@@ -241,7 +265,11 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         }
     }
 
-
+    void EnergyTestUser()
+    {
+        ENERGY -= 0.5f;
+    }
+  
     /// <summary>
     /// 캐릭터 조작에 관련된 함수
     /// </summary>
@@ -263,49 +291,38 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         }
         
         // Horizontal
-        if (Input.GetKey(KeyCode.LeftArrow))
+        if (Input.GetKey(KeyCode.LeftArrow) && ENERGY >= 0.5f)
         {
-            
+            if(!IsInvoking("EnergyTestUser"))
+                Invoke("EnergyTestUser" , 0.5f);
             movex = -m_moveSpeed * Time.deltaTime;
 
             m_skletonAnimation.skeleton.flipX = false;
 
         }
-        if (Input.GetKey(KeyCode.RightArrow))
+
+        if (Input.GetKey(KeyCode.RightArrow) && ENERGY >= 0.5f)
         {
+            if (!IsInvoking("EnergyTestUser"))
+                Invoke("EnergyTestUser" , 0.5f);
             movex = m_moveSpeed * Time.deltaTime;
 
             m_skletonAnimation.skeleton.flipX = true;
         }
         // Vertical
-        if (Input.GetKey(KeyCode.UpArrow))
+        if (Input.GetKey(KeyCode.UpArrow) && ENERGY >= 0.5f)
         {
-            
+            if (!IsInvoking("EnergyTestUser"))
+                Invoke("EnergyTestUser" , 0.5f);
             movey = m_moveSpeed * Time.deltaTime;
         }
-        if (Input.GetKey(KeyCode.DownArrow))
+        if (Input.GetKey(KeyCode.DownArrow) && ENERGY >= 0.5f)
         {
-            
+            if (!IsInvoking("EnergyTestUser"))
+                Invoke("EnergyTestUser" , 0.5f);
             movey = -m_moveSpeed * Time.deltaTime;
         }
-        // 로컬 전투 처리용--------------------------------------------------------------
-        m_prevAngle = m_gunAngle;
-        if (!m_skletonAnimation.skeleton.flipX)
-            m_armBone.transform.rotation = Quaternion.Euler(0 , 0 , m_gunAngle);
-        else
-            m_armBone.transform.rotation = Quaternion.Euler(0 , 0 , -m_gunAngle);
 
-
-        if (BitControl.Get(m_roboState , (int)ROBO_STATE.ATTACK))
-        {
-            m_skletonAnimation.state.SetAnimation(0 , ANI_ATTACK , false);
-            m_roboState = BitControl.Clear(m_roboState , (int)ROBO_STATE.ATTACK);
-            m_roboState = BitControl.Set(m_roboState , (int)ROBO_STATE.COOLTIME);
-            FireBullet();
-        }
-
-
-        //-------------------------------------------------------------------------------
 
         if (BitControl.Get(m_roboState, (int)ROBO_STATE.MOVE) &&
             (Input.GetKeyUp(KeyCode.LeftArrow) || Input.GetKeyUp(KeyCode.RightArrow) ||
@@ -372,7 +389,13 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             m_roboState = BitControl.Clear(m_roboState, (int)ROBO_STATE.ATTACK);
             m_roboState = BitControl.Set(m_roboState, (int)ROBO_STATE.COOLTIME);
             
-            FireBullet();
+            if(ENERGY >= 0.5f)
+            {
+                if (!IsInvoking("EnergyTestUser"))
+                    Invoke("EnergyTestUser" , 0.5f);
+                FireBullet();
+            }
+            
         }
 
     }
@@ -573,6 +596,13 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
                 return;
             m_hp = (int)e.msg.GetField(NetworkManager.HP_UPDATE).i;
             UpdateHp();
+        }
+        else if(e.msgType == NetworkManager.ENERGY_UPDATE)
+        {
+            if (GameManager.Instance().PLAYER.USER_NAME.Equals(e.user) || !e.targetName.EndsWith("robo"))
+                return;
+            m_roboEnergy = e.msg.GetField(NetworkManager.ENERGY_UPDATE).f;
+            UpdateEnergy();
         }
     }
 

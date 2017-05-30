@@ -47,9 +47,9 @@ public class CharacterSelectPopup : MonoBehaviour {
     public void ReturnButton()
     {
         SoundManager.Instance().PlaySound(m_selectFinish);
-
-        //CameraManager.Instance().MoveCamera(gameObject , 10 , CameraManager.CAMERA_PLACE.TUTORIAL_PLAYERMOVE);
-        PopupManager.Instance().AddPopup("LobbyPopup");
+        //튜토리얼 시작   
+         CameraManager.Instance().MoveCamera(gameObject , 10 , CameraManager.CAMERA_PLACE.TUTORIAL_PLAYERMOVE);
+     //  PopupManager.Instance().AddPopup("LobbyPopup");
         PopupManager.Instance().ClosePopup(gameObject);
     }
 

@@ -38,6 +38,10 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
     private string m_curState = null;
 
     private TextMesh m_text;
+
+    public bool m_tutorial = false;
+
+    public TutoRobo m_tutoRobo = null;
     // ---------------------------------------------------------------------//
 
     void Start()
@@ -53,6 +57,16 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
 
     bool NetworkObjectCheck()
     {
+        if (m_tutorial)
+        {
+
+            if (m_pattern == null)
+            {
+                m_pattern = new MonsterPattern(m_skeletonAnimation , ANI_MOVE , ANI_ATTACK , null);
+                m_skeletonAnimation.state.Complete += State_Complete;
+            }
+            return true;
+        }
         if (m_isNetworkObject)
             return false;        
 
@@ -93,17 +107,29 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
             m_skeletonAnimation.state.SetAnimation(0 , ANI_MOVE , true);
             if (m_attackTarget != null)
             {
-                HeroRobo robo = m_attackTarget.GetComponent<HeroRobo>();
+                if(!m_tutorial)
+                {
+                    HeroRobo robo = m_attackTarget.GetComponent<HeroRobo>();
 
-                if(robo != null)
-                    robo.Damage(m_power);
+                    if (robo != null)
+                        robo.Damage(m_power);
+                    else
+                    {
+                        Hero hero = m_attackTarget.GetComponent<Hero>();
+
+                        if (hero != null)
+                            hero.Damage(m_power);
+                    }
+                }
                 else
                 {
-                    Hero hero = m_attackTarget.GetComponent<Hero>();
+                    TutoRobo robo = m_attackTarget.GetComponent<TutoRobo>();
 
-                    if (hero != null)
-                        hero.Damage(m_power); 
+                    if (robo != null)
+                        robo.Damage(m_power);
+
                 }
+               
             }
             
         }
@@ -132,21 +158,32 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
 
     protected override void Move()
     {
+
+
         if (m_pattern != null)
-            m_pattern.Move(gameObject , m_robo.gameObject);
+        {
+            if(m_tutorial)
+                m_pattern.Move(gameObject , m_tutoRobo.gameObject);
+            else
+                m_pattern.Move(gameObject , m_robo.gameObject);
+        }
+            
         
 
         if (m_robo.transform.position.x < transform.position.x)
             m_skeletonAnimation.skeleton.flipX = false;
         else
             m_skeletonAnimation.skeleton.flipX = true;
+
+
+        if (m_tutorial)
+            return;
         base.Move();
 
-        Vector3 roboPos = m_robo.transform.position;
-        Vector3 pos = transform.position;
 
         if(!AttackAbleCheck())
             m_curState = "move";
+
         if (m_curState != m_prevState)
         {
             MDebug.Log("MOVE");
@@ -158,6 +195,13 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
     public override float Attack()
     {
         m_curState = "attack";
+        if (m_tutorial)
+        {
+            float coolTime = 0.0f;
+            if (m_pattern != null)
+                coolTime = m_pattern.Attack(m_tutoRobo.gameObject , gameObject , m_index);
+            return coolTime;
+        }
         if (m_curState != m_prevState)
         {
             MDebug.Log("ATTACK");
@@ -190,13 +234,19 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
         base.Damage(damage);
         m_text.text = "HP : " + m_hp;
 
-        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderStateValueChange(m_name , m_hp));
+        if(!m_tutorial)
+            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderStateValueChange(m_name , m_hp));
 
         if (m_hp <= 0)
         {
             MapManager.Instance().AddObject(GamePath.EFFECT,transform.position);
-            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder(m_name , "Monster"));
-            NetworkManager.Instance().RemoveNetworkOrderMessageEventListener(this);
+
+            if(!m_tutorial)
+            {
+                NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder(m_name , "Monster"));
+                NetworkManager.Instance().RemoveNetworkOrderMessageEventListener(this);
+            }
+            
             GameObject.Destroy(gameObject);
         }
     }
@@ -204,7 +254,7 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
     // 공격 가능 범위 체크
     bool AttackAbleCheck()
     {
-        Vector3 roboPos = m_robo.transform.position;
+        Vector3 roboPos = (!m_tutorial) ? m_robo.transform.position : m_tutoRobo.transform.position;
         Vector3 pos = transform.position;
 
         if (Vector3.Distance(roboPos , pos) <= GameSetting.MONSTER_ATTACK_DISTANCE)
@@ -217,7 +267,7 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
 
     bool FindMoveAbleCheck()
     {
-        Vector3 roboPos = m_robo.transform.position;
+        Vector3 roboPos = (!m_tutorial) ? m_robo.transform.position : m_tutoRobo.transform.position;
         Vector3 pos = transform.position;
 
         if (Vector3.Distance(roboPos , pos) <= GameSetting.MONSTER_FIND_DISTANCE)
@@ -225,6 +275,9 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
             return true;
         }
         m_curState = "idle";
+
+        if (m_tutorial)
+            return false;
         if (m_curState != m_prevState)
         {
             NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonAIMessage(m_name , "" , ANI_IDLE , true));

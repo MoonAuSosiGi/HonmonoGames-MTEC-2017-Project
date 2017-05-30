@@ -14,7 +14,7 @@ public static class GameSetting  {
 
     // 카메라값
     public const float CAMERA_SPACE = 10.0f;
-    public const float CAMERA_ROBO = 6.0f;
+    public const float CAMERA_ROBO = 8.0f;
 
     
     // -- 주인공 관련 값 ( 휴먼 ) -----------------------------------------------------//

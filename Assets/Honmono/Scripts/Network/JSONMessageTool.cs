@@ -156,6 +156,16 @@ public static class JSONMessageTool  {
         return obj.ToString();
 
     }
+    // energy Update
+    public static string ToJsonEnergyUdate(string targetName , float e)
+    {
+        JSONObject obj = GetDefJSON(targetName , NetworkManager.ENERGY_UPDATE);
+        obj.GetField(NetworkManager.ORDERS)[0]
+            .GetField(NetworkManager.MSG)
+            .AddField(NetworkManager.ENERGY_UPDATE , e);
+        return obj.ToString();
+
+    }
 
     // 첫 접속 후 캐릭터 생성해라!
     public static string ToJsonOrderUserCrateCharacter(string targetName)

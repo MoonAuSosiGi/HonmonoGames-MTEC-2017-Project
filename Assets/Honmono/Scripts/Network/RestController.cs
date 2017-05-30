@@ -40,7 +40,11 @@ public class RestController : MonoBehaviour {
     {
         MDebug.Log("REST : " + json);
         //url = "http://172.20.10.5:8080";
-        UnityWebRequest www = new UnityWebRequest(NetworkManager.Instance().SERVER_URL + ":8080", "POST");
+        string url = NetworkManager.Instance().SERVER_URL;
+
+        if(!url.Equals("localhost"))
+            url = "http://"+ NetworkManager.Instance().SERVER_URL;
+        UnityWebRequest www = new UnityWebRequest(url+ ":8080", "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         www.uploadHandler = (UploadHandler)new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();

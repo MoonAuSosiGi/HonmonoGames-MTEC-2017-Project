@@ -4,10 +4,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class RoboHUD : MonoBehaviour, GameUI.HPUpdateEvent
+public class RoboHUD : MonoBehaviour, GameUI.HPUpdateEvent, GameUI.ENERGYUpdateEvent
 {
     List<Image> m_hpList = new List<Image>();
     public TextMesh m_roboUI = null;
+    private int m_hp = 0;
+    private float m_energy = 0.0f;
 
     void Start()
     {
@@ -31,6 +33,20 @@ public class RoboHUD : MonoBehaviour, GameUI.HPUpdateEvent
                 m_hpList[i].gameObject.SetActive(false);
         }
 
-        m_roboUI.text = "HP : " + curHP + "\nENERGY\n100%";
+        UpdateUI();
+    }
+
+    void GameUI.ENERGYUpdateEvent.EnergyUpdate(float curEnergy)
+    {
+        m_energy = curEnergy;
+        UpdateUI();
+    }
+
+    void UpdateUI()
+    {
+        if (GameManager.Instance().ROBO == null)
+            return;
+
+        m_roboUI.text = "HP : " + GameManager.Instance().ROBO.HP + "\nENERGY\n " + string.Format("{0:F1}%" , GameManager.Instance().ROBO.ENERGY);
     }
 }

@@ -15,6 +15,9 @@ public class RoboDamagePoint : MonoBehaviour,NetworkManager.NetworkMessageEventL
 
     public List<Sprite> m_sprList = new List<Sprite>();
 
+    public bool m_tuto = false;
+    public TutorialController m_test = null;
+
     // -------------------------------------------------------------------------- //
 
     public string NETWORK_NAME
@@ -46,6 +49,12 @@ public class RoboDamagePoint : MonoBehaviour,NetworkManager.NetworkMessageEventL
         this.GetComponent<Animator>().enabled = false;
         if (m_index <= 0)
         {
+            if(m_tuto)
+            {
+                m_test.TutorialAction_Fix();
+                MapManager.Instance().RemoveObject(gameObject);
+                return;
+            }
             // hp up
             // Destroy
             if (m_isNetworkObject)

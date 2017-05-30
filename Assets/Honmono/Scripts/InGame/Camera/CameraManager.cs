@@ -35,6 +35,8 @@ public class CameraManager : Singletone<CameraManager>
         BOSS,
         TUTORIAL_PLAYERMOVE,
         TUTORIAL_ROBO,
+        TUTORIAL_ROBO_IN,
+        TUTORIAL_ROBO_SPACE
     }
     private CAMERA_PLACE m_place = CAMERA_PLACE.GAME_START;
     private CAMERA_PLACE m_prevPlace = CAMERA_PLACE.GAME_START;
@@ -70,6 +72,10 @@ public class CameraManager : Singletone<CameraManager>
     public GameObject m_TutorialROBOBG = null;
     public GameObject m_TutorialROBOPos = null;
     public GameObject m_tutorobo = null;
+
+    //튜토리얼 방 
+    public GameObject m_TutorialRoomPlace = null;
+    public GameObject m_TutorialRoomStartPos = null;
 
     private GameObject m_funcTarget = null;
     private string m_func = null;
@@ -130,6 +136,7 @@ public class CameraManager : Singletone<CameraManager>
     {
         m_prevPlace = this.m_place;
         this.m_place = place;
+        
         Vector2 colliderSize = this.GetComponent<BoxCollider2D>().size;
         GameObject obj = null;
         switch (m_place)
@@ -140,7 +147,7 @@ public class CameraManager : Singletone<CameraManager>
                 m_targetMove.m_target = m_playerROBO;
                 break;
             case CAMERA_PLACE.ROBO_IN:
-                obj = m_robotPlace; colliderSize = new Vector2(15.0f, 12.0f);
+                obj = m_robotPlace; colliderSize = new Vector2(25.0f , 15.0f);
                 m_targetMove.m_target = m_playerIntheROBO;
                 break;
             case CAMERA_PLACE.STAGE1:
@@ -155,6 +162,7 @@ public class CameraManager : Singletone<CameraManager>
                 break;
             case CAMERA_PLACE.BOSS:
                 obj = m_boss1Place; colliderSize = new Vector2(25.0f , 20.0f);
+                m_targetMove.m_target = GameManager.Instance().ROBO.gameObject;
                 m_targetPos = m_boss.transform.position;
                 break;
             case CAMERA_PLACE.TUTORIAL_PLAYERMOVE:
@@ -166,6 +174,15 @@ public class CameraManager : Singletone<CameraManager>
                 obj = m_TutorialROBOBG;
                 m_targetMove.m_target = m_tutorobo;
                 m_targetPos = m_TutorialROBOPos.transform.position;
+                break;
+            case CAMERA_PLACE.TUTORIAL_ROBO_SPACE:
+                obj = m_TutorialROBOBG;
+                m_targetMove.m_target = m_tutorobo;
+                break;
+            case CAMERA_PLACE.TUTORIAL_ROBO_IN:
+                obj = m_TutorialRoomPlace;
+                m_targetMove.m_target = m_tutoHero;
+                m_targetPos = m_TutorialRoomStartPos.transform.position;
                 break;
         }
 
@@ -218,6 +235,9 @@ public class CameraManager : Singletone<CameraManager>
 
         if (m_place != CAMERA_PLACE.GAME_START)
             m_targetMove.enabled = true;
+        if (m_place == CAMERA_PLACE.TUTORIAL_ROBO_IN || m_place == CAMERA_PLACE.TUTORIAL_ROBO_SPACE
+            || m_place == CAMERA_PLACE.TUTORIAL_ROBO_IN)
+            m_targetMove.m_test = true;
 
         m_funcTarget = null;
         m_func = null;
@@ -239,6 +259,10 @@ public class CameraManager : Singletone<CameraManager>
             
             m_Title.SetActive(false);
         }
+        else if(m_place == CAMERA_PLACE.TUTORIAL_PLAYERMOVE)
+        {
+            m_TutorialPlayerBG.transform.parent.parent.SendMessage("SetupTutorial");
+        }
 
         // 이동해야함
         if (m_andObj != null)
@@ -255,42 +279,43 @@ public class CameraManager : Singletone<CameraManager>
     void OnTriggerStay2D(Collider2D col)
     {
 
-        if (m_place != CAMERA_PLACE.ROBO_IN)
-            return;
-        if (col.transform.position.y > transform.position.y && col.name == "UP")
-        {
-            if (col.transform.position.y > 9.0f && transform.position.y < 10.74f)
-            {
-                if (this.GetComponent<Camera>().orthographicSize - 0.3f > 4.0f)
-                {
+        //if (m_place != CAMERA_PLACE.ROBO_IN || m_place != CAMERA_PLACE.TUTORIAL_ROBO_IN)
+        //    return;
+        //if (col.transform.position.y > transform.position.y && col.name == "UP")
+        //{
+        //    if (col.transform.position.y > 9.0f && transform.position.y < 10.74f)
+        //    {
+        //        if (this.GetComponent<Camera>().orthographicSize - 0.3f > 5.0f)
+        //        {
 
-                    this.GetComponent<Camera>().orthographicSize = this.GetComponent<Camera>().orthographicSize - 0.3f;
+        //            this.GetComponent<Camera>().orthographicSize = this.GetComponent<Camera>().orthographicSize - 0.3f;
 
-                }
-                else
-                {
-                    m_targetMove.SetCameraCorrection(new Vector2(0.0f, 1.73f));
-                    this.GetComponent<Camera>().orthographicSize = 4.0f;
-                    this.GetComponent<BoxCollider2D>().size = new Vector2(10.0f, 8.0f);
-                    transform.position = new Vector3(transform.position.x, 10.74f, transform.position.z);
-                }
-            }
+        //        }
+        //        else
+        //        {
+        //          //  m_targetMove.SetCameraCorrection(new Vector2(0.0f, 3.1f)); //12.3f
+        //            this.GetComponent<Camera>().orthographicSize = 5.0f;
+        //            this.GetComponent<BoxCollider2D>().size = new Vector2(10.0f, 8.0f);
+        //            transform.position = new Vector3(transform.position.x, 14.74f, transform.position.z);
+        //        }
+        //    }
 
-        }
-        else if (col.transform.position.y < transform.position.y && col.name == "DOWN")
-        {
+        //}
+        //else if (col.transform.position.y < transform.position.y && col.name == "DOWN")
+        //{
 
-            m_targetMove.SetCameraCorrection(new Vector2(0.0f, 0.0f));
-            if (this.GetComponent<Camera>().orthographicSize + 0.3f < 6.0f)
-            {
-                this.GetComponent<Camera>().orthographicSize = this.GetComponent<Camera>().orthographicSize + 0.3f;
-            }
-            else
-            {
-
-                this.GetComponent<BoxCollider2D>().size = new Vector2(15.0f, 12.0f);
-                this.GetComponent<Camera>().orthographicSize = 6.0f;
-            }
-        }
+            
+        //    if (this.GetComponent<Camera>().orthographicSize + 0.3f < GameSetting.CAMERA_ROBO)
+        //    {
+        //        this.GetComponent<Camera>().orthographicSize = this.GetComponent<Camera>().orthographicSize + 0.3f;
+        //    }
+        //    else
+        //    {
+        //     //   m_targetMove.SetCameraCorrection(new Vector2(0.0f , 0.0f));
+        //        this.GetComponent<BoxCollider2D>().size = new Vector2(15.0f, 12.0f);
+        //        this.GetComponent<Camera>().orthographicSize = GameSetting.CAMERA_ROBO;
+        //    }
+        //}
+        ////else if(col.name)
     }
 }

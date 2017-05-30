@@ -8,4 +8,9 @@ public class GameUI {
     {
         void HPUpdate(int curHP,int maxHP);
     }
+
+    public interface ENERGYUpdateEvent
+    {
+        void EnergyUpdate(float curEnergy);
+    }
 }

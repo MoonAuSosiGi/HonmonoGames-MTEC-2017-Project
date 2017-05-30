@@ -21,7 +21,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         CONTROL_DRIVE = 7,
         CONTROL_INVEN = 8,
         CONTROL_HEAL = 9,
-        CONTROL_OUT_DOOR = 10
+        CONTROL_OUT_DOOR = 10,
+        CONTROL_ENERGY_CHARGE = 11
 
     }
     // Animation 이름
@@ -35,6 +36,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     private const string ANI_STAND = "stand";
     private const string ANI_STAND_UP = "stand_up";
 
+
+   
     // 기본 정보 --------------------------------------------------------------------------------------//
 
     private int m_hp = 10;
@@ -90,12 +93,26 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
                 m_userName = value;
         }
     }
+
+
+    // -- 사다리용 ------------------------------------------------------------------------------------------------------------//
+    private SkeletonAnimation m_climb = null;
+    private bool m_LadderState = false;
+
+    // -- 에너지 차지 ---------------------------------------------------------------------------------------------------------//
+    public SpriteRenderer m_chargePad = null;
+    public GameObject m_chargeTopObj = null;
+    public GameObject m_chargeBottomObj = null;
    
     // -- NetworkMessage ------------------------------------------------------------------------------------------------------//
     private Vector3 m_targetPos = Vector3.zero;
     private Vector3 m_startPos = Vector3.zero;
 
+    //charge
+    private Vector3 m_prevChargePos = Vector3.zero;
+    private float m_lastSendTime_charge = 0.0f;
     private float m_lastSendTime = 0.0f;
+
     // state
     private int m_prevState = 0;
     //private float m_delay = 0.0f;
@@ -159,41 +176,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         }
         else
             targetPos = drPos;
-        
 
-        // 여기서 애니메이션을 유추한다.
-        float dy = Mathf.Round((targetPos.y - transform.position.y));
-        float distance = Mathf.Round(Vector3.Distance(transform.position, targetPos));
-
-        //MDebug.Log("distance "+ string.Format("{0:F2}" , distance) + "dy " + string.Format("{0:F2}" , dy) + " target "+ targetPos + " pos " +transform.position);
-        
-        //if (distance <= 0 && dy <= 0.0f)
-        //{
-        //    m_curState = (int)HERO_STATE.IDLE;
-        //}
-        //else
-        //{
-        //    if (dy <= 0.0f)
-        //    {
-
-
-        //    }
-        //    else
-        //    {
-        //        // 점프와 이동을 구별해야함
-        //        m_curState = BitControl.Set(m_curState , (int)HERO_STATE.MOVE);
-        //    }
-        //}
-
-
-        //MDebug.Log("cur " + m_curState);
-
-
-        
-
-        //m_syncTime = 0.0f;
-        //m_delay = Time.time - m_lastSyncTime;
-        //m_lastSyncTime = Time.time;
         m_targetPos = targetPos;
     }
     // Order 받는용
@@ -274,7 +257,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         m_skletonAnimation = this.GetComponent<SkeletonAnimation>();
         m_bgCurve = this.GetComponent<BansheeGz.BGSpline.Curve.BGCurve>();
         m_rigidBody = this.GetComponent<Rigidbody2D>();
-       
+        m_climb = transform.GetChild(2).GetComponent<SkeletonAnimation>();
         //-------------------------------------------------------//
 
     }
@@ -336,8 +319,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
         if (trackEntry.animation.name.Equals(ANI_REPAIR))
         {
-            m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.ATTACK);            
-            
+            m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.ATTACK);
+            m_skletonAnimation.state.ClearTrack(1);
             if(m_damagePointFix != null)
             {
                 m_damagePointFix.GetComponent<RoboDamagePoint>().DamageFix();
@@ -359,7 +342,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             else
                 ControlInSpace();
             StateSend();
-            
+
         }
         else
         {
@@ -400,18 +383,48 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             if (BitControl.Get(m_curState, (int)HERO_STATE.JUMP_FALL))
             {
                 //떨어지는 중
-                CheckAndSetAnimation(ANI_JUMP_FALL, false);
+                if (!BitControl.Get(m_curState , (int)HERO_STATE.MOVE))
+                    CheckAndSetAnimation(ANI_JUMP_FALL, false);
             }
 
             if (BitControl.Get(m_curState, (int)HERO_STATE.MOVE))
             {
-        //        if (IsCurrentAnimation(ANI_IDLE))
+                if (!IsCurrentAnimation(ANI_MOVE))
                 {
-                    CheckAndSetAnimation(ANI_MOVE , true);
-                    //m_skletonAnimation.state.SetAnimation(0, ANI_MOVE, true);
+                    m_skletonAnimation.state.SetAnimation(0 , ANI_MOVE , true);//
                 }
             }
+            if (BitControl.Get(m_curState , (int)HERO_STATE.LADDER))
+            {
+                m_skletonAnimation.enabled = false;
+                this.GetComponent<MeshRenderer>().enabled = false;
+                m_climb.gameObject.SetActive(true);
+
+                if (BitControl.Get(m_curState , (int)HERO_STATE.MOVE))
+                {
+                    if (m_climb.state.GetCurrent(0) != null &&
+                        !m_climb.state.GetCurrent(0).animation.name.Equals("animation"))
+                        m_climb.state.SetAnimation(0 , "animation" , true);
+                    else if (m_climb.state.GetCurrent(0) == null)
+                        m_climb.state.SetAnimation(0 , "animation" , true);
+                }
+                else
+                {
+                    if(m_climb.state != null)
+                        m_climb.state.ClearTrack(0);
+                }
+            }
+            else
+            {
+                m_skletonAnimation.enabled = true;
+                this.GetComponent<MeshRenderer>().enabled = true;
+                m_climb.gameObject.SetActive(false);
+            }
+
+            if (BitControl.Get(m_curState , (int)HERO_STATE.ATTACK))
+                m_skletonAnimation.state.SetAnimation(1 , ANI_REPAIR , false);
         }
+        
     }
     //-----------------------------------------------------------------------------------------------------------------------//
 
@@ -514,6 +527,56 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         }
     }
 
+    // :: 에너지 충전
+    void ObjectRoboEnergyControlCheck()
+    {
+        if(BitControl.Get(m_curState,(int)HERO_STATE.CONTROL_ENERGY_CHARGE))
+        {
+            if(Input.GetKeyDown(KeyCode.Space))
+            {
+               
+                if (iTween.Count(m_chargePad.gameObject) <= 0)
+                {
+                    iTween.MoveTo(m_chargePad.gameObject ,
+                        iTween.Hash("y" , m_chargeTopObj.transform.position.y , "oncompletetarget" , gameObject ,
+                        "oncomplete" , "PadTweenEnd" , "speed" , 4.0f,"onupdatetarget",gameObject,"onupdate", "ChargeMoveSend"));
+                    GameManager.Instance().ROBO.ENERGY = GameManager.Instance().ROBO.ENERGY + 0.5f;
+                }
+                else
+                {
+                    
+                }
+            }
+        }
+    }
+
+    void ChargeMoveSend()
+    {
+        if (string.IsNullOrEmpty(m_userName) || string.IsNullOrEmpty(NetworkOrderController.ORDER_NAME))
+            return;
+     
+        Vector3 pos =  m_chargePad.gameObject.transform.position;
+        float distance = Vector3.Distance(m_prevChargePos , pos);
+        
+        Vector3 velocity = (m_chargePad.transform.position - m_prevChargePos) / Time.deltaTime;
+        Vector3 sendPos = m_prevChargePos + (velocity * (Time.deltaTime - m_lastSendTime_charge));
+        NetworkManager.Instance().SendEnemyMoveMessage(
+           JSONMessageTool.ToJsonEnemyMove(
+               NetworkOrderController.ORDER_NAME + "_pad" ,
+               pos.x , pos.y ,
+               0 , // :: Area 선택해서 날림
+               false ,
+               new Vector3(pos.x,pos.y,-1.0f)));
+        m_lastSendTime_charge = Time.deltaTime;
+    }
+
+    void PadTweenEnd()
+    {
+        iTween.MoveTo(m_chargePad.gameObject ,
+                         iTween.Hash("y" , m_chargeBottomObj.transform.position.y,"speed",4.0f
+                         ,"onupdatetarget" , gameObject , "onupdate" , "ChargeMoveSend"));
+    }
+
     // :: 인벤
     void ObjectRoboInvenControlCheck()
     {
@@ -533,8 +596,10 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         float jump = 0.0f;
         if (Input.GetKey(KeyCode.W))
         {
-            if (BitControl.Get(m_curState , (int)HERO_STATE.LADDER))
+            if (m_LadderState)
             {
+                m_curState = BitControl.Set(m_curState , (int)HERO_STATE.MOVE);
+                m_curState = BitControl.Set(m_curState , (int)HERO_STATE.LADDER);
                 moveY = m_moveSpeed * Time.deltaTime;
                 m_rigidBody.gravityScale = 0.0f;
                 m_rigidBody.velocity = Vector2.zero;
@@ -558,8 +623,10 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         if (Input.GetKey(KeyCode.S))
         {
 
-            if (BitControl.Get(m_curState , (int)HERO_STATE.LADDER))
+            if (m_LadderState)
             {
+                m_curState = BitControl.Set(m_curState , (int)HERO_STATE.MOVE);
+                m_curState = BitControl.Set(m_curState , (int)HERO_STATE.LADDER);
                 moveY = -m_moveSpeed * Time.deltaTime;
                 m_rigidBody.gravityScale = 0.0f;
                 m_rigidBody.velocity = Vector2.zero;
@@ -618,9 +685,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
                 case "ROBOT_INVEN": state = (int)HERO_STATE.CONTROL_INVEN; break;
                 case "ROBOT_GUN": state = (int)HERO_STATE.CONTROL_GUN; break;
                 case "ROBOT_OUT_DOOR": state = (int)HERO_STATE.CONTROL_OUT_DOOR; break;
-                case "ROBOT_STATUSVIEW":
-                    // 얘는 걍 UI 띄우면 된다
-                    break;
+                case "ROBOT_STATUSVIEW": break;
+                case "ROBOT_ENERGY_CHARGE": state = (int)HERO_STATE.CONTROL_ENERGY_CHARGE; break;
             }
             SoundManager.Instance().PlaySound(m_interaction);
             if (state > 0)
@@ -641,29 +707,22 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
             // 인벤 체크
             ObjectRoboInvenControlCheck();
+
+            
         }
     }
 
     // 공격하기
     void AttackControl()
     {
-        if (Input.GetKeyUp(KeyCode.Space))
+        if (Input.GetKeyUp(KeyCode.Space) && !BitControl.Get(m_curState,(int)HERO_STATE.CONTROL_ENERGY_CHARGE))
         {
             m_curState = BitControl.Set(m_curState , (int)HERO_STATE.ATTACK);
-            m_skletonAnimation.state.SetAnimation(0 , ANI_REPAIR , false);
         }
     }
     // 중력이 적용되는 곳에서의 컨트롤 
     void Control()
     {
-        if(Input.GetKey(KeyCode.Y))
-        {
-            transform.gameObject.SetActive(false);
-            Camera.main.GetComponent<TargetMoveCamera>().m_test = true;
-            return;
-        }
-
-
         Vector2 pos = transform.position;
 
         //상황 설정
@@ -672,41 +731,38 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         float moveY = 0.0f;
         float jump = 0.0f;
 
-        // 특정 컨트롤을 다루고 있는 상태가 아닐 경우
-      //  if(GetMoveAbleCheck())
-        {
-            // 이동에 관련된 처리를 하는 녀석들 float 
+        // 가로이동
+        moveX = HorizontalMoveControl();
 
-            // 가로이동
-            moveX = HorizontalMoveControl();
+        // 점프 및 수직 이동
+        if (BitControl.Get(m_curState , (int)HERO_STATE.LADDER))
+            moveY = VerticalMoveControl();
+        else
+            jump = VerticalMoveControl();
 
-            // 점프 및 수직 이동
-            if (BitControl.Get(m_curState , (int)HERO_STATE.LADDER))
-                moveY = VerticalMoveControl();
-            else
-                jump = VerticalMoveControl();
+        // 공격 혹은 수리 
+        AttackControl();
+        // 충전
+        ObjectRoboEnergyControlCheck();
 
-            // 공격 혹은 수리 
-            AttackControl();
-
-        }
-     //   else
-        {
-            // 특정 컨트롤을 다루고 있는 상태가 아닌 경우에만 이게 가능 
-            ObjectControl();
-        }
-
-        
-       
+        ObjectControl();
        
 
         // 이동 애니메이션 체크
-        if (!BitControl.Get(m_curState,(int)HERO_STATE.LADDER) && (BitControl.Get(m_curState, (int)HERO_STATE.MOVE) && 
-            (Input.GetKeyUp(KeyCode.A) || Input.GetKeyUp(KeyCode.D))))
+        if ((BitControl.Get(m_curState, (int)HERO_STATE.MOVE) && 
+            (Input.GetKeyUp(KeyCode.A) || Input.GetKeyUp(KeyCode.D) || Input.GetKeyUp(KeyCode.W) || Input.GetKeyUp(KeyCode.S))))
         {
-            CheckAndSetAnimation(ANI_IDLE, true);
-            m_curState = (int)HERO_STATE.IDLE; //BitControl.Clear(m_curState, (int)HERO_STATE.MOVE);
 
+            m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.MOVE);
+            if (!BitControl.Get(m_curState , (int)HERO_STATE.LADDER))
+            {
+                CheckAndSetAnimation(ANI_IDLE , true);
+                m_curState = (int)HERO_STATE.IDLE;
+            }
+            else
+            {
+                m_climb.state.ClearTrack(0);
+            }
         }
 
         // 떨어지는 상태임
@@ -721,6 +777,9 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             if (m_rigidBody.velocity.y >= 0.0f)
             {
                 m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.JUMP_FALL);
+                //t
+                if(!BitControl.Get(m_curState,(int)HERO_STATE.MOVE))
+                    CheckAndSetAnimation(ANI_IDLE , true);
             }
         }
         
@@ -739,7 +798,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
                 // 점프 ㄱㄱ
                 this.m_rigidBody.AddForce(new Vector2(0, jump));
                 // IDLE / MOVE 상태일 때만 점프 애니메이션 
-                if (IsCurrentAnimation(ANI_IDLE) || IsCurrentAnimation(ANI_MOVE))
+                if (IsCurrentAnimation(ANI_IDLE))// || IsCurrentAnimation(ANI_MOVE))
                 {
                     //레디 -> 점핑 ㄱㄱ
                     m_skletonAnimation.state.SetAnimation(0, ANI_JUMP_READY, false);
@@ -751,18 +810,39 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             if(BitControl.Get(m_curState,(int)HERO_STATE.JUMP_FALL))
             {
                 //떨어지는 중
-                CheckAndSetAnimation(ANI_JUMP_FALL, false);
+                if (!BitControl.Get(m_curState , (int)HERO_STATE.MOVE))
+                    CheckAndSetAnimation(ANI_JUMP_FALL, false);
             }
 
-            if (BitControl.Get(m_curState, (int)HERO_STATE.MOVE) 
-                || BitControl.Get(m_curState, (int)HERO_STATE.LADDER))
+            if (BitControl.Get(m_curState, (int)HERO_STATE.MOVE))
             {
-                if (IsCurrentAnimation(ANI_IDLE))
+                if (!IsCurrentAnimation(ANI_MOVE))
                 {
                     m_skletonAnimation.state.SetAnimation(0 , ANI_MOVE , true);//
                 }
                 this.transform.Translate(new Vector3(moveX, moveY));
             }
+
+            if(BitControl.Get(m_curState , (int)HERO_STATE.LADDER))
+            {
+                m_skletonAnimation.enabled = false;
+                this.GetComponent<MeshRenderer>().enabled = false;
+                m_climb.gameObject.SetActive(true);
+
+                if(BitControl.Get(m_curState,(int)HERO_STATE.MOVE))
+                {
+                    if (m_climb.state.GetCurrent(0) != null &&
+                        !m_climb.state.GetCurrent(0).animation.name.Equals("animation"))
+                        m_climb.state.SetAnimation(0 , "animation" , true);
+                    else if (m_climb.state.GetCurrent(0) == null)
+                        m_climb.state.SetAnimation(0 , "animation" , true);
+                    MDebug.Log("여기");
+                }
+            }
+
+            //test
+            if(BitControl.Get(m_curState,(int)HERO_STATE.ATTACK))
+                m_skletonAnimation.state.SetAnimation(1 , ANI_REPAIR , false);
         }
         Debug.DrawLine(pos, new Vector3(pos.x,pos.y - GetComponent<BoxCollider2D>().bounds.size.y,0.0f),Color.red);
 
@@ -866,19 +946,19 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
    
 
     // -- 상호작용 체크용 -----------------------------------------------------------//
-    bool GetMoveAbleCheck()
-    {
-        return !(m_userControlName == "ROBOT_HEAL" ||
-                m_userControlName == "ROBOT_DRIVE" ||
-                m_userControlName == "ROBOT_INVEN" ||
-                m_userControlName == "ROBOT_GUN" ||
-                m_userControlName == "ROBOT_OUT_DOOR");
-        //return !(BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_DRIVE) ||
-        //        BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_GUN) ||
-        //        BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_HEAL) ||
-        //        BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_INVEN) ||
-        //        BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_OUT_DOOR));
-    }
+    //bool GetMoveAbleCheck()
+    //{
+    //    return !(m_userControlName == "ROBOT_HEAL" ||
+    //            m_userControlName == "ROBOT_DRIVE" ||
+    //            m_userControlName == "ROBOT_INVEN" ||
+    //            m_userControlName == "ROBOT_GUN" ||
+    //            m_userControlName == "ROBOT_OUT_DOOR");
+    //    //return !(BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_DRIVE) ||
+    //    //        BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_GUN) ||
+    //    //        BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_HEAL) ||
+    //    //        BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_INVEN) ||
+    //    //        BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_OUT_DOOR));
+    //}
 
 
     // -- 스파인 애니메이션용 -------------------------------------------------------//
@@ -943,7 +1023,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
         if(col.transform.tag.Equals("LADDER"))
         {
-            m_curState = BitControl.Set(m_curState , (int)HERO_STATE.LADDER);
+            m_LadderState = true;
         }
         else if (!string.IsNullOrEmpty(col.transform.tag))
             m_userControlName = col.transform.tag;
@@ -960,12 +1040,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             (BitControl.Get(m_curState, (int)HERO_STATE.JUMP) ||
             BitControl.Get(m_curState, (int)HERO_STATE.JUMP_FALL)))
         {
-       //     m_rigidBody.gravityScale = 0.0f;
-            //m_rigidBody.velocity = Vector3.zero;
-         //   m_rigidBody.angularVelocity = 0.0f;
-            //m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.JUMP);
-            //m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.JUMP_FALL);
-            //m_curState = BitControl.Set(m_curState, (int)HERO_STATE.LADDER);
+
         }
     }
 
@@ -979,42 +1054,19 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         if (!string.IsNullOrEmpty(col.transform.tag))
             m_userControlName = null;
 
-        if (col.tag == "LADDER" && BitControl.Get(m_curState,(int)HERO_STATE.LADDER))
+        if (col.tag == "LADDER")
         {
+            m_LadderState = false;
             m_rigidBody.gravityScale = 1.0f;
             m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.LADDER);
+
+            // 사다리
+            m_skletonAnimation.enabled = true;
+            this.GetComponent<MeshRenderer>().enabled = true;
+            m_climb.state.ClearTrack(0);
+            m_climb.gameObject.SetActive(false);
         }
         
-    }
-
-
-    void OnCollisionEnter2D(Collision2D col)
-    {
-        //이건 호스트에서만 충돌 처리를 해야 하니까 넣은 것 
-      //  if(!OrderCheckAndReturn())
-        {
-        //    return;
-        }
-      //  else
-        {
-          
-        }
-        
-        // 부딪친 대상이 지형일 경우와 오브젝트일 경우가 있다.
-        // 지형일 경우
-        // 점프 중인지 체크
-        if (BitControl.Get(m_curState, (int)HERO_STATE.JUMP) ||
-            BitControl.Get(m_curState, (int)HERO_STATE.JUMP_FALL))
-        {
-            m_prevState = m_curState;
-            m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.JUMP);
-            m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.JUMP_FALL);
-            m_curState = (int)HERO_STATE.IDLE;//BitControl.Set(m_curState, (int)HERO_STATE.IDLE);
-            m_skletonAnimation.state.SetAnimation(0, ANI_IDLE, true);
-            m_rigidBody.velocity = new Vector2(0.0f , 0.0f);
-            StateSend();
-
-        }
     }
 
     bool OrderCheckAndReturn()

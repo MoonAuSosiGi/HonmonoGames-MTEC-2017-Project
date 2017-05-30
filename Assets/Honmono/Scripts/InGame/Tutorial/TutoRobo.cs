@@ -5,9 +5,12 @@ using Spine.Unity;
 
 public class TutoRobo : MonoBehaviour
 {
-
-
+    public TutorialController m_tuto = null;
+    public AudioClip m_laser1 = null;
     private SkeletonAnimation m_skletonAnimation = null;
+    public Animator m_engineAnimator = null;
+    public GameObject m_damagePoint = null;
+
     // 이동을 제외한 상태가 지정된다.
     public int m_roboState = 0;
 
@@ -34,18 +37,103 @@ public class TutoRobo : MonoBehaviour
     // -- 총 본 
     public GameObject m_gunBone = null;
 
+    // -- move / gun State
+    private int m_curState = 0;
+
+    public int CUR_STATE
+    {
+        get { return m_curState; }
+        set { m_curState = value;}
+    }
+
     // Use this for initialization
     void Start () {
-		
-	}
+        m_skletonAnimation = this.GetComponent<SkeletonAnimation>();
+        m_skletonAnimation.state.Complete += AttackEndCheckEvent;
+        m_gunAngle = m_armBone.transform.rotation.eulerAngles.z;
+    }
 	
 	// Update is called once per frame
 	void Update () {
-		
+        if (m_curState == 1)
+            Control();
+        else if (m_curState == 2)
+            ControlGun();
 	}
+    void ControlGun()
+    {
+        m_prevAngle = m_gunAngle;
+        if (!m_skletonAnimation.skeleton.flipX)
+            m_armBone.transform.rotation = Quaternion.Euler(0 , 0 , m_gunAngle);
+        else
+            m_armBone.transform.rotation = Quaternion.Euler(0 , 0 , -m_gunAngle);
 
+
+        if (Input.GetKey(KeyCode.UpArrow))
+        {
+            if (m_gunAngle - 1.0f > -360.0f)
+                m_gunAngle -= 1.0f;
+
+        }
+        if (Input.GetKey(KeyCode.DownArrow))
+        {
+            if (m_gunAngle + 1.0f < 360.0f)
+                m_gunAngle += 1.0f;
+        }
+
+        if (Input.GetKeyUp(KeyCode.Space) && !BitControl.Get(m_roboState , (int)HeroRobo.ROBO_STATE.COOLTIME))
+        {
+            SoundManager.Instance().PlaySound(m_laser1);
+            m_roboState = BitControl.Set(m_roboState , (int)HeroRobo.ROBO_STATE.ATTACK);
+
+        }
+
+        if (BitControl.Get(m_roboState , (int)HeroRobo.ROBO_STATE.ATTACK))
+        {
+            m_skletonAnimation.state.SetAnimation(0 , ANI_ATTACK , false);
+            m_roboState = BitControl.Clear(m_roboState , (int)HeroRobo.ROBO_STATE.ATTACK);
+            m_roboState = BitControl.Set(m_roboState , (int)HeroRobo.ROBO_STATE.COOLTIME);
+
+            FireBullet();
+        }
+
+    }
+
+    // 어택 종료시 초기화
+    void AttackEndCheckEvent(Spine.TrackEntry trackEntry)
+    {
+        if (BitControl.Get(m_roboState , (int)HeroRobo.ROBO_STATE.COOLTIME))//trackEntry.animation.name == ANI_ATTACK)
+        {
+
+            m_roboState = BitControl.Clear(m_roboState , (int)HeroRobo.ROBO_STATE.COOLTIME);
+            //m_effectAnimator.gameObject.SetActive(true);
+            //m_effectAnimator.Play("Robo_attackEffect");
+        }
+    }
+
+    bool create = false;
+    void DamagePointCreate()
+    {
+        if (create)
+            return;
+        m_tuto.TutorialAction_KillMonster("");
+        GameObject obj = MapManager.Instance().AddObject(
+            GamePath.DAMAGE_POINT , m_damagePoint.transform.position);
+        obj.transform.parent = m_damagePoint.transform.parent;
+        RoboDamagePoint p = obj.GetComponent<RoboDamagePoint>();
+        p.m_tuto = true;
+        p.m_test = m_tuto;
+        create = true;
+    }
+
+    // -- 데미지 상호작용 --------------------------------------------------------------------------------------//
+    public void Damage(int damage)
+    {
+        DamagePointCreate();
+    }
     void Control()
     {
+
         // 가져다 쓰기 편하기 위해 선언       
         Vector3 pos = transform.position;
 
@@ -57,7 +145,7 @@ public class TutoRobo : MonoBehaviour
         if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.RightArrow) ||
             Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.DownArrow))
         {
-           // m_engineAnimator.SetInteger("play" , 1);
+            m_engineAnimator.SetInteger("play" , 1);
             m_roboState = BitControl.Set(m_roboState , (int)HeroRobo.ROBO_STATE.MOVE);
         }
 
@@ -87,24 +175,7 @@ public class TutoRobo : MonoBehaviour
 
             movey = -m_moveSpeed * Time.deltaTime;
         }
-        // 로컬 전투 처리용--------------------------------------------------------------
-        m_prevAngle = m_gunAngle;
-        if (!m_skletonAnimation.skeleton.flipX)
-            m_armBone.transform.rotation = Quaternion.Euler(0 , 0 , m_gunAngle);
-        else
-            m_armBone.transform.rotation = Quaternion.Euler(0 , 0 , -m_gunAngle);
 
-
-        if (BitControl.Get(m_roboState , (int)HeroRobo.ROBO_STATE.ATTACK))
-        {
-            m_skletonAnimation.state.SetAnimation(0 , ANI_ATTACK , false);
-            m_roboState = BitControl.Clear(m_roboState , (int)HeroRobo.ROBO_STATE.ATTACK);
-            m_roboState = BitControl.Set(m_roboState , (int)HeroRobo.ROBO_STATE.COOLTIME);
-            FireBullet();
-        }
-
-
-        //-------------------------------------------------------------------------------
 
         if (BitControl.Get(m_roboState , (int)HeroRobo.ROBO_STATE.MOVE) &&
             (Input.GetKeyUp(KeyCode.LeftArrow) || Input.GetKeyUp(KeyCode.RightArrow) ||
@@ -113,7 +184,7 @@ public class TutoRobo : MonoBehaviour
             //  CheckAndSetAnimation(ANI_IDLE, true);
             m_skletonAnimation.state.SetAnimation(0 , ANI_IDLE , true);
             m_roboState = BitControl.Clear(m_roboState , (int)HeroRobo.ROBO_STATE.MOVE);
-         //   m_engineAnimator.SetInteger("play" , 0);
+            m_engineAnimator.SetInteger("play" , 0);
             //m_roboState = BitControl.Set(m_roboState, (int)HeroRobo.ROBO_STATE.IDLE);
         }
 
@@ -121,7 +192,7 @@ public class TutoRobo : MonoBehaviour
         if (m_roboState == (int)HeroRobo.ROBO_STATE.IDLE) //BitControl.Get(m_roboState, (int)HeroRobo.ROBO_STATE.IDLE))
         {
             CheckAndSetAnimation(ANI_IDLE , true);
-         //   m_engineAnimator.SetInteger("play" , 0);
+            m_engineAnimator.SetInteger("play" , 0);
             // m_skletonAnimation.state.SetAnimation(0, ANI_IDLE, true);
         }
         else
@@ -147,20 +218,10 @@ public class TutoRobo : MonoBehaviour
         b.transform.rotation = Quaternion.Euler(0.0f , 0.0f , m_gunBone.transform.rotation.eulerAngles.z - 90.0f);
 
         b.transform.position = pos;
-
-
-        // 네트워크 식별 이름
-        string n = GameManager.Instance().PLAYER.USER_NAME + "_" + m_bulletIndex;
-        b.SetupBullet(n , false , Vector3.zero , 0.0f , m_skletonAnimation.skeleton.flipX);
-
-        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(n , "myTeam_bullet" , pos.x , pos.y , pos.z , flip));
-        m_bulletIndex++;
-
-
     }
 
     // -- 스파인 애니메이션용 -------------------------------------------------------//
-    bool IsCurrentAnimation(string ani)
+     bool IsCurrentAnimation(string ani)
     {
         if (m_skletonAnimation == null)
             return false;
@@ -173,4 +234,16 @@ public class TutoRobo : MonoBehaviour
             m_skletonAnimation.state.SetAnimation(0 , ani , loop);
     }
 
+
+    //test
+
+    void OnTriggerEnter2D(Collider2D col)
+    {
+        if(col.tag.Equals("Player"))
+        {
+            CameraManager.Instance().MoveCameraAndObject(
+                gameObject , 10 , CameraManager.CAMERA_PLACE.TUTORIAL_ROBO_IN , col.gameObject);
+            m_tuto.TutorialAction_ObjectInteraction("enter_door");  
+        }
+    }
 }

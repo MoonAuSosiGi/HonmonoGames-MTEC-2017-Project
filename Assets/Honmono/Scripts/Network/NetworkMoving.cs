@@ -70,8 +70,7 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
             return;
 
         Vector3 newPos = new Vector3(x, y);
-
-        float distance = Vector3.Distance(transform.position, newPos);
+       
 
         targetPos = drPos;
 
@@ -93,13 +92,13 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
                 targetPos = newPos;
             }
         }
-        m_targetPos = targetPos;
+        transform.position = targetPos;        
     }
 
     //-- Network Message 에 따른 이동 보간 ( 네트워크 플레이어 ) ------------------------------------//
     void NetworkMoveLerp()
     {
-        transform.position = m_targetPos;
+       // transform.position = m_targetPos;
         //m_syncTime += Time.deltaTime;
         
 

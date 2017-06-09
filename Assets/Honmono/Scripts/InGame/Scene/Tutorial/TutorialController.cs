@@ -113,7 +113,9 @@ public class TutorialController : MonoBehaviour {
         if(m_curTutorialIndex >= m_tutorialObject.GetField("tutorial").Count)
         {
             gameObject.SetActive(false);
-            PopupManager.Instance().AddPopup("LobbyPopup");
+
+            InvokeRepeating("CheckFinalTuToTalk" , 0.0f , 0.1f);
+           
 
             return;
         }
@@ -133,6 +135,17 @@ public class TutorialController : MonoBehaviour {
             
         }
     }
+
+    void CheckFinalTuToTalk()
+    {
+        if(m_talk.TUTP_TALK_ALIVE == false)
+        {
+            PopupManager.Instance().AddPopup("LobbyPopup");
+            CancelInvoke("CheckFinalTutoTalk");
+            GameObject.Destroy(gameObject);
+        }
+    }
+
     // -- 튜토리얼 계산 --------------------------------------------------------------//
     private void ProcessTutorial()
     {

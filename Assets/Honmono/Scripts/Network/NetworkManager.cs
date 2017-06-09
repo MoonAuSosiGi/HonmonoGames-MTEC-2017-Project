@@ -38,6 +38,7 @@ public class NetworkManager : Singletone<NetworkManager>
     public const string USER_CONNECT = "user_connect";
     public const string USER_INFO_REQ = "userinfo_req";
     public const string USER_CHARACTER_CREATE = "user_char_create";
+    public const string USER_PLACE_CHANGE = "user_place_change";
     public const string USER_LOGOUT = "user_logout";
     public const string USER_READY = "user_ready";
     public const string USER_INDEX = "user_index"; // ready
@@ -100,6 +101,10 @@ public class NetworkManager : Singletone<NetworkManager>
         get { return m_userNameList; }
     }
 
+    public List<Hero> ROBO_USERLIST
+    {
+        get { return m_robotUserList; }
+    }
     // -- 기본 정보 -------------------------------------------------------------------------------------------//
 
     private string m_serverURL = "localhost"; //"13.124.50.145:8090";
@@ -230,29 +235,40 @@ public class NetworkManager : Singletone<NetworkManager>
 
         string json = null;
 
-        while(m_socketMoveMessage.Count > 0)
+        while (m_socketMoveMessage.Count > 0)
+        {
+            
             json = m_socketMoveMessage.Dequeue();
+            JSONObject check = new JSONObject(json);
+
+            if (check.GetField("Users") == null)
+                break;
+        }
         JSONObject obj = new JSONObject(json);
 
         if(obj.GetField("Users") == null)
         {
             MDebug.Log("Client Enter " + obj);
-            // 임시코드 
+            // 클라다!
 
-            string t = "hero_robo";
-            string a = "hero";
             GameManager.Instance().PLAYER.NETWORK_INDEX = (int)obj.GetField("Client ID").i;
 
 
-            if (GameManager.Instance().PLAYER.NETWORK_INDEX <= 1)
+            // 2번부터 호스트
+            if (GameManager.Instance().PLAYER.NETWORK_INDEX == 2)
             {
                 NetworkOrderController.ORDER_NAME = GameManager.Instance().PLAYER.USER_NAME;
                 NetworkOrderController.ORDER_SPACE = 0;
 
             }
-            else if(GameManager.Instance().PLAYER.NETWORK_INDEX > 1)
+            else if(GameManager.Instance().PLAYER.NETWORK_INDEX > 2)
             {
                // NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderRequest(NetworkOrderController.ORDER_NAME, NetworkOrderController.ORDER_SPACE));
+            }
+            else if(GameManager.Instance().PLAYER.NETWORK_INDEX == 1)
+            {
+                // 옵저버다
+                NetworkOrderController.OBSERVER_MODE = true;
             }
             return;
         }
@@ -274,23 +290,23 @@ public class NetworkManager : Singletone<NetworkManager>
         // 들어와있는 것들은 켠다.
         // 다만 위치를 판단해서 켜준다.
 
-        foreach(Hero hero in m_spaceUserList)
-        {
-            for(int i = 0; i < users.Count; i ++)
-            {
-                if(users[i].GetField(USERNAME).str == hero.USERNAME)
-                {
+        //foreach(Hero hero in m_spaceUserList)
+        //{
+        //    for(int i = 0; i < users.Count; i ++)
+        //    {
+        //        if(users[i].GetField(USERNAME).str == hero.USERNAME)
+        //        {
 
-                    int area = (int)users[i].GetField("Z").f;
+        //            int area = (int)users[i].GetField("Z").f;
                     
-                    if (area == (int)NetworkOrderController.AreaInfo.AREA_SPACE 
-                        && m_userNameList.Contains(hero.USERNAME.Split('_')[0]))
-                        hero.gameObject.SetActive(true);
-                    else
-                        hero.gameObject.SetActive(false);
-                }
-            }
-        }
+        //            if (area == (int)NetworkOrderController.AreaInfo.AREA_SPACE 
+        //                && m_userNameList.Contains(hero.USERNAME.Split('_')[0]))
+        //                hero.gameObject.SetActive(true);
+        //            else
+        //                hero.gameObject.SetActive(false);
+        //        }
+        //    }
+        //}
 
         //여긴 로봇 :: 아마 부하 없을거
         foreach (Hero hero in m_robotUserList)
@@ -317,6 +333,8 @@ public class NetworkManager : Singletone<NetworkManager>
 
     public void GameStartUserSetup(string name)
     {
+        if (NetworkOrderController.OBSERVER_MODE)
+            return;
         m_userNameList.Add(name);
         m_robotUserList[0].USERNAME = name + "_robo";
         m_robotUserList[0].gameObject.SetActive(true);
@@ -326,14 +344,14 @@ public class NetworkManager : Singletone<NetworkManager>
     {
         if(m_userNameList.Contains(name))
         {
-            foreach(Hero user in m_spaceUserList)
-            {
-                if (user.USERNAME == name + "_space")
-                {
-                    user.USERNAME = "";
-                    user.gameObject.SetActive(false);
-                }
-            }
+            //foreach(Hero user in m_spaceUserList)
+            //{
+            //    if (user.USERNAME == name + "_space")
+            //    {
+            //        user.USERNAME = "";
+            //        user.gameObject.SetActive(false);
+            //    }
+            //}
             foreach (Hero user in m_robotUserList)
             {
                 if (user.USERNAME == name + "_robo")
@@ -477,14 +495,27 @@ public class NetworkManager : Singletone<NetworkManager>
     public void GameStart()
     {
         // 로그인 / 로비 세팅 완료되었다.
-        m_robotUserList[0].gameObject.SetActive(true);
-        CameraManager.Instance().MoveCamera(
-            m_robotUserList[0].transform.parent.gameObject,GameSetting.CAMERA_ROBO,CameraManager.CAMERA_PLACE.ROBO_IN);
         
-        GameStartUserSetup(GameManager.Instance().PLAYER.USER_NAME);
 
-        SendOrderMessage(JSONMessageTool.ToJsonOrderUserCrateCharacter(
-            GameManager.Instance().PLAYER.USER_NAME));
+        //CameraManager.Instance().MoveCamera(
+        //    m_robotUserList[0].transform.parent.gameObject,GameSetting.CAMERA_ROBO,CameraManager.CAMERA_PLACE.ROBO_IN);
+        
+        // 옵저버일 경우 캐릭터 생성 명령을 하지 않음
+        if(NetworkOrderController.OBSERVER_MODE)
+        {
+            m_robotUserList[0].IS_PLAYER = false;
+            GameManager.Instance().SetupObserver();
+        }
+        else
+        {
+            m_robotUserList[0].gameObject.SetActive(true);
+            GameStartUserSetup(GameManager.Instance().PLAYER.USER_NAME);
+
+            SendOrderMessage(JSONMessageTool.ToJsonOrderUserCrateCharacter(
+                GameManager.Instance().PLAYER.USER_NAME));
+            
+        }
+
         SoundManager.Instance().PlayBGM(2);
         m_chatUI.SetActive(true);
 

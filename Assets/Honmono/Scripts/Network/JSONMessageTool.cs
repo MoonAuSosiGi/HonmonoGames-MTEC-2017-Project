@@ -167,6 +167,16 @@ public static class JSONMessageTool  {
 
     }
 
+    // 옵저버를 위한것 
+    public static string ToJsonUserPlaceChange(int place)
+    {
+        JSONObject obj = GetDefJSON("" , NetworkManager.USER_PLACE_CHANGE);
+        obj.GetField(NetworkManager.ORDERS)[0]
+            .GetField(NetworkManager.MSG)
+            .AddField(NetworkManager.USER_PLACE_CHANGE , place);
+        return obj.ToString();
+    }
+
     // 첫 접속 후 캐릭터 생성해라!
     public static string ToJsonOrderUserCrateCharacter(string targetName)
     {

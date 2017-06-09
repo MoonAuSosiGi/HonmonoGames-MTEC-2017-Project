@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListenrer
+public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListenrer,PopupManager.PopupHide
 {
 
 
@@ -41,11 +41,12 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
 
         SoundManager.Instance().PlayBGM(1);
         NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
+
         for (int i = 0; i < m_playerList.Count; i++)
         {
             GameObject player = m_playerList[i];
             //서버에서 체크하기 전에 세팅 금지
-            if(i+1 == GameManager.Instance().PLAYER.NETWORK_INDEX)
+            if(i+2 == GameManager.Instance().PLAYER.NETWORK_INDEX)
             {
                 // 나다
                 Image wait = GetProfileWait(player);
@@ -83,17 +84,23 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
                 NetworkOrderController.ORDER_NAME, NetworkOrderController.ORDER_SPACE));
 
 
-        if (GameManager.Instance().PLAYER.NETWORK_INDEX == 1)
+        if (GameManager.Instance().PLAYER.NETWORK_INDEX == 2)
         {
             //host
             m_startButton.gameObject.SetActive(true);
             m_readyButton.gameObject.SetActive(false);
         }
-        else
+        else if(GameManager.Instance().PLAYER.NETWORK_INDEX > 2)
         {
             //user
             m_startButton.gameObject.SetActive(false);
             m_readyButton.gameObject.SetActive(true);
+        }
+        else
+        {
+            //옵저버
+            m_startButton.gameObject.SetActive(false);
+            m_readyButton.gameObject.SetActive(false);
         }
 
     }
@@ -282,7 +289,6 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
                 else
                     m_startButton.sprite = m_sprStart_normal;
 
-                MDebug.Log("ready " + m_readyCount);
             }
             else if(e.msgType == NetworkManager.GAME_START)
             {
@@ -308,7 +314,7 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
         if (index == GameManager.Instance().PLAYER.NETWORK_INDEX)
             return;
         
-        GameObject player = m_playerList[index-1];
+        GameObject player = m_playerList[index-2];
 
         // 이미 세팅되어있다면 패스
         if (GetProfileName(player).text == e.msg
@@ -351,5 +357,10 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
             GameManager.Instance().PLAYER.STATUS,
             GameManager.Instance().PLAYER.USER_NAME,
             m_readyButton.sprite == m_sprReady_setting));
+    }
+
+    public void HideEndEvent()
+    {
+        GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO_IN);
     }
 }

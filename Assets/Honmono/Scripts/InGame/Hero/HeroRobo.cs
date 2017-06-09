@@ -103,7 +103,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     // HUD
     public GameObject m_hpHUD = null;
 
-    private List<GameUI.HPUpdateEvent> m_hpReceieveList = new List<GameUI.HPUpdateEvent>();
+    private List<GameUI.RobotHPUpdateEvent> m_hpReceieveList = new List<GameUI.RobotHPUpdateEvent>();
     private List<GameUI.ENERGYUpdateEvent> m_energyReceieveList = new List<GameUI.ENERGYUpdateEvent>();
 
     public float ENERGY { get { return m_roboEnergy; }
@@ -112,7 +112,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             UpdateEnergy();
             NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonEnergyUdate("robo" , m_roboEnergy));
         } }
-    public void AddHPUpdateEvent(GameUI.HPUpdateEvent recv)
+    public void AddHPUpdateEvent(GameUI.RobotHPUpdateEvent recv)
     {
         if (!m_hpReceieveList.Contains(recv))
             m_hpReceieveList.Add(recv);
@@ -126,7 +126,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
 
     void UpdateHp()
     {
-        foreach (GameUI.HPUpdateEvent recv in m_hpReceieveList)
+        foreach (GameUI.RobotHPUpdateEvent recv in m_hpReceieveList)
             recv.HPUpdate(m_hp , GameSetting.HERO_ROBO_MAX_HP);
     }
 
@@ -177,13 +177,6 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     // Update is called once per frame
     void Update () {
 
-        // 한명이라도 조작하고 있으면 HUD 를 띄움
-        if (!string.IsNullOrEmpty(m_movePlayerName) || !string.IsNullOrEmpty(m_gunPlayerName))
-        {
-            m_hpHUD.SetActive(true);
-        }
-        else
-            m_hpHUD.SetActive(false);
         m_prevState = m_roboState;
         if (!string.IsNullOrEmpty(m_movePlayerName) &&
             m_movePlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))

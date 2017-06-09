@@ -101,8 +101,9 @@ public class TutoHero : MonoBehaviour {
             m_tutoMoveCk = false;
             m_tuto.TutorialAction_ObjectInteraction("tuto_move");
             m_tutoRobo.GetComponent<TutoRobo>().CUR_STATE = 0;
-            CameraManager.Instance().MoveCamera(gameObject , GameSetting.CAMERA_ROBO ,
-                CameraManager.CAMERA_PLACE.TUTORIAL_ROBO_IN);
+            GameManager.Instance().ChangeScene(GameManager.PLACE.TUTORIAL_ROBO_IN);
+            //CameraManager.Instance().MoveCamera(gameObject , GameSetting.CAMERA_ROBO ,
+            //    CameraManager.CAMERA_PLACE.TUTORIAL_ROBO_IN);
         }
         
     }
@@ -115,18 +116,20 @@ public class TutoHero : MonoBehaviour {
             if (m_tutoRobo.GetComponent<TutoRobo>().CUR_STATE == 0)
             {
                 m_tutoRobo.GetComponent<TutoRobo>().CUR_STATE = 1;
-                CameraManager.Instance().MoveCamera(
-                    m_tutoRobo ,
-                    GameSetting.CAMERA_SPACE ,
-                    CameraManager.CAMERA_PLACE.TUTORIAL_ROBO_SPACE);
+                GameManager.Instance().ChangeScene(GameManager.PLACE.TUTORIAL_ROBO);
+                //CameraManager.Instance().MoveCamera(
+                //    m_tutoRobo ,
+                //    GameSetting.CAMERA_SPACE ,
+                //    CameraManager.CAMERA_PLACE.TUTORIAL_ROBO_SPACE);
                 m_tuto.TutorialAction_ObjectInteraction("drive_controller");
                 m_tutoMoveCk = true;
             }
             else
             {
                 m_tutoRobo.GetComponent<TutoRobo>().CUR_STATE = 0;
-                CameraManager.Instance().MoveCamera(gameObject , GameSetting.CAMERA_ROBO , 
-                    CameraManager.CAMERA_PLACE.TUTORIAL_ROBO_IN);
+                GameManager.Instance().ChangeScene(GameManager.PLACE.TUTORIAL_ROBO_IN);
+                //CameraManager.Instance().MoveCamera(gameObject , GameSetting.CAMERA_ROBO , 
+                //    CameraManager.CAMERA_PLACE.TUTORIAL_ROBO_IN);
             }
         }
     }
@@ -141,16 +144,18 @@ public class TutoHero : MonoBehaviour {
                 if(m_tutoEnemy != null)
                  m_tutoEnemy.SetActive(true);
                 m_tutoRobo.GetComponent<TutoRobo>().CUR_STATE = 2;
-                CameraManager.Instance().MoveCamera(
-                    m_tutoRobo ,
-                    GameSetting.CAMERA_SPACE ,
-                    CameraManager.CAMERA_PLACE.TUTORIAL_ROBO_SPACE);
-             //   m_tuto.TutorialAction_ObjectInteraction("gun_controller");
+                GameManager.Instance().ChangeScene(GameManager.PLACE.TUTORIAL_ROBO);
+                //CameraManager.Instance().MoveCamera(
+                //    m_tutoRobo ,
+                //    GameSetting.CAMERA_SPACE ,
+                //    CameraManager.CAMERA_PLACE.TUTORIAL_ROBO_SPACE);
+                //   m_tuto.TutorialAction_ObjectInteraction("gun_controller");
             }
             else
             {
                 m_tutoRobo.GetComponent<TutoRobo>().CUR_STATE = 0;
-                CameraManager.Instance().MoveCamera(gameObject , GameSetting.CAMERA_ROBO , CameraManager.CAMERA_PLACE.TUTORIAL_ROBO_IN);
+                GameManager.Instance().ChangeScene(GameManager.PLACE.TUTORIAL_ROBO_IN);
+                //CameraManager.Instance().MoveCamera(gameObject , GameSetting.CAMERA_ROBO , CameraManager.CAMERA_PLACE.TUTORIAL_ROBO_IN);
             }
         }
     }

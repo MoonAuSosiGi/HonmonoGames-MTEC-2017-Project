@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class LoginPopup : MonoBehaviour {
+public class LoginPopup : MonoBehaviour ,PopupManager.PopupHide{
 
     // -- 로그인 팝업 ----------------------------//
     [SerializeField]
@@ -23,8 +23,8 @@ public class LoginPopup : MonoBehaviour {
     private RectTransform m_loading = null;
 
     //로고 바꿔야함
-    [SerializeField]
-    private Image m_lockImg = null;
+  //  [SerializeField]
+ //   private Image m_lockImg = null;
 
     [SerializeField]
     private Sprite m_unlockImg = null;
@@ -48,7 +48,7 @@ public class LoginPopup : MonoBehaviour {
         if(m_socketCheck && NetworkManager.Instance().IsSocketAlived())
         {
             StopAllCoroutines();
-            m_lockImg.sprite = m_unlockImg;
+         //   m_lockImg.sprite = m_unlockImg;
 
             if(!IsInvoking())
                 Invoke("LoginGO", 0.5f);
@@ -59,9 +59,10 @@ public class LoginPopup : MonoBehaviour {
 
     void LoginGO()
     {
-        CameraManager.Instance().MoveCamera(
-            CameraManager.Instance().m_gameStart , 10.0f , CameraManager.CAMERA_PLACE.GAME_START,
-            Camera.main.gameObject,"TitleEnd");
+        //CameraManager.Instance().MoveCamera(
+        //    CameraManager.Instance().m_gameStart , 10.0f , CameraManager.CAMERA_PLACE.GAME_START,
+        //    Camera.main.gameObject,"TitleEnd");
+        Camera.main.gameObject.SendMessage("TitleEnd");
         m_socketCheck = false;
         
         PopupManager.Instance().ClosePopup(gameObject);
@@ -94,6 +95,7 @@ public class LoginPopup : MonoBehaviour {
         {
             PopupManager.Instance().ClosePopup(gameObject);
             PopupManager.Instance().MessagePopupOK("ERROR", "REST 서버에 접속할 수 없습니다.");
+            PopupManager.Instance().AddPopup("LoginPopup");
             return;
         }
 
@@ -134,5 +136,10 @@ public class LoginPopup : MonoBehaviour {
         m_loading.Rotate(new Vector3(0, 0, 0.5f));
         yield return StartCoroutine(Loading());
 
+    }
+
+    public void HideEndEvent()
+    {
+        GameManager.Instance().ChangeScene(GameManager.PLACE.ONLY_POPUP_SHOW);
     }
 }

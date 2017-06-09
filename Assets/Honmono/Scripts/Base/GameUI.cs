@@ -4,9 +4,14 @@ using UnityEngine;
 
 public class GameUI {
 
-    public interface HPUpdateEvent
+    public interface RobotHPUpdateEvent
     {
         void HPUpdate(int curHP,int maxHP);
+    }
+
+    public interface CharacterHPUpdateEvent
+    {
+        void HPUpdate(int curHP , int maxHP);
     }
 
     public interface ENERGYUpdateEvent

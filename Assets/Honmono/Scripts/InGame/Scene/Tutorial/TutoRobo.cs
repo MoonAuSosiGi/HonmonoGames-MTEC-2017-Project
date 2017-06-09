@@ -116,7 +116,7 @@ public class TutoRobo : MonoBehaviour
     {
         if (create)
             return;
-        m_tuto.TutorialAction_KillMonster("");
+       // m_tuto.TutorialAction_KillMonster("");
         GameObject obj = MapManager.Instance().AddObject(
             GamePath.DAMAGE_POINT , m_damagePoint.transform.position);
         obj.transform.parent = m_damagePoint.transform.parent;
@@ -130,6 +130,11 @@ public class TutoRobo : MonoBehaviour
     public void Damage(int damage)
     {
         DamagePointCreate();
+    }
+
+    public void TutoKillMonster()
+    {
+        m_tuto.TutorialAction_KillMonster("");
     }
     void Control()
     {
@@ -241,8 +246,7 @@ public class TutoRobo : MonoBehaviour
     {
         if(col.tag.Equals("Player"))
         {
-            CameraManager.Instance().MoveCameraAndObject(
-                gameObject , 10 , CameraManager.CAMERA_PLACE.TUTORIAL_ROBO_IN , col.gameObject);
+            GameManager.Instance().ChangeScene(GameManager.PLACE.TUTORIAL_ROBO_IN);
             m_tuto.TutorialAction_ObjectInteraction("enter_door");  
         }
     }

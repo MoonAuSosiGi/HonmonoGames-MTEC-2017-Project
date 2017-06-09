@@ -246,6 +246,10 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
                 NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder(m_name , "Monster"));
                 NetworkManager.Instance().RemoveNetworkOrderMessageEventListener(this);
             }
+            else
+            {
+                m_tutoRobo.TutoKillMonster();
+            }
             
             GameObject.Destroy(gameObject);
         }

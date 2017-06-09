@@ -22,6 +22,11 @@ public class MonsterPattern : PatternState
             m_skletonAnimation.state.SetAnimation(0 , m_attackAni , false);
         //    m_tick = 0.0f;
         //}
+        TutoRobo r = hero.GetComponent<TutoRobo>();
+        if(r != null)
+        {
+            r.Damage(1);
+        }
         
         return 1.0f;
     }

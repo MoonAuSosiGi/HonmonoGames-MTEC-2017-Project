@@ -13,7 +13,7 @@ public class TutoDoor : MonoBehaviour {
         if(col.transform.tag.Equals("Player"))
         {
             m_player = col.gameObject;
-            Vector3 p = new Vector3(0 , -20.67f);
+            Vector3 p = new Vector3(0 , 20.67f);
             
             iTween.MoveTo(gameObject , iTween.Hash("y" , Camera.main.ScreenToWorldPoint(p).y , 
                 "easeType" , "easeOutBack" , "oncompletetarget" , gameObject , "oncomplete" , "DoorEnd",
@@ -25,7 +25,8 @@ public class TutoDoor : MonoBehaviour {
     {
         m_controller.TutorialAction_ObjectInteraction("open_door");
 
-        CameraManager.Instance().MoveCameraAndObject(gameObject , 10 , CameraManager.CAMERA_PLACE.TUTORIAL_ROBO , m_player , gameObject , "EndTuto",false);
+        //GameManager.Instance().ChangeScene(GameManager.PLACE.TUTORIAL_ROBO);
+        //CameraManager.Instance().MoveCameraAndObject(gameObject , 10 , CameraManager.CAMERA_PLACE.TUTORIAL_ROBO , m_player , gameObject , "EndTuto",false);
     }
 
     void EndTuto()

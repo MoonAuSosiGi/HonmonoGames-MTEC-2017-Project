@@ -1,0 +1,27 @@
+
+mon_boss2.png
+size: 512,256
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+보스_0000_1
+  rotate: true
+  xy: 2, 80
+  size: 171, 280
+  orig: 171, 280
+  offset: 0, 0
+  index: -1
+보스_0001_2
+  rotate: false
+  xy: 284, 2
+  size: 129, 120
+  orig: 129, 120
+  offset: 0, 0
+  index: -1
+보스_0014_15
+  rotate: false
+  xy: 284, 124
+  size: 129, 127
+  orig: 129, 127
+  offset: 0, 0
+  index: -1

@@ -6,6 +6,7 @@ using UnityEngine;
 public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessageEventListenrer {
 
     private static string m_orderName;
+    private static bool m_observer = false;
     private static short m_orderSpace;
 
     public enum AreaInfo
@@ -25,6 +26,11 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
         set { m_orderName = value; }
     }
     
+    public static bool OBSERVER_MODE
+    {
+        get { return m_observer; }
+        set { m_observer = value; }
+    }
     
 
    
@@ -237,6 +243,8 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
             case NetworkManager.USER_CHARACTER_CREATE:
                 NetworkManager.Instance().CreateUserCharacter(e.targetName);
                 break;
+            
+                
 
 
         }

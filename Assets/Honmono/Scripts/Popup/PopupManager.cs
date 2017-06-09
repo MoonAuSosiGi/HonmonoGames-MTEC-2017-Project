@@ -20,6 +20,11 @@ public class PopupManager : Singletone<PopupManager> {
         return m_popupQueue.Count;
     }
 
+
+    public interface PopupHide
+    {
+        void HideEndEvent();
+    }
     
 
     // -- 팝업 메소드 ---------------------------------------------------------------------------------------------------------//
@@ -32,7 +37,7 @@ public class PopupManager : Singletone<PopupManager> {
 
         m_popupQueue.Enqueue(popup);
         if (m_popupQueue.Count == 1)
-            iTween.ScaleTo(popup, iTween.Hash("x", 1.0f, "y", 1.0f, "easetype", m_tween, "time", 0.5f));
+            iTween.ScaleTo(popup, iTween.Hash("x", 1.0f, "y", 1.0f, "easetype", m_tween, "time", 0.3f));
     }
 
     // 기본 팝업 - OK
@@ -45,7 +50,7 @@ public class PopupManager : Singletone<PopupManager> {
 
         m_popupQueue.Enqueue(popup);
         if (GetPopupCount() == 1)
-            iTween.ScaleTo(popup, iTween.Hash("x", 1.0f, "y", 1.0f, "easetype", m_tween, "time", 0.5f));
+            iTween.ScaleTo(popup, iTween.Hash("x", 1.0f, "y", 1.0f, "easetype", m_tween, "time", 0.3f));
     }
 
     // 기본 팝업 - ok cancel
@@ -58,7 +63,7 @@ public class PopupManager : Singletone<PopupManager> {
 
         m_popupQueue.Enqueue(popup);
         if (GetPopupCount() == 1)
-            iTween.ScaleTo(popup, iTween.Hash("x", 1.0f, "y", 1.0f, "easetype", m_tween, "time", 0.5f));
+            iTween.ScaleTo(popup, iTween.Hash("x", 1.0f, "y", 1.0f, "easetype", m_tween, "time", 0.3f));
     }
 
     // 모든 팝업은 이것으로 닫아야 함.
@@ -68,7 +73,7 @@ public class PopupManager : Singletone<PopupManager> {
 
         if (obj == popup)
         {
-            iTween.ScaleTo(popup, iTween.Hash("x", 0.0f, "y", 0.0f, "easetype", m_tween, "time", 0.5f, 
+            iTween.ScaleTo(popup, iTween.Hash("x", 0.0f, "y", 0.0f, "easetype", m_tween, "time", 0.3f, 
                 "oncompletetarget", gameObject, "oncomplete", "PopupCloseEnd"));
         }
     }
@@ -76,6 +81,10 @@ public class PopupManager : Singletone<PopupManager> {
     void PopupCloseEnd()
     {
         GameObject obj = m_popupQueue.Dequeue();
+        PopupHide hide = obj.GetComponent<PopupHide>();
+
+        if (hide != null)
+            hide.HideEndEvent();
         GameObject.Destroy(obj);
 
         if (m_popupQueue.Count > 0)

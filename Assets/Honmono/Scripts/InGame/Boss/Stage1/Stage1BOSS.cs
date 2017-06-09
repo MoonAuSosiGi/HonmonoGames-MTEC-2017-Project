@@ -101,7 +101,7 @@ public class Stage1BOSS : Monster, NetworkManager.NetworkMessageEventListenrer
     protected void MoveSend()
     {
         Vector3 pos = transform.position;
-        float distance = Vector3.Distance(m_prevPos , pos);
+        //float distance = Vector3.Distance(m_prevPos , pos);
         m_prevPos = transform.position;
 
         Vector3 velocity = (transform.position - m_prevPos) / Time.deltaTime;

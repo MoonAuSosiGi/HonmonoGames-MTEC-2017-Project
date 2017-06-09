@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Spine.Unity;
+using UnityEngine.SceneManagement;
+using System;
 
-public class CharacterSelectPopup : MonoBehaviour {
+public class CharacterSelectPopup : MonoBehaviour,PopupManager.PopupHide {
 
     //-- 기본 정보 -------------------------------------------------------------------------//
     [SerializeField]
@@ -46,16 +48,32 @@ public class CharacterSelectPopup : MonoBehaviour {
 
     public void ReturnButton()
     {
-        SoundManager.Instance().PlaySound(m_selectFinish);
+        // SoundManager.Instance().PlaySound(m_selectFinish);
         //튜토리얼 시작   
-         CameraManager.Instance().MoveCamera(gameObject , 10 , CameraManager.CAMERA_PLACE.TUTORIAL_PLAYERMOVE);
-     //  PopupManager.Instance().AddPopup("LobbyPopup");
+     //   GameManager.Instance().ChangeScene(GameManager.PLACE.TUTORIAL_START);
+          //  CameraManager.Instance().MoveCamera(gameObject , 10 , CameraManager.CAMERA_PLACE.TUTORIAL_PLAYERMOVE);
+
+
+        //정상
+       // PopupManager.Instance().AddPopup("LobbyPopup");
+
+
+        //씬 옮기기
+
+        //SceneManager.LoadScene("TutorialScene");
+
         PopupManager.Instance().ClosePopup(gameObject);
+    }
+
+    public void HideEndEvent()
+    {
+        //GameManager.Instance().ChangeScene(GameManager.PLACE.TUTORIAL_START);
+        PopupManager.Instance().AddPopup("LobbyPopup");
     }
 
     //-------------------------------------------------------------------------------------//
     // Use this for initialization
-    
+
     void Start () {
         m_leftStart = m_Left.transform.position;
         m_centerStart = m_Center.transform.position;
@@ -72,7 +90,7 @@ public class CharacterSelectPopup : MonoBehaviour {
 
         UIUpdate();
 
-        SoundManager.Instance().PlayBGM(1);
+      //  SoundManager.Instance().PlayBGM(1);
     }
 	
 	// Update is called once per frame
@@ -265,5 +283,6 @@ public class CharacterSelectPopup : MonoBehaviour {
                 m_repairList[i].enabled = false;
         }
     }
-    
+
+ 
 }

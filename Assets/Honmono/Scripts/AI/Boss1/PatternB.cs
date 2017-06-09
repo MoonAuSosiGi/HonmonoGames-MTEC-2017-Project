@@ -33,7 +33,7 @@ public class PatternB : PatternState
            
             Vector3 dir = m_hero.transform.position - m_monster.transform.position;
             dir.Normalize();
-            float distance = Vector3.Distance(m_hero.transform.position , m_monster.transform.position);
+            //float distance = Vector3.Distance(m_hero.transform.position , m_monster.transform.position);
             string name = GameManager.Instance().PLAYER.USER_NAME + "_boss_B_" + Monster.m_index++;
             b.SetupBullet(name , false , dir);
             b.BULLET_SPEED = 20.0f;

@@ -22,6 +22,7 @@ public class Singletone<T> : MonoBehaviour where T : MonoBehaviour{
             }
             catch(Exception e)
             {
+                MDebug.Log(e.ToString());
                 return null;
             }
            

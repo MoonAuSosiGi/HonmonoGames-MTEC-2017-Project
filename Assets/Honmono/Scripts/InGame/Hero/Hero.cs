@@ -89,8 +89,21 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     // USER NAME
     public string USERNAME {
         get { return m_userName; }
-        set {
-                m_userName = value;
+        set { m_userName = value; }
+    }
+
+    public bool IS_PLAYER
+    {
+        get { return m_isMe; }
+        set
+        {
+            m_isMe = value;
+
+            if (m_isMe)
+            {
+                GameManager.Instance().HeroSetup(this);
+                m_rigidBody.gravityScale = (m_inSpace) ? 0.0f : 1.0f;
+            }
         }
     }
 
@@ -199,17 +212,15 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
                 GameManager.Instance().ROBO.MOVE_PLYAER = e.user;
 
                 if (m_isMe && m_userName.Equals(e.user + "_robo"))
-                    CameraManager.Instance().MoveCamera(
-                        GameManager.Instance().ROBO.gameObject, 
-                        GameSetting.CAMERA_SPACE, 
-                        CameraManager.CAMERA_PLACE.STAGE1);
+                    GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO);
+                    
             }
             else
             {
                 if (m_isMe && m_userName.Equals(e.user + "_robo"))
                 {
                     m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.CONTROL_DRIVE);
-                    NetworkManager.Instance().GototheRobo();
+                    GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO_IN);
                     GameManager.Instance().PLAYER.PLAYER_HERO = this;
                 }
                GameManager.Instance().ROBO.MOVE_PLYAER = null;
@@ -226,17 +237,14 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
                 GameManager.Instance().ROBO.GUN_PLAYER = e.user;
                 
                 if(m_isMe && m_userName.Equals(e.user + "_robo"))
-                    CameraManager.Instance().MoveCamera(
-                        GameManager.Instance().ROBO.gameObject,
-                        GameSetting.CAMERA_SPACE, 
-                        CameraManager.CAMERA_PLACE.STAGE1);
+                    GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO);
             }
             else
             {
                 if (m_isMe && m_userName.Equals(e.user + "_robo"))
                 {
                     m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.CONTROL_GUN);
-                    NetworkManager.Instance().GototheRobo();
+                    GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO_IN);
                     GameManager.Instance().PLAYER.PLAYER_HERO = this;
                 }
 
@@ -250,8 +258,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
     void Awake()
     {
-        if (m_isMe)
-            GameManager.Instance().HeroSetup(this);
+        
 
         //-- 필요 컴포넌트 받아오기-------------------------------//
         m_skletonAnimation = this.GetComponent<SkeletonAnimation>();
@@ -265,11 +272,10 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     void Start()
     {
 
+        
         // 움직였을 때만 패킷을 전송해야 한다. 그러기 위한 디스턴스 판별용 포지션 적용
         m_prevPos = transform.position;
 
-        if (m_isMe)
-            m_rigidBody.gravityScale = (m_inSpace) ? 0.0f : 1.0f;
         m_skletonAnimation.state.Complete += CompleteAnimation;
 
         // 네트워크 이벤트 옵저버 등록
@@ -470,31 +476,26 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     {
         if (BitControl.Get(m_curState , (int)HERO_STATE.CONTROL_OUT_DOOR))
         {
-            GameObject target = null;
-            int cameraSize = 6;
-            CameraManager.CAMERA_PLACE place = CameraManager.CAMERA_PLACE.ROBO_IN;
+
             string func = "";
 
-            switch (CameraManager.Instance().PLACE)
+            switch (GameManager.Instance().SCENE_PLACE)
             {
-                case CameraManager.CAMERA_PLACE.ROBO_IN:
-                    target = CameraManager.Instance().m_inTheStar;
-                    place = CameraManager.CAMERA_PLACE.STAR;
+                case GameManager.PLACE.ROBO_IN:
                     func = "RobotOutEnd";
                     
+                    GameManager.Instance().ChangeScene(GameManager.PLACE.PLANET , gameObject , func);
                     break;
-                case CameraManager.CAMERA_PLACE.STAR:
-                    target = CameraManager.Instance().m_robotPlace;
-                    
-                    cameraSize = 4;
-                    place = CameraManager.CAMERA_PLACE.ROBO_IN;
+                case GameManager.PLACE.PLANET:    
                     this.GetComponent<Rigidbody2D>().gravityScale = 0.0f;
                     func = "RobotInEnd";
+
+                    GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO_IN , gameObject , func);
                     break;
 
             }
             
-            CameraManager.Instance().MoveCameraAndObject(target , cameraSize , place , gameObject,gameObject,func,false);
+            //CameraManager.Instance().MoveCameraAndObject(target , cameraSize , place , gameObject,gameObject,func,false);
 
 
 
@@ -511,7 +512,14 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     {
         m_skletonAnimation.skeleton.SetSkin("char_01");
         m_skletonAnimation.skeleton.SetToSetupPose();
-        m_curState = BitControl.Set(m_curState , (int)HERO_STATE.LADDER);
+        //m_curState = BitControl.Set(m_curState , (int)HERO_STATE.LADDER);
+
+        //m_LadderState = false;
+        //m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.LADDER);
+        //m_skletonAnimation.enabled = true;
+        //this.GetComponent<MeshRenderer>().enabled = true;
+        //m_climb.state.ClearTrack(0);
+        //m_climb.gameObject.SetActive(false);
     }
 
     // ::::::::::::::::::::::::::::
@@ -979,13 +987,12 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     void MoveSend()
     {
         Vector3 pos = transform.position;
-        float distance = Vector3.Distance(m_prevPos, pos);
+        float distance = Vector3. Distance(m_prevPos, pos);
 
         float area = (float)((m_inSpace) ? (int)NetworkOrderController.AreaInfo.AREA_SPACE : (int)NetworkOrderController.AreaInfo.AREA_ROBOT);
         
         Vector3 velocity = (transform.position - m_prevPos) / Time.deltaTime;
         Vector3 sendPos = m_prevPos + ( velocity * (Time.deltaTime - m_lastSendTime));
-        //dirPos.Normalize();
         
         NetworkManager.Instance().SendMoveMessage(
             JSONMessageTool.ToJsonMove(

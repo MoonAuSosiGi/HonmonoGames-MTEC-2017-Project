@@ -18,6 +18,11 @@ public class TutorialTalk : MonoBehaviour {
     public AudioClip m_buzzer = null;
     public AudioClip m_tuto_announce = null;
     public AudioClip m_tip = null;
+
+    public bool TUTP_TALK_ALIVE
+    {
+        get { return m_tutoTalkAlive; }
+    }
     
     
     void Start()
@@ -53,8 +58,6 @@ public class TutorialTalk : MonoBehaviour {
             {
                 m_tweenAnimation = false;
                 ShowTween();
-
-                
             }
         }
 

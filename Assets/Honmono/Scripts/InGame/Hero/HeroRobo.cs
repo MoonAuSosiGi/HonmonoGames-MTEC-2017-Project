@@ -44,9 +44,6 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     // 이동을 제외한 상태가 지정된다.
     public int m_roboState = 0;
 
-    // Reload 속도 -- 
-    private float m_reloadSpeed = 0.3f;
-
     // Move 속도 
     private float m_moveSpeed = 10.0f;
 
@@ -56,7 +53,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     private float m_gunAngle = 0.0f;
 
     // 로봇 에너지
-    private float m_roboEnergy = 10.0f;
+    private float m_roboEnergy = 100.0f;
 
     //-- animation --//
     private const string ANI_IDLE = "idle";
@@ -73,7 +70,16 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
 
     private string m_controllName = null;
 
-    public int HP { get { return m_hp; } set { m_hp = value; } }
+    public int HP {
+        get { return m_hp; }
+        set
+        {
+            m_hp = value;
+            GameManager.Instance().ChangeHP(m_hp);
+            NetworkManager.Instance().SendOrderMessage(
+                JSONMessageTool.ToJsonHPUdate("robo" , m_hp));
+        }
+    }
 
     // -- Damge Object ------------------------------//
     public GameObject m_DamageAnchor = null;
@@ -100,41 +106,18 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
 
 
     // --------------------------------------------------------------------------------//
-    // HUD
-    public GameObject m_hpHUD = null;
-
-    private List<GameUI.RobotHPUpdateEvent> m_hpReceieveList = new List<GameUI.RobotHPUpdateEvent>();
-    private List<GameUI.ENERGYUpdateEvent> m_energyReceieveList = new List<GameUI.ENERGYUpdateEvent>();
+  
 
     public float ENERGY { get { return m_roboEnergy; }
         set {
             m_roboEnergy = value;
-            UpdateEnergy();
-            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonEnergyUdate("robo" , m_roboEnergy));
+            if (NetworkOrderController.OBSERVER_MODE)
+                return;
+            GameManager.Instance().ChangeEnergy(m_roboEnergy);
+            NetworkManager.Instance().SendOrderMessage(
+                JSONMessageTool.ToJsonEnergyUdate("robo" , m_roboEnergy));
         } }
-    public void AddHPUpdateEvent(GameUI.RobotHPUpdateEvent recv)
-    {
-        if (!m_hpReceieveList.Contains(recv))
-            m_hpReceieveList.Add(recv);
-    }
-
-    public void AddEnergyUpdateEvent(GameUI.ENERGYUpdateEvent recv)
-    {
-        if (!m_energyReceieveList.Contains(recv))
-            m_energyReceieveList.Add(recv);
-    }
-
-    void UpdateHp()
-    {
-        foreach (GameUI.RobotHPUpdateEvent recv in m_hpReceieveList)
-            recv.HPUpdate(m_hp , GameSetting.HERO_ROBO_MAX_HP);
-    }
-
-    void UpdateEnergy()
-    {
-        foreach (GameUI.ENERGYUpdateEvent recv in m_energyReceieveList)
-            recv.EnergyUpdate(m_roboEnergy);
-    }
+    
 
     // --------------------------------------------------------------------------------//
 
@@ -163,17 +146,8 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         {
             m_DamageAnchorList.Add(m_DamageAnchor.transform.GetChild(i).gameObject);
         }
-        AddHPUpdateEvent(m_hpHUD.GetComponent<RoboHUD>());
-        AddEnergyUpdateEvent(m_hpHUD.GetComponent<RoboHUD>());
-        UpdateHp();
-        UpdateEnergy();
     }
-	
-    void TuToEnd()
-    {
-        PopupManager.Instance().AddPopup("LobbyPopup");
-        transform.parent.gameObject.SetActive(false);
-    }
+
     // Update is called once per frame
     void Update () {
 
@@ -369,16 +343,18 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
                 m_gunAngle += 1.0f;
         }
 
-        if (Input.GetKeyUp(KeyCode.Space) && !BitControl.Get(m_roboState, (int)ROBO_STATE.COOLTIME))
+        if (!BitControl.Get(m_roboState , (int)ROBO_STATE.COOLTIME) && Input.GetKeyUp(KeyCode.Space))
         {
             SoundManager.Instance().PlaySound(m_laser1);
             m_roboState = BitControl.Set(m_roboState, (int)ROBO_STATE.ATTACK);
             
         }
 
-        if (BitControl.Get(m_roboState, (int)ROBO_STATE.ATTACK))
+        if (BitControl.Get(m_roboState, (int)ROBO_STATE.ATTACK) && 
+            !BitControl.Get(m_roboState , (int)ROBO_STATE.COOLTIME))
         {
             m_skletonAnimation.state.SetAnimation(0, ANI_ATTACK, false);
+            StateSend();
             m_roboState = BitControl.Clear(m_roboState, (int)ROBO_STATE.ATTACK);
             m_roboState = BitControl.Set(m_roboState, (int)ROBO_STATE.COOLTIME);
             
@@ -386,7 +362,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             {
                 if (!IsInvoking("EnergyTestUser"))
                     Invoke("EnergyTestUser" , 0.5f);
-                FireBullet();
+                
             }
             
         }
@@ -411,23 +387,26 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
                     m_skletonAnimation.state.SetAnimation(0, ANI_MOVE, true);
                 m_engineAnimator.SetInteger("play" , 1);
             }
-            if (BitControl.Get(m_roboState, (int)ROBO_STATE.ATTACK))
-            {
-                m_skletonAnimation.state.SetAnimation(0, ANI_ATTACK, false);
-                m_roboState = BitControl.Clear(m_roboState, (int)ROBO_STATE.ATTACK);
-                m_roboState = BitControl.Set(m_roboState, (int)ROBO_STATE.COOLTIME);
-               
-            }
+            
+        }
+        if (BitControl.Get(m_roboState , (int)ROBO_STATE.ATTACK))
+        {
+            m_skletonAnimation.state.SetAnimation(0 , ANI_ATTACK , false);
+            m_roboState = BitControl.Clear(m_roboState , (int)ROBO_STATE.ATTACK);
+            m_roboState = BitControl.Set(m_roboState , (int)ROBO_STATE.COOLTIME);
+
         }
     }
 
     // 어택 종료시 초기화
     void AttackEndCheckEvent(Spine.TrackEntry trackEntry)
     {
-        if(BitControl.Get(m_roboState, (int)ROBO_STATE.COOLTIME))//trackEntry.animation.name == ANI_ATTACK)
+        if(trackEntry.animation.name.Equals(ANI_ATTACK))//trackEntry.animation.name == ANI_ATTACK)
         {
-       
+            if (m_gunPlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
+                FireBullet();
             m_roboState = BitControl.Clear(m_roboState, (int)ROBO_STATE.COOLTIME);
+            m_skletonAnimation.state.SetAnimation(0 , ANI_IDLE , true);
             //m_effectAnimator.gameObject.SetActive(true);
             //m_effectAnimator.Play("Robo_attackEffect");
         }
@@ -588,14 +567,12 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             if (GameManager.Instance().PLAYER.USER_NAME.Equals(e.user) || !e.targetName.EndsWith("robo"))
                 return;
             m_hp = (int)e.msg.GetField(NetworkManager.HP_UPDATE).i;
-            UpdateHp();
         }
         else if(e.msgType == NetworkManager.ENERGY_UPDATE)
         {
             if (GameManager.Instance().PLAYER.USER_NAME.Equals(e.user) || !e.targetName.EndsWith("robo"))
                 return;
             m_roboEnergy = e.msg.GetField(NetworkManager.ENERGY_UPDATE).f;
-            UpdateEnergy();
         }
     }
 
@@ -617,8 +594,8 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             if (!r)
             {
                 GameManager.Instance().CUR_PLACE = GameManager.ROBO_PLACE.BOSS_AREA;
-                CameraManager.Instance().MoveCameraAndObject(gameObject , 10 ,
-                    CameraManager.CAMERA_PLACE.BOSS , gameObject);
+                //CameraManager.Instance().MoveCameraAndObject(gameObject , 10 ,
+                //    CameraManager.CAMERA_PLACE.BOSS , gameObject);
 
                 if(userName.Equals(MOVE_PLYAER))
                     MapManager.Instance().AddMonster(
@@ -628,6 +605,24 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
                 r = true;
             }
           
+        }
+        switch (col.tag)
+        {
+            case "BOSS_SCENE":
+                GameManager.Instance().ChangeScene(GameManager.PLACE.STAGE1_BOSS);
+                MapManager.Instance().AddMonster(GamePath.BOSS1 , "boss1_" + GameManager.Instance().PLAYER.USER_NAME ,
+                    MapManager.Instance().m_bossCreatePlace.transform.position);
+                break;
+            case "BOSS_SCENE2":
+                GameManager.Instance().ChangeScene(GameManager.PLACE.STAGE1_BOSS);
+                MapManager.Instance().AddMonster(GamePath.BOSS1 , "boss2_" + GameManager.Instance().PLAYER.USER_NAME ,
+                    MapManager.Instance().m_bossCreatePlace.transform.position);
+                break;
+            case "PLANET1":
+            case "PLANET2":
+                m_controllName = col.tag;
+                NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRoboPlaceChange(m_controllName));
+                break;
         }
     }
     bool r = false;
@@ -653,35 +648,28 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     // -- 데미지 상호작용 --------------------------------------------------------------------------------------//
     public void Damage(int damage)
     {
-        this.m_hp -= damage;
+        HP -= damage;
 
         // 이곳에서 구멍 이펙트 생성 
-        if(m_hp % 10 == 0)
+        if(HP % 10 == 0)
         {
             // 10이상 데미지를 받을 때마다 생성
             DamagePointCreate();
         }
 
-        if(m_hp <= 0)
+        if(HP <= 0)
         {
-            m_hp = 0;
+            HP = 0;
         }
-
-        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonHPUdate("robo",m_hp));
-
-        UpdateHp();
 
     }
 
     public void Heal(int heal)
     {
-        this.m_hp += heal;
+        HP += heal;
 
-        if (this.m_hp >= GameSetting.HERO_MAX_HP)
-            this.m_hp = GameSetting.HERO_ROBO_MAX_HP;
-
-        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonHPUdate("robo",m_hp));
-        UpdateHp();
+        if (HP >= GameSetting.HERO_MAX_HP)
+            HP = GameSetting.HERO_ROBO_MAX_HP;
     }
 
     // 특정 데미지 이상 받았을 때만 호출

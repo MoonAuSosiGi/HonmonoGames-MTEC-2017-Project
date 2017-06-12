@@ -136,32 +136,38 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                         break;
                     case "monster1":
                         {
-                            if (e.user.Equals(GameManager.Instance().PLAYER.USER_NAME))
-                                return;
-                            
-                            Vector3 p = new Vector3(e.msg.GetField("X").f , e.msg.GetField("Y").f , -1.0f);
-                            GameObject m = MapManager.Instance().AddObject(GamePath.MONSTER1, new Vector3(p.x , p.y , -1));
-                            
-                            NetworkMoving moving = m.AddComponent<NetworkMoving>();
-                            m.AddComponent<NetworkMonster>().NAME = e.targetName;
-                            m.GetComponent<Stage1Monster>().enabled = false;
-                            m.GetComponent<Stage1Monster>().MONSTER_NAME = e.targetName;
-                            m.GetComponent<Stage1Monster>().NETWORKING = true;
-                            moving.NAME = e.targetName;
+                            CreateMonster(e.user , GamePath.MONSTER1 , e.targetName ,
+                                e.msg.GetField("X").f , e.msg.GetField("Y").f);
                         }
                         break;
                     case "monster2":
                         {
-                            if (e.user.Equals(GameManager.Instance().PLAYER.USER_NAME))
-                                return;
-                            Vector3 p = new Vector3(e.msg.GetField("X").f , e.msg.GetField("Y").f , -1.0f);
-                            GameObject m = MapManager.Instance().AddObject(GamePath.MONSTER2, new Vector3(p.x , p.y , -1));
-                            NetworkMoving moving = m.AddComponent<NetworkMoving>();
-                            m.AddComponent<NetworkMonster>().NAME = e.targetName;
-                            m.GetComponent<Stage1Monster>().MONSTER_NAME = e.targetName;
-                            m.GetComponent<Stage1Monster>().enabled = false;
-                            m.GetComponent<Stage1Monster>().NETWORKING = true;
-                            moving.NAME = e.targetName;
+                            CreateMonster(e.user , GamePath.MONSTER2 , e.targetName ,
+                                e.msg.GetField("X").f , e.msg.GetField("Y").f);
+                        }
+                        break;
+                    case "SpaceMonster1":
+                        {
+                            CreateMonster(e.user , GamePath.SPACE_MONSTER1 , e.targetName ,
+                                e.msg.GetField("X").f , e.msg.GetField("Y").f);
+                        }
+                        break;
+                    case "SpaceMonster2":
+                        {
+                            CreateMonster(e.user , GamePath.SPACE_MONSTER2, e.targetName ,
+                                e.msg.GetField("X").f , e.msg.GetField("Y").f);
+                        }
+                        break;
+                    case "InsidePentrationMonster":
+                        {
+                            CreateInsideMonster(e.user , e.targetName ,
+                                 e.msg.GetField("X").f , e.msg.GetField("Y").f);
+                        }
+                        break;
+                    case "PentrationMonsterSpace":
+                        {
+                            CreatePentrationMonster(e.user , e.targetName ,
+                                 e.msg.GetField("X").f , e.msg.GetField("Y").f);
                         }
                         break;
                 }
@@ -170,10 +176,6 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
             case NetworkManager.CH_ORIGINUSER: // 조작자를 바꿔라
                 ORDER_NAME = e.msg.GetField(NetworkManager.ORDER).GetField(NetworkManager.ORDER).str;
                 ORDER_SPACE = (short)e.msg.GetField(NetworkManager.ORDER).GetField("order_space").i;
-
-                MDebug.Log("ORDER " + ORDER_NAME);
-
-                MDebug.Log(GameManager.Instance().ROBO == null);
 
                 if (ORDER_NAME == GameManager.Instance().PLAYER.USER_NAME && ORDER_SPACE == 0)
                 {
@@ -221,8 +223,6 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                     GameManager.Instance().ROBO.MOVE_PLYAER = e.user;
                 else
                 {
-                    //if (e.user == GameManager.Instance().PLAYER.USER_NAME)
-                    //    NetworkManager.Instance().GototheRobo();
                     GameManager.Instance().ROBO.MOVE_PLYAER = null;
                 }
                 //GameManager.Instance().ROBO.name = e.user + "_robot";
@@ -232,8 +232,6 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                     GameManager.Instance().ROBO.GUN_PLAYER = e.user;
                 else
                 {
-                    if(e.user == GameManager.Instance().PLAYER.USER_NAME)
-                        NetworkManager.Instance().GototheRobo();
                     GameManager.Instance().ROBO.GUN_PLAYER = null;
                 }
                 break;
@@ -249,5 +247,54 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
 
         }
     }
+
+
+    // 몬스터 생성 
+    void CreateMonster(string userName,string monsterPrefab, string targetName , float x,float y,bool autoDir = true)
+    {
+        if (userName.Equals(GameManager.Instance().PLAYER.USER_NAME))
+            return;
+        Vector3 p = new Vector3(x , y , -1.0f);
+        GameObject m = MapManager.Instance().AddObject(monsterPrefab , new Vector3(p.x , p.y , -1));
+        NetworkMoving moving = m.AddComponent<NetworkMoving>();
+        moving.AUTO_DIR = autoDir;
+        m.AddComponent<NetworkMonster>().NAME = targetName;
+        m.GetComponent<Stage1Monster>().MONSTER_NAME = targetName;
+        m.GetComponent<Stage1Monster>().enabled = false;
+        m.GetComponent<Stage1Monster>().NETWORKING = true;
+        moving.NAME = targetName;
+    }
+
+    void CreateInsideMonster(string userName , string targetName , float x , float y , bool autoDir = true)
+    {
+        if (userName.Equals(GameManager.Instance().PLAYER.USER_NAME))
+            return;
+        Vector3 p = new Vector3(x , y , -1.0f);
+        GameObject m = MapManager.Instance().AddObject(GamePath.INSIDE_MONSTER , new Vector3(p.x , p.y , -1));
+        NetworkMoving moving = m.AddComponent<NetworkMoving>();
+        moving.AUTO_DIR = autoDir;
+        m.AddComponent<NetworkInsidePentrationMonster>().NAME = targetName;
+        m.GetComponent<InsidePentrationMonster>().MONSTER_NAME = targetName;
+        m.GetComponent<InsidePentrationMonster>().enabled = false;
+        m.GetComponent<InsidePentrationMonster>().NETWORKING = true;
+        moving.NAME = targetName;
+    }
+
+    void CreatePentrationMonster(string userName , string targetName , float x , float y , bool autoDir = true)
+    {
+        if (userName.Equals(GameManager.Instance().PLAYER.USER_NAME))
+            return;
+        Vector3 p = new Vector3(x , y , -1.0f);
+        GameObject m = MapManager.Instance().AddObject(GamePath.PENTRATION_MONSTER , new Vector3(p.x , p.y , -1));
+        NetworkMoving moving = m.AddComponent<NetworkMoving>();
+        moving.AUTO_DIR = autoDir;
+        m.AddComponent<NetworkMonster>().NAME = targetName;
+        m.GetComponent<SpacePentrationMonster>().MONSTER_NAME = targetName;
+        m.GetComponent<SpacePentrationMonster>().enabled = false;
+        m.GetComponent<SpacePentrationMonster>().NETWORKING = true;
+        moving.NAME = targetName;
+    }
+
+
 
 }

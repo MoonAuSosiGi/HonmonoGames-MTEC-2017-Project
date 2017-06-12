@@ -1,0 +1,76 @@
+
+mon_chimtoo_inside.png
+size: 2048,512
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+_0000s_0000_앞1
+  rotate: false
+  xy: 1051, 56
+  size: 159, 102
+  orig: 159, 102
+  offset: 0, 0
+  index: -1
+_0000s_0001_앞
+  rotate: false
+  xy: 1051, 160
+  size: 165, 188
+  orig: 165, 188
+  offset: 0, 0
+  index: -1
+_0000s_0002_뒷다리
+  rotate: true
+  xy: 1218, 209
+  size: 139, 74
+  orig: 139, 74
+  offset: 0, 0
+  index: -1
+_0000s_0003_뒷다리1
+  rotate: true
+  xy: 2, 2
+  size: 48, 207
+  orig: 48, 207
+  offset: 0, 0
+  index: -1
+_0000s_0004_Layer-4
+  rotate: false
+  xy: 2, 52
+  size: 1047, 430
+  orig: 1047, 430
+  offset: 0, 0
+  index: -1
+_0000s_0005_레이어-1
+  rotate: false
+  xy: 1051, 350
+  size: 247, 132
+  orig: 247, 132
+  offset: 0, 0
+  index: -1
+_0000s_0006_앞1-copy
+  rotate: false
+  xy: 1490, 380
+  size: 159, 102
+  orig: 159, 102
+  offset: 0, 0
+  index: -1
+_0000s_0007_앞-copy
+  rotate: true
+  xy: 1300, 317
+  size: 165, 188
+  orig: 165, 188
+  offset: 0, 0
+  index: -1
+_0000s_0008_뒷다리1-copy
+  rotate: true
+  xy: 1651, 439
+  size: 43, 207
+  orig: 43, 207
+  offset: 0, 0
+  index: -1
+_0000s_0009_뒷다리-copy
+  rotate: false
+  xy: 1294, 241
+  size: 139, 74
+  orig: 139, 74
+  offset: 0, 0
+  index: -1

@@ -34,6 +34,8 @@ public class MapManager : Singletone<MapManager> {
     private List<GameObject> m_objectList = new List<GameObject>();
 
     public HeroRobo m_robo = null;
+
+    public GameObject m_bossCreatePlace = null;
     //----------------------------------------------------------------------------------------//
     // 바깥에서 사용할 GET
     public float CAMERA_HALF_WIDTH { get { return this.m_cameraHalfWdith; } }
@@ -43,8 +45,10 @@ public class MapManager : Singletone<MapManager> {
 
     public Vector3 BACKGROUND_POS { get { return m_limitBackground.transform.position; } }
 
-
-   //----------------------------------------------------------------------------------------//
+    public GameObject m_robo_in_monsterPos1 = null;
+    public GameObject m_robo_in_monsterPos2 = null;
+    private int m_roboInMonsterIndex = 0;
+    //----------------------------------------------------------------------------------------//
 
     void Start()
     {
@@ -52,7 +56,7 @@ public class MapManager : Singletone<MapManager> {
         this.m_cameraHalfWdith = (Camera.main.orthographicSize * Screen.width / Screen.height);
         this.m_cameraHalfHeight = (this.m_cameraHalfWdith * Screen.height / Screen.width);
 
-        GameManager.Instance().PLAYER.PLAYER_HERO = m_users[0];
+        GameManager.Instance().HeroSetup(m_users[0]);
         GameManager.Instance().ROBO = m_robo;
         //temp 
 
@@ -125,6 +129,12 @@ public class MapManager : Singletone<MapManager> {
                 
                 NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(name,"boss1",pos.x,pos.y,pos.z));
             }
+            else if(prefabPath.Equals(GamePath.BOSS2))
+            {
+                monster.GetComponent<Stage2Boss>().MONSTER_NAME = name;
+
+                NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(name , "boss2" , pos.x , pos.y , pos.z));
+            }
             else if(prefabPath.Equals(GamePath.MONSTER1))
             {
                 monster.GetComponent<Stage1Monster>().MONSTER_NAME = name;
@@ -136,7 +146,28 @@ public class MapManager : Singletone<MapManager> {
                 monster.GetComponent<Stage1Monster>().MONSTER_NAME = name;
                 NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCreateOrder(name , "monster2"));
             }
+            else if(prefabPath.Equals(GamePath.INSIDE_MONSTER))
+            {
+                monster.GetComponent<InsidePentrationMonster>().MONSTER_NAME = name;
+            }
         }
         return monster;
+    }
+
+    public void PentrationMonsterCreate()
+    {
+        int r = Random.Range(0 , 2);
+        Vector3 pos = Vector3.zero;
+        if (r == 0)
+            pos = m_robo_in_monsterPos1.transform.position;
+        else
+            pos = m_robo_in_monsterPos2.transform.position;
+
+        string name = "monster_" + GameManager.Instance().PLAYER.USER_NAME + "_inside_" + m_roboInMonsterIndex;
+        NetworkManager.Instance().SendOrderMessage(
+                    JSONMessageTool.ToJsonCreateOrder(
+                        name, "InsidePentrationMonster" , pos.x , pos.y , -1.0f));
+        AddMonster(GamePath.INSIDE_MONSTER , name , pos);
+        m_roboInMonsterIndex++;
     }
 }

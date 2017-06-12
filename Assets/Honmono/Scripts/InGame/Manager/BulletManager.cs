@@ -8,6 +8,7 @@ public class BulletManager : Singletone<BulletManager> {
     {
         B_HERO_DEF = 0,  // 주인공의 디폴트 총알
         B_BOSS1_P1,      // 보스 1 패턴 1 총알
+        EGG_BULLET      // 에그 총알
     }
 
     //-----------------------------------//
@@ -46,6 +47,11 @@ public class BulletManager : Singletone<BulletManager> {
             case BULLET_TYPE.B_BOSS1_P1:
                 {
                     path = GamePath.WEAPON_BULLET_BOSS;
+                    return AddBulletBoss1(path);
+                }
+            case BULLET_TYPE.EGG_BULLET:
+                {
+                    path = GamePath.WEAPON_BULLET_EGG;
                     return AddBulletBoss1(path);
                 }
         }

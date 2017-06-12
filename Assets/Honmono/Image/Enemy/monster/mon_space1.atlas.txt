@@ -1,0 +1,62 @@
+
+mon_space1.png
+size: 512,128
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+우주몹1_0000_위
+  rotate: false
+  xy: 350, 6
+  size: 86, 61
+  orig: 86, 61
+  offset: 0, 0
+  index: -1
+우주몹1_0001_아래
+  rotate: true
+  xy: 460, 64
+  size: 61, 37
+  orig: 61, 37
+  offset: 0, 0
+  index: -1
+우주몹1_0002_머리
+  rotate: false
+  xy: 350, 69
+  size: 108, 56
+  orig: 108, 56
+  offset: 0, 0
+  index: -1
+우주몹1_0003_혀
+  rotate: false
+  xy: 2, 2
+  size: 145, 21
+  orig: 145, 21
+  offset: 0, 0
+  index: -1
+우주몹1_0004_1
+  rotate: false
+  xy: 2, 25
+  size: 179, 100
+  orig: 179, 100
+  offset: 0, 0
+  index: -1
+우주몹1_0005_2
+  rotate: false
+  xy: 183, 61
+  size: 165, 64
+  orig: 165, 64
+  offset: 0, 0
+  index: -1
+우주몹1_0006_3
+  rotate: false
+  xy: 183, 18
+  size: 78, 41
+  orig: 154, 73
+  offset: 68, 5
+  index: -1
+우주몹1_0007_4
+  rotate: false
+  xy: 263, 34
+  size: 78, 25
+  orig: 78, 25
+  offset: 0, 0
+  index: -1

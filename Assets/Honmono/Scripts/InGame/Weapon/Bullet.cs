@@ -6,19 +6,19 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
 {
 
     // -- 기본 정보 -------------------------------------------------------------------------//
-    private SpriteRenderer m_renderer = null;
-    private float m_moveSpeed = 10.0f;
-    private string m_bulletName = "";
-    private bool m_isNetworkObject = false;
+    protected SpriteRenderer m_renderer = null;
+    protected float m_moveSpeed = 10.0f;
+    protected string m_bulletName = "";
+    protected bool m_isNetworkObject = false;
 
     Vector3 m_bulletDir = Vector3.left;
 
     public string BULLET_NAME { get { return m_bulletName; } }
 
     public float BULLET_SPEED { get { return m_moveSpeed; } set { m_moveSpeed = value; } }
-    private bool m_filp = false;
+    protected bool m_filp = false;
 
-    private bool m_alive = false;
+    protected bool m_alive = false;
 
     public bool ALIVE { get { return m_alive; } set { m_alive = value; } }
 
@@ -28,12 +28,12 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
         ENEMY
     }
 
-    private BULLET_TARGET m_curTarget = BULLET_TARGET.PLAYER;
+    protected BULLET_TARGET m_curTarget = BULLET_TARGET.PLAYER;
 
     // -- 네트워크 ------------------------------------------------------------------------- //
-    private Vector3 m_prevPos = Vector3.zero;
-    private Vector3 m_targetPos = Vector3.zero;
-    private float m_lastSendTime = 0.0f;
+    protected Vector3 m_prevPos = Vector3.zero;
+    protected Vector3 m_targetPos = Vector3.zero;
+    protected float m_lastSendTime = 0.0f;
 
     // ------------------------------------------------------------------------------------- //
     // Use this for initialization
@@ -73,7 +73,7 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
 
     }
 
-    void DeleteBullet()
+    protected void DeleteBullet()
     {
         CancelInvoke();
         MapManager.Instance().AddObject(GamePath.EFFECT , transform.position)
@@ -206,6 +206,7 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
                 Monster mon = col.GetComponent<Monster>();
                 if (mon.enabled)
                 {
+                    GameManager.Instance().SetCurrentEnemy(mon);
                     mon.Damage(1);
                     
                 }
@@ -215,9 +216,10 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
             }
             else if(col.transform.tag.Equals("BOSS") && m_curTarget == BULLET_TARGET.PLAYER)
             {
-                Stage1BOSS boss = col.GetComponent<Stage1BOSS>();
                 
-                if(boss.enabled)
+                Stage1BOSS boss = col.GetComponent<Stage1BOSS>();
+                GameManager.Instance().SetCurrentEnemy(boss);
+                if (boss.enabled)
                     boss.Damage(1);
                 else
                     NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonDamage(boss.MONSTER_NAME , 1));

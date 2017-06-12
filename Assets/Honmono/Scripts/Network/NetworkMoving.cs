@@ -15,7 +15,11 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
     private SkeletonAnimation m_skeltonAni = null;
     private int m_networkSpace = 0;
 
+    // true 일 경우 flip 을 받아와서 적용 아니면 비적용
+    private bool m_autoDir = false;
 
+
+    public bool AUTO_DIR { get { return m_autoDir; } set { m_autoDir = value; } }
     public string NAME { get { return m_name; } set { m_name = value; } }
 
     // -- 클라에서 보간용 --------------------------------------------------------------//
@@ -57,7 +61,7 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
                 x = obj[i].GetField("X").f;
                 y = obj[i].GetField("Y").f;
                 z = obj[i].GetField("Z").f;
-                flip = obj[i].GetField("Dir");
+                flip = obj[i].GetField("Dir").b;
                 ck = true;
                 JSONObject v = obj[i].GetField(NetworkManager.DIRVECTOR);
                 drPos = new Vector3(v.GetField("X").f , v.GetField("Y").f , v.GetField("Z").f);
@@ -80,7 +84,8 @@ public class NetworkMoving : MonoBehaviour, NetworkManager.NetworkMoveEventListe
         {
             if (m_skeltonAni.skeleton.flipX != flip)
             {
-       //         m_skeltonAni.skeleton.flipX = flip;
+                if(AUTO_DIR)
+                    m_skeltonAni.skeleton.flipX = flip;
                 targetPos = newPos;
             }
         }

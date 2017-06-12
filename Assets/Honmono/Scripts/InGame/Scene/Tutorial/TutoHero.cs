@@ -167,30 +167,30 @@ public class TutoHero : MonoBehaviour {
         {
             GameObject target = null;
             int cameraSize = 6;
-            CameraManager.CAMERA_PLACE place = CameraManager.CAMERA_PLACE.ROBO_IN;
+        //    CameraManager.CAMERA_PLACE place = CameraManager.CAMERA_PLACE.ROBO_IN;
             string func = "";
 
-            switch (CameraManager.Instance().PLACE)
-            {
-                case CameraManager.CAMERA_PLACE.ROBO_IN:
-                    target = CameraManager.Instance().m_inTheStar;
-                    place = CameraManager.CAMERA_PLACE.STAR;
-                    func = "RobotOutEnd";
+            //switch (CameraManager.Instance().PLACE)
+            //{
+            //    case CameraManager.CAMERA_PLACE.ROBO_IN:
+            //        target = CameraManager.Instance().m_inTheStar;
+            //        place = CameraManager.CAMERA_PLACE.STAR;
+            //        func = "RobotOutEnd";
 
-                    break;
-                case CameraManager.CAMERA_PLACE.STAR:
-                    target = CameraManager.Instance().m_robotPlace;
+            //        break;
+            //    case CameraManager.CAMERA_PLACE.STAR:
+            //        target = CameraManager.Instance().m_robotPlace;
 
-                    cameraSize = 4;
-                    place = CameraManager.CAMERA_PLACE.ROBO_IN;
-                    this.GetComponent<Rigidbody2D>().gravityScale = 0.0f;
-                    func = "RobotInEnd";
-                    break;
+            //        cameraSize = 4;
+            //        place = CameraManager.CAMERA_PLACE.ROBO_IN;
+            //        this.GetComponent<Rigidbody2D>().gravityScale = 0.0f;
+            //        func = "RobotInEnd";
+            //        break;
 
-            }
+            //}
 
-            CameraManager.Instance().MoveCameraAndObject(target , cameraSize , place , gameObject , gameObject , func , false);
-
+            //CameraManager.Instance().MoveCameraAndObject(target , cameraSize , place , gameObject , gameObject , func , false);
+    
 
 
         }
@@ -588,8 +588,10 @@ public class TutoHero : MonoBehaviour {
             // 사다리
             m_skletonAnimation.enabled = true;
             this.GetComponent<MeshRenderer>().enabled = true;
+            if (m_climb == null)
+                return;
             if(m_climb.state.GetCurrent(0) != null)
-              m_climb.state.ClearTrack(0);
+                m_climb.state.ClearTrack(0);
             m_climb.gameObject.SetActive(false);
         }
 

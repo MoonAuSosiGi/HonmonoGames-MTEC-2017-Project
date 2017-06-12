@@ -44,6 +44,24 @@ public static class JSONMessageTool  {
             this.Status = status;
         }
     }
+    // -- 로봇이 어디있느지에 대한 정보를 넘긴다 
+    public static string ToJsonRoboPlaceChange(string placeName)
+    {
+        JSONObject obj = GetDefJSON(placeName , NetworkManager.ROBOT_PLACE);
+        return obj.ToString();
+    }
+
+    // -- 행성 스크롤 정보 -------------------------------------------------------------
+    public static string ToJsonPlanetInfoSend(string planetName,float leftX,float rightX)
+    {
+        JSONObject obj = GetDefJSON(planetName , NetworkManager.PLANET_INFO);
+        JSONObject msg = obj.GetField(NetworkManager.ORDERS)[0].GetField(NetworkManager.MSG);
+        JSONObject pos = new JSONObject();
+        pos.Add(leftX);
+        pos.Add(rightX);
+        msg.AddField(NetworkManager.PLANET_INFO , pos);
+        return obj.ToString();
+    }
 
     // -----------------------------------------------------------------------------------------------//
 
@@ -146,6 +164,16 @@ public static class JSONMessageTool  {
         return obj.ToString();
     }
 
+    public static string ToJsonCharacterHPUpdate(int hp, int maxhp)
+    {
+        JSONObject obj = GetDefJSON("" , NetworkManager.CHARACTER_HPUPDATE);
+        JSONObject msg = obj.GetField(NetworkManager.ORDERS)[0].GetField(NetworkManager.MSG);
+        msg.AddField(NetworkManager.CHARACTER_HPUPDATE , hp);
+        msg.AddField(NetworkManager.CHARACTER_MAXHP , maxhp);
+
+        return obj.ToString();
+
+    }
     // HP Update
     public static string ToJsonHPUdate(string targetName,int hp)
     {

@@ -30,8 +30,53 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
 
     // 테스트
     public string m_curSceneState = "login";
+    // -- 게임 UI ------------------------------------------------------------------------------//
+    // HUD
+    public RoboHUD m_gameHUD = null;
 
-    // -- Scene Management ------------------------------------------//
+    private List<GameUI.RobotHPUpdateEvent> m_hpReceieveList = new List<GameUI.RobotHPUpdateEvent>();
+    private List<GameUI.ENERGYUpdateEvent> m_energyReceieveList = new List<GameUI.ENERGYUpdateEvent>();
+
+    public void AddHPUpdateEvent(GameUI.RobotHPUpdateEvent recv)
+    {
+        if (!m_hpReceieveList.Contains(recv))
+            m_hpReceieveList.Add(recv);
+    }
+
+    public void AddEnergyUpdateEvent(GameUI.ENERGYUpdateEvent recv)
+    {
+        if (!m_energyReceieveList.Contains(recv))
+            m_energyReceieveList.Add(recv);
+    }
+
+    void UpdateHp(int curHP)
+    {
+        foreach (GameUI.RobotHPUpdateEvent recv in m_hpReceieveList)
+            recv.HPUpdate(curHP , GameSetting.HERO_ROBO_MAX_HP);
+    }
+
+    void UpdateEnergy(float curEnergy)
+    {
+        foreach (GameUI.ENERGYUpdateEvent recv in m_energyReceieveList)
+            recv.EnergyUpdate(curEnergy);
+    }
+
+    public void ChangeEnergy(float curEnergy)
+    {
+        UpdateEnergy(curEnergy);
+    }
+
+    public void ChangeHP(int curHP)
+    {
+        UpdateHp(curHP);
+    }
+
+    // 현재 때리고 있는 몬스터 
+    public void SetCurrentEnemy(Monster monster)
+    {
+        m_gameHUD.SetMonster(monster);
+    }
+    // -- Scene Management ---------------------------------------------------------------------//
     TargetMoveCamera m_moveCamera = null;
     
     public enum PLACE
@@ -44,7 +89,11 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
         PLANET,
         STAGE1_BOSS,
         ONLY_POPUP_SHOW,
-        ROBO
+        ROBO,
+        ROBO_IN_DRIVE,
+        ROBO_IN_GUN,
+        PLANET1,
+        PLANET2
     }
 
     [Serializable]
@@ -60,6 +109,7 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
     public GameObject m_uiObj = null;
     public GameObject m_funcTarget = null;
     private string m_func = null;
+    private bool m_faceOutEndFunc = true;
     private GameObject m_moveTarget = null;
     private GameObject m_targetPlace = null;
     private GameObject m_backgroundObj = null;
@@ -71,8 +121,8 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
         get { return m_place; }
         set { m_place = value; }
     }
-    //---------------------------------------------------------------//
-    //--옵저버용-----------------------------------------------------//
+    //------------------------------------------------------------------------------------------//
+    //--옵저버용--------------------------------------------------------------------------------//
     class GameUserInfo
     {
         public PLACE place;
@@ -83,7 +133,14 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
             this.player = player;
         }
     }
+    //접속중인 유저들
     private List<GameUserInfo> m_gameUserInfo = null;
+
+    public void HudSetup(List<string> users)
+    {
+        m_gameHUD.SetPlayerInfo(users);
+        NetworkManager.Instance().AddNetworkOrderMessageEventListener(m_gameHUD);
+    }
 
     public void SetupObserver()
     {
@@ -95,8 +152,9 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
         }
 
     }
+    // 현재 보고 있는 유저
     private int m_curIndex = 0;
-    //---------------------------------------------------------------//
+    //------------------------------------------------------------------------------------------//
     void Start()
     {
         Application.runInBackground = true;
@@ -105,6 +163,10 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
         m_moveCamera = Camera.main.GetComponent<TargetMoveCamera>();
         //  PopupManager.Instance().AddPopup("NetworkConnectPopup");
 
+        // -- ui setup ------------------- //
+        AddHPUpdateEvent(m_gameHUD);
+        AddEnergyUpdateEvent(m_gameHUD);
+        //-------------------------------- //
         NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
     }
 
@@ -119,7 +181,14 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
         m_robo = robo;
     }
 
-    // -- 게임 내에서의 상황 관리용 ------------------------------------------------ //
+    public void UIShow(bool b)
+    {
+        m_gameHUD.gameObject.SetActive(b);
+        UpdateHp(ROBO.HP);
+        UpdateEnergy(ROBO.ENERGY);
+    }
+
+    // -- 게임 내에서의 상황 관리용 ---------------------------------------------------------- //
     // 로봇의 현재 위치를 추적한다.
 
     public enum ROBO_PLACE
@@ -143,7 +212,7 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
     }
 
     // -- Scene 전환 관련 정리 ----------------------------------------------------------------//
-    public void ChangeScene(PLACE place,GameObject funcTarget = null, string func = null)
+    public void ChangeScene(PLACE place,GameObject funcTarget = null, string func = null,bool fadeOutEndFunc = true)
     {
         m_place = place;
 
@@ -158,6 +227,7 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
 
         m_funcTarget = funcTarget;
         m_func = func;
+        m_faceOutEndFunc = fadeOutEndFunc;
 
         m_moveCamera.TARGET_MOVEABLE = false;
         switch (place)
@@ -165,8 +235,15 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
             case PLACE.PLANET:
                 m_moveCamera.CORRECTION = new Vector2(0.0f , 5.5f);
                 break;
+            case PLACE.PLANET1:
+                m_moveCamera.TARGET_MOVEABLE = true;
+                m_moveCamera.CORRECTION = new Vector2(0.0f , 6.0f);
+                break;
+            case PLACE.ROBO_IN_DRIVE:
+            case PLACE.ROBO_IN_GUN:
             case PLACE.ROBO_IN:
                 m_moveCamera.CORRECTION = new Vector2(0.0f , 5.76f);
+                m_moveCamera.TARGET_MOVEABLE = true;
                 break;
             case PLACE.ROBO:
                 m_backgroundObj = 
@@ -189,6 +266,7 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
     }
 
 
+    // 옵저버가 플레이어를 쫒아다닌다 
     public void ChangeUser(int userIndex)
     {
         if (userIndex < 0 || userIndex >= m_gameUserInfo.Count)
@@ -200,7 +278,11 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
         switch(info.place)
         {
             case PLACE.PLANET:
+            case PLACE.ROBO_IN_GUN:
+            case PLACE.ROBO_IN_DRIVE:
             case PLACE.ROBO_IN:
+            case PLACE.PLANET1:
+            case PLACE.PLANET2:
                 m_moveTarget = info.player.gameObject;
                 break;
             default:
@@ -240,6 +322,8 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
         {
             if(e.msgType.Equals(NetworkManager.USER_PLACE_CHANGE))
             {
+                if (m_gameUserInfo == null)
+                    return;
                 for(int i = 0; i < m_gameUserInfo.Count; i++)
                 {
                     
@@ -305,7 +389,7 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
             if (m_moveTarget != null)
                 m_moveTarget.transform.position = p;
 
-            if(m_funcTarget != null)
+            if(m_funcTarget != null && m_faceOutEndFunc)
                 m_funcTarget.SendMessage(m_func);
 
             CameraFadeIn();
@@ -326,6 +410,12 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
             }
 
             m_moveCamera.enabled = true;
+
+            if (m_funcTarget != null && !m_faceOutEndFunc)
+                m_funcTarget.SendMessage(m_func);
+
+            if (m_place != PLACE.ONLY_POPUP_SHOW)
+                UIShow(true);
             m_uiObj.SetActive(true);
         }
     }

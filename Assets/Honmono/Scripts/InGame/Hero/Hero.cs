@@ -56,7 +56,9 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     public bool m_inSpace = true;
 
     public bool IN_SPACE { get { return m_inSpace; } set { m_inSpace = value; } }
-   
+    // -- 데미지 쿨타임
+    bool m_damageCoolTime = false;
+    MeshRenderer m_meshRenderer = null;
 
     // 렌더러
     private SkeletonAnimation m_skletonAnimation = null;
@@ -82,6 +84,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     private string m_userName = "";
 
     private string m_userControlName = "";
+    private Monster m_monster = null;
     private GameObject m_damagePointFix = null;
 
     //기존 위치
@@ -211,17 +214,21 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
                 GameManager.Instance().ROBO.MOVE_PLYAER = e.user;
 
+                //test
+               
+
                 if (m_isMe && m_userName.Equals(e.user + "_robo"))
-                    GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO);
-                    
+                    GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO,gameObject, "InteractionEffect",false);
+
+
             }
             else
             {
                 if (m_isMe && m_userName.Equals(e.user + "_robo"))
                 {
                     m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.CONTROL_DRIVE);
-                    GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO_IN);
-                    GameManager.Instance().PLAYER.PLAYER_HERO = this;
+                    GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO_IN_DRIVE);
+                    GameManager.Instance().HeroSetup(this);
                 }
                GameManager.Instance().ROBO.MOVE_PLYAER = null;
 
@@ -237,15 +244,15 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
                 GameManager.Instance().ROBO.GUN_PLAYER = e.user;
                 
                 if(m_isMe && m_userName.Equals(e.user + "_robo"))
-                    GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO);
+                    GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO , gameObject , "InteractionEffect" , false);
             }
             else
             {
                 if (m_isMe && m_userName.Equals(e.user + "_robo"))
                 {
                     m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.CONTROL_GUN);
-                    GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO_IN);
-                    GameManager.Instance().PLAYER.PLAYER_HERO = this;
+                    GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO_IN_GUN);
+                    GameManager.Instance().HeroSetup(this);
                 }
 
                 GameManager.Instance().ROBO.GUN_PLAYER = null;
@@ -253,6 +260,11 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             }
         }
       
+    }
+
+    void InteractionEffect()
+    {
+        PopupManager.Instance().AddPopup("InteractionPopup");
     }
     //------------------------------------------------------------------------------------------------------------------------//
 
@@ -265,6 +277,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         m_bgCurve = this.GetComponent<BansheeGz.BGSpline.Curve.BGCurve>();
         m_rigidBody = this.GetComponent<Rigidbody2D>();
         m_climb = transform.GetChild(2).GetComponent<SkeletonAnimation>();
+        m_meshRenderer = this.GetComponent<MeshRenderer>();
         //-------------------------------------------------------//
 
     }
@@ -272,7 +285,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     void Start()
     {
 
-        
+       
         // 움직였을 때만 패킷을 전송해야 한다. 그러기 위한 디스턴스 판별용 포지션 적용
         m_prevPos = transform.position;
 
@@ -331,13 +344,23 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             {
                 m_damagePointFix.GetComponent<RoboDamagePoint>().DamageFix();
             }
+            else if(m_monster != null)
+            {
+                m_monster.Damage(1);
+            }
         }
     }
-    
+
     void Update()
     {
         m_prevPos = transform.position;
         m_prevState = m_curState;
+
+        if (NetworkOrderController.OBSERVER_MODE)
+        { 
+            if(m_rigidBody != null)
+                m_rigidBody.simulated = false;
+        }
 
         if (m_isMe)
         {
@@ -484,7 +507,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
                 case GameManager.PLACE.ROBO_IN:
                     func = "RobotOutEnd";
                     
-                    GameManager.Instance().ChangeScene(GameManager.PLACE.PLANET , gameObject , func);
+                    GameManager.Instance().ChangeScene(GameManager.PLACE.PLANET1 , gameObject , func);
                     break;
                 case GameManager.PLACE.PLANET:    
                     this.GetComponent<Rigidbody2D>().gravityScale = 0.0f;
@@ -681,7 +704,6 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     //특정 오브젝트 조작시
     void ObjectControl()
     {
-        // 특정 컨트롤 조작시에 조작키를 눌렀을 때 
         if (Input.GetKeyUp(KeyCode.R))
         {
             int state = -1;
@@ -844,7 +866,6 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
                         m_climb.state.SetAnimation(0 , "animation" , true);
                     else if (m_climb.state.GetCurrent(0) == null)
                         m_climb.state.SetAnimation(0 , "animation" , true);
-                    MDebug.Log("여기");
                 }
             }
 
@@ -951,23 +972,6 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 //        MoveSend();
     }
 
-   
-
-    // -- 상호작용 체크용 -----------------------------------------------------------//
-    //bool GetMoveAbleCheck()
-    //{
-    //    return !(m_userControlName == "ROBOT_HEAL" ||
-    //            m_userControlName == "ROBOT_DRIVE" ||
-    //            m_userControlName == "ROBOT_INVEN" ||
-    //            m_userControlName == "ROBOT_GUN" ||
-    //            m_userControlName == "ROBOT_OUT_DOOR");
-    //    //return !(BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_DRIVE) ||
-    //    //        BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_GUN) ||
-    //    //        BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_HEAL) ||
-    //    //        BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_INVEN) ||
-    //    //        BitControl.Get(m_curState, (int)HERO_STATE.CONTROL_OUT_DOOR));
-    //}
-
 
     // -- 스파인 애니메이션용 -------------------------------------------------------//
     bool IsCurrentAnimation(string ani)
@@ -1027,6 +1031,10 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         {
             m_damagePointFix = col.gameObject;
         }
+        else if(col.tag.Equals("ENEMY"))
+        {
+            m_monster = col.GetComponent<Monster>();
+        }
 
         if(col.transform.tag.Equals("LADDER"))
         {
@@ -1061,6 +1069,9 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         if (!string.IsNullOrEmpty(col.transform.tag))
             m_userControlName = null;
 
+        if (m_monster != null && col.transform.tag.Equals("ENEMY"))
+            m_monster = null;
+
         if (col.tag == "LADDER")
         {
             m_LadderState = false;
@@ -1070,8 +1081,18 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             // 사다리
             m_skletonAnimation.enabled = true;
             this.GetComponent<MeshRenderer>().enabled = true;
-            m_climb.state.ClearTrack(0);
-            m_climb.gameObject.SetActive(false);
+            
+            try
+            {
+                if (m_climb.state.GetCurrent(0) != null)
+                    m_climb.state.ClearTrack(0);
+                m_climb.gameObject.SetActive(false);
+            }
+            catch(Exception)
+            {
+
+            }
+            
         }
         
     }
@@ -1084,16 +1105,57 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     void OnApplicationQuit()
     {
         NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderUserLogOut(
-            GameManager.Instance().PLAYER.NETWORK_INDEX,
-            GameManager.Instance().PLAYER.STATUS,
-            GameManager.Instance().PLAYER.USER_NAME,
+            GameManager.Instance().PLAYER.NETWORK_INDEX ,
+            GameManager.Instance().PLAYER.STATUS ,
+            GameManager.Instance().PLAYER.USER_NAME ,
             false));
     }
 
-    public void Damage(int damage)
-    {
-        m_hp -= damage;
 
-       
+
+
+    public void Damage(int damage,bool left = true)
+    {
+        if (m_damageCoolTime)
+            return;
+        m_hp -= damage;
+        m_damageCoolTime = true;
+
+        
+
+        if (m_rigidBody != null)
+        {
+            float xpower = (!left) ? -100.0f : 100.0f;  
+            m_rigidBody.AddForce(new Vector2(xpower , m_jumpPower * 0.5f));
+
+            InvokeRepeating("DamageEffect" ,0.1f, 0.1f);
+        }
+    }
+
+    void DamageEffect()
+    {
+        Color color = m_meshRenderer.material.color;
+
+        color.g -= 0.5f;
+        color.b -= 0.5f;
+        m_meshRenderer.material.color = color;
+        if(color.g <= 0.0f)
+        {
+            CancelInvoke("DamageEffect");
+            InvokeRepeating("DamageEffectEnd" , 0.1f , 0.1f);
+        }
+    }
+    void DamageEffectEnd()
+    {
+        Color color = m_meshRenderer.material.color;
+
+        color.g += 0.3f;
+        color.b += 0.3f;
+        m_meshRenderer.material.color = color;
+        if (color.g >= 1.0f)
+        {
+            CancelInvoke("DamageEffectEnd");
+            m_damageCoolTime = false;
+        }
     }
 }

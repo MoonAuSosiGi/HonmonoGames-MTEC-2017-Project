@@ -8,6 +8,7 @@ public static class GamePath {
     public static string PREFABS = "Prefabs/";
     public static string WEAPON_BULLET_DEF = PREFABS + "Weapon/Bullet/Def_Bullet";
     public static string WEAPON_BULLET_BOSS = PREFABS + "Weapon/Bullet/Boss_Bullet";
+    public static string WEAPON_BULLET_EGG = PREFABS + "Weapon/Bullet/Egg_Bullet";
 
     public static string POPUP = PREFABS + "Popup/";
     public static string ENEMY = PREFABS + "Enemy/";
@@ -15,8 +16,13 @@ public static class GamePath {
 
     // BOSS
     public static string BOSS1 = BOSS + "Stage1BOSS";
+    public static string BOSS2 = BOSS + "Stage2BOSS";
     public static string MONSTER1 = ENEMY + "Monster1";
     public static string MONSTER2 = ENEMY + "Monster2";
+    public static string SPACE_MONSTER1 = ENEMY + "SpaceMonster1";
+    public static string SPACE_MONSTER2 = ENEMY + "SpaceMonster2";
+    public static string INSIDE_MONSTER = ENEMY + "PentrationMonsterInside";
+    public static string PENTRATION_MONSTER = ENEMY + "PentrationMonsterSpace";
 
     public static string EFFECT = ENEMY + "EFFECT";
 

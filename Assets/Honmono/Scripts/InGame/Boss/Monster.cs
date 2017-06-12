@@ -17,7 +17,7 @@ public class Monster : MonoBehaviour {
 
     // 기본 스탯
     [SerializeField]
-    protected float m_fullHp = 100.0f;  // 풀 체력
+    protected int m_fullHp = 100;  // 풀 체력
     [SerializeField]
     protected int m_hp = 100;      // 체력
     [SerializeField]
@@ -35,6 +35,7 @@ public class Monster : MonoBehaviour {
     public string MONSTER_NAME { get { return m_name; } set { m_name = value; } }
 
     protected GameObject m_attackTarget = null;
+    private RoboHUD m_hud = null;
 
     // -- 네트워크용 ------------------------------------------------------------------------------//
 
@@ -74,8 +75,15 @@ public class Monster : MonoBehaviour {
         float per = m_pattern.PreProcessedDamge();
 
         m_hp -= (int)(damage * per);
-        
-        // UI 가 바뀌는 처리는 일단 여기서 하지 않는다.
+
+        if (m_hud != null)
+            m_hud.MonsterHPUpdate(m_hp , m_fullHp);
+    }
+
+    // 체력 보여주기용 
+    public void SetHUD(RoboHUD hud)
+    {
+        m_hud = hud;
     }
 
     // 이동 

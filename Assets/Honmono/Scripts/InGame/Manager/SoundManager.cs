@@ -17,9 +17,6 @@ public class SoundManager : Singletone<SoundManager> {
     // temp Code
     public void PlayBGM(int stage)
     {
-        MDebug.Log("TTTTT ASDFASDFASDF ASD "+stage + " " + m_bgmList.Count);
- 
-        
         m_bgmSource.clip = m_bgmList[stage];
         m_bgmSource.Play();
     }

@@ -293,11 +293,21 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
             else if(e.msgType == NetworkManager.GAME_START)
             {
                 SoundManager.Instance().PlaySound(m_gameStart);
+
                 // 여기서 게임 시작 처리 
-                // TODO 지우는 처리 좀 
+                List<string> users = new List<string>();
+                for (int i = 0; i < m_playerList.Count; i++)
+                {
+                    MDebug.Log(" " + i + " " +GetProfileName(m_playerList[i]).text);
+                    if (string.IsNullOrEmpty(GetProfileName(m_playerList[i]).text))
+                        continue;
+                    users.Add(GetProfileName(m_playerList[i]).text);
+                }
+                GameManager.Instance().HudSetup(users);
+
                 NetworkManager.Instance().RemoveNetworkOrderMessageEventListener(this);
                 NetworkManager.Instance().GameStart();
-                //MapManager.Instance().GameStart();
+                
                 
                 PopupManager.Instance().ClosePopup(gameObject);
             }
@@ -313,8 +323,14 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
         // 나자신을 세팅할 필요는 없음
         if (index == GameManager.Instance().PLAYER.NETWORK_INDEX)
             return;
+
+        if (index - 2 < 0)
+            return;
         
         GameObject player = m_playerList[index-2];
+
+        if (player == null)
+            return;
 
         // 이미 세팅되어있다면 패스
         if (GetProfileName(player).text == e.msg
@@ -343,8 +359,15 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
         SetPlayerStatus(player, 1, (int)e.msg.GetField(NetworkManager.USER_CONNECT).GetField(NetworkManager.STATUS_POWER).i);
         SetPlayerStatus(player, 2, (int)e.msg.GetField(NetworkManager.USER_CONNECT).GetField(NetworkManager.STATUS_REPAIR).i);
 
-        GetRush(player).SetActive(e.orders.GetField(NetworkManager.MSG).GetField(NetworkManager.USER_CONNECT).GetField(NetworkManager.READY_STATE).b);
-        GetRushName(player).text = e.orders.GetField(NetworkManager.MSG).GetField(NetworkManager.USER_CONNECT).GetField(NetworkManager.CLIENT_ID).str;
+        try
+        {
+            GetRush(player).SetActive(e.orders.GetField(NetworkManager.MSG).GetField(NetworkManager.USER_CONNECT).GetField(NetworkManager.READY_STATE).b);
+            GetRushName(player).text = e.orders.GetField(NetworkManager.MSG).GetField(NetworkManager.USER_CONNECT).GetField(NetworkManager.CLIENT_ID).str;
+        }catch(Exception)
+        {
+
+        }
+        
 
     }
     

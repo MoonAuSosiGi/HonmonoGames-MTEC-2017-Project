@@ -1,0 +1,34 @@
+
+mon_chimtoo_space.png
+size: 1024,1024
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+_0001s_0000_몸
+  rotate: false
+  xy: 2, 215
+  size: 659, 733
+  orig: 659, 733
+  offset: 0, 0
+  index: -1
+_0001s_0001_다리-copy-2
+  rotate: false
+  xy: 2, 2
+  size: 498, 107
+  orig: 498, 107
+  offset: 0, 0
+  index: -1
+_0001s_0002_다리-copy
+  rotate: true
+  xy: 663, 321
+  size: 627, 87
+  orig: 627, 87
+  offset: 0, 0
+  index: -1
+_0001s_0003_다리
+  rotate: false
+  xy: 2, 111
+  size: 658, 102
+  orig: 658, 102
+  offset: 0, 0
+  index: -1

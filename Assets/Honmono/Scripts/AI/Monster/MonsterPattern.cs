@@ -24,8 +24,12 @@ public class MonsterPattern : PatternState
         //}
         TutoRobo r = hero.GetComponent<TutoRobo>();
         if(r != null)
-        {
             r.Damage(1);
+        else
+        {
+            HeroRobo robo = hero.GetComponent<HeroRobo>();
+            if (robo != null)
+                robo.Damage(1);
         }
         
         return 1.0f;

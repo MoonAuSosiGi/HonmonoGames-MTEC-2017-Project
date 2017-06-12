@@ -226,6 +226,15 @@ namespace WindowsInput
 #endif
         }
 
+        public static bool GetKeyUp(KeyCode key)
+        {
+#if (UNITY_STANDALONE_WIN && !UNITY_EDITOR_OSX)
+            return !((GetAsyncKeyState(KeyCodeToVkey(key)) & 8001) == 1);
+#else
+            return Input.GetKeyUp(key);
+#endif
+        }
+
         // GetKey with GetAsyncKeyState for full keycode
         public static bool GetKeyFullCover(KeyCode key)
         {

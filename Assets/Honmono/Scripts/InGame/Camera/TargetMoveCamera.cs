@@ -39,7 +39,7 @@ public class TargetMoveCamera : MonoBehaviour
 
     public Vector3 BACKGROUND_POS { get { return m_limitBackground.transform.position; } }
 
-    public bool m_test = false;
+    private bool m_test = false;
 
     public bool TARGET_MOVEABLE { get { return m_test; } set { m_test = value; } }
     public Vector2 CORRECTION { get { return m_camera_correction; } set { m_camera_correction = value; } }
@@ -53,7 +53,6 @@ public class TargetMoveCamera : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
 
         if (!m_test)
         {
@@ -103,15 +102,25 @@ public class TargetMoveCamera : MonoBehaviour
             if (m_target == null)
                 return;
             Vector3 targetPos = m_target.transform.position;
-            transform.position = new Vector3(targetPos.x + m_camera_correction.x , targetPos.y + m_camera_correction.y , transform.position.z);
+            transform.position = new Vector3(
+                targetPos.x + m_camera_correction.x , 
+                targetPos.y + m_camera_correction.y , 
+                transform.position.z);
         }
 
     }
 
     public void SetBackgrounds(GameObject obj)
     {
+       
         this.m_backgroundHalfWidth = 0.0f;
         this.m_backgroundHalfHeight = 0.0f;
+
+        if (obj == null)
+        {
+            m_test = true;
+            return;
+        }
 
         switch (obj.transform.childCount)
         {

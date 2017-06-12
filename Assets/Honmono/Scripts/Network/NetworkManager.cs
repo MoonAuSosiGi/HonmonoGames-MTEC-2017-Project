@@ -54,6 +54,9 @@ public class NetworkManager : Singletone<NetworkManager>
     public const string CRASH_NAME1 = "crashname1";
     public const string CRASH_NAME2 = "crashname2";
 
+    // HUD
+    public const string CHARACTER_HPUPDATE = "character_hpupdate";
+    public const string CHARACTER_MAXHP = "character_maxhp";
 
     //create order
     public const string CREATE_TARGET = "create_target";
@@ -62,6 +65,8 @@ public class NetworkManager : Singletone<NetworkManager>
     public const string ROBOT_DRIVER = "robot_driver";
     public const string ROBOT_GUNNER = "robot_gunner";
 
+    public const string ROBOT_PLACE = "robot_place";
+    // ROBO
 
     // AI
     public const string AI = "ai"; // type
@@ -81,6 +86,8 @@ public class NetworkManager : Singletone<NetworkManager>
     public const string INTHE_STAR = "intherstar";
     public const string PLACE_CHANGE = "placechange";
 
+    // PLANET
+    public const string PLANET_INFO = "planetInfo";
 
     public GameObject m_chatUI = null;
 
@@ -509,24 +516,24 @@ public class NetworkManager : Singletone<NetworkManager>
         else
         {
             m_robotUserList[0].gameObject.SetActive(true);
+            GameManager.Instance().HeroSetup(m_robotUserList[0]);
             GameStartUserSetup(GameManager.Instance().PLAYER.USER_NAME);
 
             SendOrderMessage(JSONMessageTool.ToJsonOrderUserCrateCharacter(
                 GameManager.Instance().PLAYER.USER_NAME));
             
         }
-
+        
         SoundManager.Instance().PlayBGM(2);
-        m_chatUI.SetActive(true);
-
+        //m_chatUI.SetActive(true);
         GameManager.Instance().m_curSceneState = "play";
     }
 
-    public void GototheRobo()
-    {
-        CameraManager.Instance().MoveCamera(m_robotUserList[0].gameObject, 
-            GameSetting.CAMERA_ROBO, CameraManager.CAMERA_PLACE.ROBO_IN);        
-    }
+    //public void GototheRobo()
+    //{
+    //    CameraManager.Instance().MoveCamera(m_robotUserList[0].gameObject, 
+    //        GameSetting.CAMERA_ROBO, CameraManager.CAMERA_PLACE.ROBO_IN);        
+    //}
 
     void Start()
     { 

@@ -25,7 +25,7 @@ public class EnergyCharger : MonoBehaviour ,NetworkManager.NetworkMessageEventLi
             t.position = new Vector3(t.position.x , prevPos.y + distance , t.position.z);
         }
         UpdateEnergy();
-        GameManager.Instance().ROBO.AddEnergyUpdateEvent(this);
+        GameManager.Instance().AddEnergyUpdateEvent(this);
     }
 
     void Update()

@@ -6,6 +6,7 @@ using WebSocketSharp;
 
 public class NetworkManager : Singletone<NetworkManager>
 {
+    public GameObject m_playerStartPosition = null;
 
     // --  사용자 정의  --------------------------------------------------------------------------------------//
     public const string MSGTYPE = "msgType";
@@ -48,6 +49,7 @@ public class NetworkManager : Singletone<NetworkManager>
     public const string STATUS_SPEED = "status_userspeed";
     public const string STATUS_POWER = "status_power";
     public const string STATUS_REPAIR = "status_repair";
+    public const string USER_SKELETON_DATA_ASSET = "skeletondataAsset";
 
     //충돌체크
     public const string CRASH = "crash";
@@ -88,6 +90,10 @@ public class NetworkManager : Singletone<NetworkManager>
 
     // PLANET
     public const string PLANET_INFO = "planetInfo";
+
+    // 부분파괴
+    public const string PART_DESTROY = "part_destroy";
+
 
     public GameObject m_chatUI = null;
 
@@ -255,7 +261,7 @@ public class NetworkManager : Singletone<NetworkManager>
 
         if(obj.GetField("Users") == null)
         {
-            MDebug.Log("Client Enter " + obj);
+            MDebug.Log("Client Enter " + obj + " " + GameManager.Instance().PLAYER.USER_NAME);
             // 클라다!
 
             GameManager.Instance().PLAYER.NETWORK_INDEX = (int)obj.GetField("Client ID").i;
@@ -292,7 +298,7 @@ public class NetworkManager : Singletone<NetworkManager>
 
         //확실한 것은 받아오는 리스트엔 모든 유저가 다 있다.
         // 이름 구분 방법 : 이름_space 이름_robot 이름_행성이름
-      
+
 
         // 들어와있는 것들은 켠다.
         // 다만 위치를 판단해서 켜준다.
@@ -305,7 +311,7 @@ public class NetworkManager : Singletone<NetworkManager>
         //        {
 
         //            int area = (int)users[i].GetField("Z").f;
-                    
+
         //            if (area == (int)NetworkOrderController.AreaInfo.AREA_SPACE 
         //                && m_userNameList.Contains(hero.USERNAME.Split('_')[0]))
         //                hero.gameObject.SetActive(true);
@@ -315,23 +321,25 @@ public class NetworkManager : Singletone<NetworkManager>
         //    }
         //}
 
-        //여긴 로봇 :: 아마 부하 없을거
-        foreach (Hero hero in m_robotUserList)
-        {
-            for (int i = 0; i < users.Count; i++)
-            {
-                if (users[i].GetField(USERNAME).str == hero.USERNAME)
-                {
+        //if (m_robotUserList.Count <= 0)
+        //    return;
+        ////여긴 로봇 :: 아마 부하 없을거
+        //foreach (Hero hero in m_robotUserList)
+        //{
+        //    for (int i = 0; i < users.Count; i++)
+        //    {
+        //        if (users[i].GetField(USERNAME).str == hero.USERNAME)
+        //        {
 
-                    int area = (int)users[i].GetField("Z").f;
-                    if (area == (int)NetworkOrderController.AreaInfo.AREA_ROBOT
-                        && m_userNameList.Contains(hero.USERNAME.Split('_')[0]))
-                        hero.gameObject.SetActive(true);
-                    else
-                        hero.gameObject.SetActive(false);
-                }
-            }
-        }
+        //            int area = (int)users[i].GetField("Z").f;
+        //            if (area == (int)NetworkOrderController.AreaInfo.AREA_ROBOT
+        //                && m_userNameList.Contains(hero.USERNAME.Split('_')[0]))
+        //                hero.gameObject.SetActive(true);
+        //            else
+        //                hero.gameObject.SetActive(false);
+        //        }
+        //    }
+        //}
         
 
         for (int i = m_moveEventList.Count - 1; i >= 0; i--)
@@ -371,26 +379,24 @@ public class NetworkManager : Singletone<NetworkManager>
     }
 
     // 캐릭터 생성
-    public void CreateUserCharacter(string name)
+    public void CreateUserCharacter(string name,string assetName)
     {
-        if(!m_userNameList.Contains(name))
+        string prefab = "";
+        switch (assetName)
         {
-            //TODO 추후 여기서 name split 해서 캐릭터 생성 
-            foreach(Hero user in m_robotUserList)
-            {
-                if(string.IsNullOrEmpty(user.USERNAME) || !m_userNameList.Contains(user.USERNAME.Split('_')[0]))
-                {
-                    if(!user.m_isMe)
-                    {
-                        m_userNameList.Add(name);
-                        user.USERNAME = name + "_robo";
-                        user.gameObject.SetActive(true);
-                        return;
-                    }
-
-                }
-            }
+            case "char_01_SkeletonData": prefab = GamePath.CHARACTER1; break;
+            case "char_02_SkeletonData": prefab = GamePath.CHARACTER2; break;
+            case "char_03_SkeletonData": prefab = GamePath.CHARACTER3; break;
         }
+        GameObject hero = MapManager.Instance().AddHero(prefab , m_playerStartPosition.transform.position);
+        hero.transform.parent = m_playerStartPosition.transform.parent;
+        Hero h = hero.GetComponent<Hero>();
+        h.m_isMe = false;
+        h.USERNAME = name + "_robo";
+        m_robotUserList.Add(h);
+        m_userNameList.Add(name);
+        MDebug.Log("NA "+name);
+        
     }
     // ---------------------------------------------------------------------------------------------------------//
 
@@ -502,25 +508,51 @@ public class NetworkManager : Singletone<NetworkManager>
     public void GameStart()
     {
         // 로그인 / 로비 세팅 완료되었다.
-        
 
-        //CameraManager.Instance().MoveCamera(
-        //    m_robotUserList[0].transform.parent.gameObject,GameSetting.CAMERA_ROBO,CameraManager.CAMERA_PLACE.ROBO_IN);
-        
-        // 옵저버일 경우 캐릭터 생성 명령을 하지 않음
-        if(NetworkOrderController.OBSERVER_MODE)
+        string prefab = "";
+        switch (GameManager.Instance().PLAYER.SKELETON_DATA_ASSET)
         {
+            case "char_01_SkeletonData": prefab = GamePath.CHARACTER1; break;
+            case "char_02_SkeletonData": prefab = GamePath.CHARACTER2; break;
+            case "char_03_SkeletonData": prefab = GamePath.CHARACTER3; break;
+        }
+        GameObject hero = MapManager.Instance().AddHero(prefab , m_playerStartPosition.transform.position);
+        hero.transform.parent = m_playerStartPosition.transform.parent;
+        Hero h = hero.GetComponent<Hero>();
+        m_robotUserList.Add(h);
+        h.USERNAME = GameManager.Instance().PLAYER.USER_NAME + "_robo";
+
+        // 옵저버일 경우 캐릭터 생성 명령을 하지 않음
+        if (NetworkOrderController.OBSERVER_MODE)
+        {
+            
             m_robotUserList[0].IS_PLAYER = false;
+            h.USERNAME = NetworkOrderController.ORDER_NAME;
             GameManager.Instance().SetupObserver();
         }
         else
         {
-            m_robotUserList[0].gameObject.SetActive(true);
+            // 자기 자신 생성해야함 ---------------------------------//
+          
+           
+            h.m_isMe = true;
+
+
+
+            // ----------------------------------------------------- //
+
+            Hero temp = null;
+            foreach(Hero t in m_robotUserList)
+            {
+                if(temp.USERNAME)
+            }
+
             GameManager.Instance().HeroSetup(m_robotUserList[0]);
             GameStartUserSetup(GameManager.Instance().PLAYER.USER_NAME);
 
             SendOrderMessage(JSONMessageTool.ToJsonOrderUserCrateCharacter(
-                GameManager.Instance().PLAYER.USER_NAME));
+                GameManager.Instance().PLAYER.USER_NAME,
+                GameManager.Instance().PLAYER.SKELETON_DATA_ASSET));
             
         }
         

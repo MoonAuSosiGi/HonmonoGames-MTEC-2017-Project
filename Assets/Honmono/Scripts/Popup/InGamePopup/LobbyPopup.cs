@@ -115,7 +115,9 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
             NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderUserEnter(
                 GameManager.Instance().PLAYER.NETWORK_INDEX,
                 GameManager.Instance().PLAYER.STATUS,
-                GameManager.Instance().PLAYER.USER_NAME, false));
+                GameManager.Instance().PLAYER.USER_NAME,
+                GameManager.Instance().PLAYER.SKELETON_DATA_ASSET, 
+                false));
         }
     }
 
@@ -221,6 +223,7 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
                         GameManager.Instance().PLAYER.NETWORK_INDEX,
                         GameManager.Instance().PLAYER.STATUS,
                         GameManager.Instance().PLAYER.USER_NAME,
+                        GameManager.Instance().PLAYER.SKELETON_DATA_ASSET,
                         m_readyButton.sprite == m_sprReady_setting));
             //유저가 나갔다
             else if(e.msgType == NetworkManager.USER_LOGOUT)
@@ -320,12 +323,21 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
         int index = (int)e.msg
             .GetField(NetworkManager.USER_CONNECT).GetField(NetworkManager.USER_CONNECT).i;
         
+        
         // 나자신을 세팅할 필요는 없음
         if (index == GameManager.Instance().PLAYER.NETWORK_INDEX)
             return;
 
         if (index - 2 < 0)
             return;
+        
+        if(index - 2 == 0 && NetworkOrderController.OBSERVER_MODE)
+        {
+            
+            GameManager.Instance().PLAYER.SKELETON_DATA_ASSET = 
+                e.msg.GetField(NetworkManager.USER_CONNECT)
+                .GetField(NetworkManager.USER_SKELETON_DATA_ASSET).str;
+        }
         
         GameObject player = m_playerList[index-2];
 
@@ -344,7 +356,9 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
             NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderUserEnter(
                 GameManager.Instance().PLAYER.NETWORK_INDEX,
                 GameManager.Instance().PLAYER.STATUS,
-                GameManager.Instance().PLAYER.USER_NAME, false));
+                GameManager.Instance().PLAYER.USER_NAME, 
+                GameManager.Instance().PLAYER.SKELETON_DATA_ASSET,
+                false));
         }
 
         if (GetProfileWait(player) != null)

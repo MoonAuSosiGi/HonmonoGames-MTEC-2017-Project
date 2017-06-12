@@ -11,6 +11,13 @@ public class PlayerInfo {
     private string m_UserName = "";
     private int m_hp = 0;
     private PLAYER_STATUS m_status = new PLAYER_STATUS();
+    private string m_skeletonDataAssetName = "";
+
+    public string SKELETON_DATA_ASSET
+    {
+        get { return m_skeletonDataAssetName; }
+        set { m_skeletonDataAssetName = value; }
+    }
 
 
     public enum PlayerJob

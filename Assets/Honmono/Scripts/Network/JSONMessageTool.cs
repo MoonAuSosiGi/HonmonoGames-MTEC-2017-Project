@@ -44,6 +44,16 @@ public static class JSONMessageTool  {
             this.Status = status;
         }
     }
+    // 부분 파괴해야지
+    public static string ToJsonPartDestroy(int index)
+    {
+        JSONObject obj = GetDefJSON("" , NetworkManager.PART_DESTROY);
+        obj.GetField(NetworkManager.ORDERS)[0]
+            .GetField(NetworkManager.MSG)
+            .AddField(NetworkManager.PART_DESTROY , index);
+        return obj.ToString();
+    }
+
     // -- 로봇이 어디있느지에 대한 정보를 넘긴다 
     public static string ToJsonRoboPlaceChange(string placeName)
     {
@@ -206,9 +216,12 @@ public static class JSONMessageTool  {
     }
 
     // 첫 접속 후 캐릭터 생성해라!
-    public static string ToJsonOrderUserCrateCharacter(string targetName)
+    public static string ToJsonOrderUserCrateCharacter(string targetName,string assetName)
     {
         JSONObject obj = GetDefJSON(targetName, NetworkManager.USER_CHARACTER_CREATE);
+        obj.GetField(NetworkManager.ORDERS)[0]
+            .GetField(NetworkManager.MSG)
+            .AddField(NetworkManager.USER_CHARACTER_CREATE , assetName);
         return obj.ToString();
     }
 
@@ -268,7 +281,7 @@ public static class JSONMessageTool  {
     }
 
     //접속
-    public static string ToJsonOrderUserEnter(int userIndex,PlayerInfo.PLAYER_STATUS status,string name,bool ready)
+    public static string ToJsonOrderUserEnter(int userIndex,PlayerInfo.PLAYER_STATUS status,string name,string skeletonDataName,bool ready)
     {
         JSONObject obj = GetDefJSON("", NetworkManager.USER_CONNECT);
         JSONObject obj2 = new JSONObject();
@@ -276,6 +289,7 @@ public static class JSONMessageTool  {
         obj2.AddField(NetworkManager.STATUS_SPEED, status.STAT_SPEED);
         obj2.AddField(NetworkManager.STATUS_POWER, status.STAT_POWER);
         obj2.AddField(NetworkManager.STATUS_REPAIR, status.STAT_REPAIR);
+        obj2.AddField(NetworkManager.USER_SKELETON_DATA_ASSET , skeletonDataName);
         obj2.AddField(NetworkManager.CLIENT_ID, name);
         obj2.AddField(NetworkManager.READY_STATE, ready);
 

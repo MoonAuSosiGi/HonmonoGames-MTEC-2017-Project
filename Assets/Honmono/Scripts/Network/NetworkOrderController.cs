@@ -122,16 +122,12 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
 
                     case "boss1":
                         {
-                            if (e.user.Equals(GameManager.Instance().PLAYER.USER_NAME))
-                                return;
-                            Vector3 p = new Vector3(e.msg.GetField("X").f , e.msg.GetField("Y").f , -1.0f);
-                            GameObject boss = MapManager.Instance().AddObject(GamePath.BOSS1, new Vector3(p.x , p.y , -1));
-                            boss.transform.eulerAngles = Vector3.zero;
-                            boss.gameObject.AddComponent<NetworkMoving>().NAME = e.targetName;
-                            boss.GetComponent<Stage1BOSS>().enabled = false;
-                            boss.GetComponent<Stage1BOSS>().MONSTER_NAME = e.targetName;
-                            boss.gameObject.AddComponent<NetworkStage1BOSS>().BOSS_NAME = e.targetName;
-                            
+                            CreateBOSS(1 , e.user , e.targetName , e.msg.GetField("X").f , e.msg.GetField("Y").f);
+                        }
+                        break;
+                    case "boss2":
+                        {
+                            CreateBOSS(2 , e.user , e.targetName , e.msg.GetField("X").f , e.msg.GetField("Y").f);
                         }
                         break;
                     case "monster1":
@@ -168,6 +164,24 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                         {
                             CreatePentrationMonster(e.user , e.targetName ,
                                  e.msg.GetField("X").f , e.msg.GetField("Y").f);
+                        }
+                        break;
+                    case "PlanetMonster1":
+                        {
+                            CreatePlanetMonster(e.user , GamePath.PLANET_MONSTER1 , e.targetName ,
+                                e.msg.GetField("X").f , e.msg.GetField("Y").f);
+                        }
+                        break;
+                    case "PlanetMonster2":
+                        {
+                            CreatePlanetMonster(e.user , GamePath.PLANET_MONSTER2 , e.targetName ,
+                                e.msg.GetField("X").f , e.msg.GetField("Y").f);
+                        }
+                        break;
+                    case "PlanetMonster3":
+                        {
+                            CreatePlanetMonster(e.user , GamePath.PLANET_MONSTER3 , e.targetName ,
+                             e.msg.GetField("X").f , e.msg.GetField("Y").f);
                         }
                         break;
                 }
@@ -239,7 +253,11 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                 break;
 
             case NetworkManager.USER_CHARACTER_CREATE:
-                NetworkManager.Instance().CreateUserCharacter(e.targetName);
+                if (e.user.Equals(GameManager.Instance().PLAYER.USER_NAME))
+                    return;
+
+                NetworkManager.Instance().CreateUserCharacter(
+                    e.targetName,e.msg.GetField(NetworkManager.USER_CHARACTER_CREATE).str);
                 break;
             
                 
@@ -248,6 +266,34 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
         }
     }
 
+    void CreateBOSS(int stageNumber,string userName,string targetName,float x,float y)
+    {
+        if (userName.Equals(GameManager.Instance().PLAYER.USER_NAME))
+            return;
+
+        string prefabPath = (stageNumber == 1) ? GamePath.BOSS1 : GamePath.BOSS2;
+
+        Vector3 p = new Vector3(x, y, -1.0f);
+        GameObject boss = MapManager.Instance().AddObject(prefabPath, new Vector3(p.x , p.y , -1));
+
+        boss.transform.eulerAngles = Vector3.zero;
+        boss.gameObject.AddComponent<NetworkMoving>().NAME = targetName;
+
+        if (stageNumber == 1)
+        {
+            boss.GetComponent<Stage1BOSS>().enabled = false;
+            boss.GetComponent<Stage1BOSS>().MONSTER_NAME = targetName;
+            boss.gameObject.AddComponent<NetworkStage1BOSS>().BOSS_NAME = targetName;
+        }
+        else
+        {
+            boss.AddComponent<NetworkStage2BOSS>();
+            boss.GetComponent<Stage2Boss>().enabled = false;
+            boss.GetComponent<Stage2Boss>().MONSTER_NAME = targetName;    
+        }
+        
+
+    }
 
     // 몬스터 생성 
     void CreateMonster(string userName,string monsterPrefab, string targetName , float x,float y,bool autoDir = true)
@@ -258,10 +304,39 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
         GameObject m = MapManager.Instance().AddObject(monsterPrefab , new Vector3(p.x , p.y , -1));
         NetworkMoving moving = m.AddComponent<NetworkMoving>();
         moving.AUTO_DIR = autoDir;
+        
         m.AddComponent<NetworkMonster>().NAME = targetName;
         m.GetComponent<Stage1Monster>().MONSTER_NAME = targetName;
         m.GetComponent<Stage1Monster>().enabled = false;
         m.GetComponent<Stage1Monster>().NETWORKING = true;
+        moving.NAME = targetName;
+    }
+
+    //행성 몬스터 생성
+    void CreatePlanetMonster(string userName , string monsterPrefab , string targetName , float x , float y , bool autoDir = true)
+    {
+        if (userName.Equals(GameManager.Instance().PLAYER.USER_NAME))
+            return;
+        Vector3 p = new Vector3(x , y , -1.0f);
+        GameObject m = MapManager.Instance().AddObject(monsterPrefab , new Vector3(p.x , p.y , -1));
+        NetworkMoving moving = m.AddComponent<NetworkMoving>();
+        moving.AUTO_DIR = autoDir;
+
+        if (!monsterPrefab.Equals(GamePath.PLANET_MONSTER2))
+        {
+            m.AddComponent<NetworkStage1MonsterMoveAttack>().NAME = targetName;
+            m.GetComponent<Stage1MonsterMoveAttack>().MONSTER_NAME = targetName;
+            m.GetComponent<Stage1MonsterMoveAttack>().enabled = false;
+            m.GetComponent<Stage1MonsterMoveAttack>().NETWORKING = true;
+        }
+        else
+        {
+            m.AddComponent<NetworkStage1MonsterStopAttack>().NAME = targetName;
+            m.GetComponent<Stage1MonsterStopAttack>().MONSTER_NAME = targetName;
+            m.GetComponent<Stage1MonsterStopAttack>().enabled = false;
+            m.GetComponent<Stage1MonsterStopAttack>().NETWORKING = true;
+        }
+       
         moving.NAME = targetName;
     }
 

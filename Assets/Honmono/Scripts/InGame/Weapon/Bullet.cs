@@ -190,6 +190,7 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
 
     void OnTriggerEnter2D(Collider2D col)
     {
+       
         if (m_isNetworkObject)
             return;
        
@@ -224,6 +225,17 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
                 else
                     NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonDamage(boss.MONSTER_NAME , 1));
                 DeleteBullet();
+            }
+            else if(col.transform.tag.Equals("BOSS2") && m_curTarget == BULLET_TARGET.PLAYER)
+            {
+                Stage2BossBone bone = col.GetComponent<Stage2BossBone>();
+                GameManager.Instance().SetCurrentEnemy(bone.m_boss2);
+                if (bone.m_boss2.enabled)
+                    bone.m_boss2.Damage(1,bone.name);
+                else
+                    NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonDamage(bone.m_boss2.MONSTER_NAME , 1));
+                DeleteBullet();
+
             }
             else if(col.transform.tag.Equals("Player") && m_curTarget == BULLET_TARGET.ENEMY)
             {

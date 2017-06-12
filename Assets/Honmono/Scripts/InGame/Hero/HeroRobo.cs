@@ -70,6 +70,12 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
 
     private string m_controllName = null;
 
+    public string ROBO_PLACE_NAME
+    {
+        get { return m_controllName; }
+        set { m_controllName = value; }
+    }
+
     public int HP {
         get { return m_hp; }
         set
@@ -163,6 +169,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             Control();
             MoveSend();
             StateSend();
+            BossSceneMove();
             NetworkGunAngleLerp();
             return;
         }
@@ -184,6 +191,23 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         NetworkGunAngleLerp();
     }
 
+    // 보스 이동
+    void BossSceneMove()
+    {
+        if(Input.GetKeyUp(KeyCode.O))
+        {
+            GameManager.Instance().ChangeScene(GameManager.PLACE.STAGE1_BOSS);
+            MapManager.Instance().AddMonster(GamePath.BOSS1 , "boss1_" + GameManager.Instance().PLAYER.USER_NAME ,
+                MapManager.Instance().m_bossCreatePlace.transform.position);
+        }
+        else if(Input.GetKeyUp(KeyCode.P))
+        {
+            GameManager.Instance().ChangeScene(GameManager.PLACE.STAGE1_BOSS);
+            MapManager.Instance().AddMonster(GamePath.BOSS2 , "boss2_" + GameManager.Instance().PLAYER.USER_NAME ,
+                MapManager.Instance().m_bossCreatePlace.transform.position);
+        }
+    }
+    
     // Network Move Message Send ------------------------------------!
     // 조종하는 녀석만 이걸 실행한다.
     void MoveSend()
@@ -574,6 +598,15 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
                 return;
             m_roboEnergy = e.msg.GetField(NetworkManager.ENERGY_UPDATE).f;
         }
+        else if(e.msgType.Equals(NetworkManager.ROBOT_PLACE))
+        {
+            if(!string.IsNullOrEmpty(m_movePlayerName) &&
+                m_movePlayerName.Equals(e.user) || (!string.IsNullOrEmpty(m_gunPlayerName) && m_gunPlayerName.Equals(e.user)))
+            {
+                return;
+            }
+            m_controllName = e.targetName;
+        }
     }
 
     //-------------------------------------------------------------------------------//
@@ -649,7 +682,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     public void Damage(int damage)
     {
         HP -= damage;
-
+        GameManager.Instance().CameraShake(1.0f);
         // 이곳에서 구멍 이펙트 생성 
         if(HP % 10 == 0)
         {

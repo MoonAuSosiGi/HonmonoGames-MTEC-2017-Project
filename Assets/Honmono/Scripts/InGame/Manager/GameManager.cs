@@ -71,6 +71,11 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
         UpdateHp(curHP);
     }
 
+    public void ChangeCharacterHP(int curHP,int maxHP)
+    {
+        ((GameUI.CharacterHPUpdateEvent)m_gameHUD).HPUpdate(curHP , maxHP);
+    }
+
     // 현재 때리고 있는 몬스터 
     public void SetCurrentEnemy(Monster monster)
     {
@@ -186,6 +191,16 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
         m_gameHUD.gameObject.SetActive(b);
         UpdateHp(ROBO.HP);
         UpdateEnergy(ROBO.ENERGY);
+    }
+    // -- 카메라 이펙트
+    public void CameraShake(float time)
+    {
+        iTween.MoveBy(gameObject , iTween.Hash("x" , -0.3f ,"time",0.3f, "oncompletetarget" ,
+            gameObject , "oncomplete" , "CameraShakeEnd"));
+    }
+    void CameraShakeEnd()
+    {
+        iTween.MoveBy(gameObject , iTween.Hash("x" , 0.3f , "time" , 0.3f));
     }
 
     // -- 게임 내에서의 상황 관리용 ---------------------------------------------------------- //
@@ -421,4 +436,40 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
     }
 
 
+    public string GetCharacterNormalSkin(string skeletonDataAsset)
+    {
+        switch(skeletonDataAsset)
+        {
+            case "char_01_SkeletonData": return "char_01";
+            case "char_02_SkeletonData": return "normal";
+            case "char_03_SkeletonData": return "char_01";
+        }
+
+        return null;
+    }
+    public string GetCharacterSuitSkin(string skeletonDataAsset)
+    {
+        switch (skeletonDataAsset)
+        {
+            case "char_01_SkeletonData": return "char_01_a";
+            case "char_02_SkeletonData": return "suit";
+            case "char_03_SkeletonData": return "suit";
+        }
+        return null;
+    }
+    public string GetCharacterNormalClimbSkin(string skeletonDataAsset)
+    {
+        switch (skeletonDataAsset)
+        {
+            case "char_01_SkeletonData": return "default";
+            case "char_02_SkeletonData": return "default";
+            case "char_03_SkeletonData": return "default";
+        }
+        return null;
+    }
+    public string GetCharacterSuitClimbSkin(string skeletonDataAsset)
+    {
+        
+        return "default";
+    }
 }

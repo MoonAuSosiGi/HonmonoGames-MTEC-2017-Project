@@ -60,7 +60,6 @@ public class RoboHUD : MonoBehaviour,
 
     public void SetPlayerInfo(List<string> users)
     {
-        MDebug.Log("t " + users.Count);
         for (int i = 0; i < m_userList.Count; i++)
         {
             if (users.Count <= i || string.IsNullOrEmpty(users[i]))
@@ -81,6 +80,7 @@ public class RoboHUD : MonoBehaviour,
         CancelInvoke("MonsterHPOutCheck");
 
         m_currentTarget = mon;
+        MDebug.Log(" mon " + mon.name);
         m_currentTarget.SetHUD(this);
         m_topEnemyHPBar.transform.parent.gameObject.SetActive(true);
 

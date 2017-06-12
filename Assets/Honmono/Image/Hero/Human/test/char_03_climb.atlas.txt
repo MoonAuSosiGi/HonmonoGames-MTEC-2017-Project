@@ -1,0 +1,76 @@
+
+char_03_climb.png
+size: 512,256
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+작업복~2_0000_몸통
+  rotate: false
+  xy: 174, 87
+  size: 114, 148
+  orig: 114, 148
+  offset: 0, 0
+  index: -1
+작업복~2_0001_머리
+  rotate: false
+  xy: 2, 52
+  size: 170, 183
+  orig: 180, 190
+  offset: 5, 7
+  index: -1
+작업복~2_0002_왼허벅
+  rotate: false
+  xy: 290, 90
+  size: 45, 52
+  orig: 45, 52
+  offset: 0, 0
+  index: -1
+작업복~2_0003_왼다리
+  rotate: false
+  xy: 423, 197
+  size: 38, 38
+  orig: 38, 38
+  offset: 0, 0
+  index: -1
+작업복~2_0004_오른허벅
+  rotate: true
+  xy: 369, 190
+  size: 45, 52
+  orig: 45, 52
+  offset: 0, 0
+  index: -1
+작업복~2_0005_오른다리
+  rotate: false
+  xy: 463, 198
+  size: 37, 37
+  orig: 37, 37
+  offset: 0, 0
+  index: -1
+작업복~2_0006_왼팔
+  rotate: false
+  xy: 2, 2
+  size: 84, 48
+  orig: 84, 48
+  offset: 0, 0
+  index: -1
+작업복~2_0007_왼손
+  rotate: false
+  xy: 290, 194
+  size: 77, 41
+  orig: 77, 41
+  offset: 0, 0
+  index: -1
+작업복~2_0008_오른팔
+  rotate: false
+  xy: 290, 144
+  size: 55, 48
+  orig: 55, 48
+  offset: 0, 0
+  index: -1
+작업복~2_0009_오른손
+  rotate: false
+  xy: 88, 9
+  size: 76, 41
+  orig: 76, 41
+  offset: 0, 0
+  index: -1

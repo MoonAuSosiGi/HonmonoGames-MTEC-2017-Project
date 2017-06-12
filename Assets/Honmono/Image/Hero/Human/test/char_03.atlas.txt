@@ -1,0 +1,118 @@
+
+char_03.png
+size: 1024,256
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+백인_우주복_L_arm
+  rotate: true
+  xy: 2, 2
+  size: 57, 132
+  orig: 57, 132
+  offset: 0, 0
+  index: -1
+백인_우주복_L_foot
+  rotate: false
+  xy: 860, 179
+  size: 44, 25
+  orig: 44, 25
+  offset: 0, 0
+  index: -1
+백인_우주복_L_leg
+  rotate: true
+  xy: 743, 149
+  size: 53, 88
+  orig: 55, 88
+  offset: 2, 0
+  index: -1
+백인_우주복_R_arm
+  rotate: false
+  xy: 620, 138
+  size: 66, 111
+  orig: 66, 111
+  offset: 0, 0
+  index: -1
+백인_우주복_R_foot
+  rotate: false
+  xy: 378, 70
+  size: 47, 27
+  orig: 47, 27
+  offset: 0, 0
+  index: -1
+백인_우주복_R_leg
+  rotate: true
+  xy: 943, 198
+  size: 51, 70
+  orig: 51, 70
+  offset: 0, 0
+  index: -1
+백인_우주복_body
+  rotate: false
+  xy: 378, 99
+  size: 121, 150
+  orig: 121, 152
+  offset: 0, 2
+  index: -1
+백인_우주복_head
+  rotate: false
+  xy: 199, 71
+  size: 177, 178
+  orig: 178, 179
+  offset: 0, 1
+  index: -1
+플젝_백인_0004_head
+  rotate: false
+  xy: 2, 61
+  size: 195, 188
+  orig: 195, 191
+  offset: 0, 2
+  index: -1
+플젝_백인_0005_L_arm
+  rotate: true
+  xy: 743, 204
+  size: 45, 115
+  orig: 45, 115
+  offset: 0, 0
+  index: -1
+플젝_백인_0006_R_foot
+  rotate: false
+  xy: 620, 111
+  size: 46, 25
+  orig: 46, 25
+  offset: 0, 0
+  index: -1
+플젝_백인_0007_L_foot
+  rotate: true
+  xy: 833, 156
+  size: 46, 25
+  orig: 46, 25
+  offset: 0, 0
+  index: -1
+플젝_백인_0008_L_leg
+  rotate: true
+  xy: 860, 206
+  size: 43, 81
+  orig: 43, 81
+  offset: 0, 0
+  index: -1
+플젝_백인_0009_body
+  rotate: false
+  xy: 501, 110
+  size: 117, 139
+  orig: 120, 139
+  offset: 3, 0
+  index: -1
+플젝_백인_0010_R_arm
+  rotate: false
+  xy: 688, 141
+  size: 53, 108
+  orig: 53, 108
+  offset: 0, 0
+  index: -1
+플젝_백인_0011_R_leg
+  rotate: true
+  xy: 136, 18
+  size: 41, 72
+  orig: 41, 72
+  offset: 0, 0
+  index: -1

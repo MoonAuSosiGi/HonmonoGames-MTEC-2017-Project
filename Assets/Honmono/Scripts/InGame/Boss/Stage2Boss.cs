@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
+using System.Text.RegularExpressions;
 using Spine.Unity;
 
 public class Stage2Boss : Monster {
@@ -15,6 +17,15 @@ public class Stage2Boss : Monster {
     private Vector3 m_dir = Vector3.zero;
     // 총 발사하기 위한 본 리스트
     public List<GameObject> m_boneList = new List<GameObject>();
+    // 박살나기 유무를 위한 본 리스트
+    public List<Stage2BOSSBone> m_destroyBoneList = new List<Stage2BOSSBone>();
+
+ 
+    public class Stage2BOSSBone
+    {
+        public int m_hp;
+        public SpriteRenderer m_renderer;
+    }
 
 
     // Move 용
@@ -50,11 +61,30 @@ public class Stage2Boss : Monster {
         m_pattern = new Boss2PatternA(m_skeletonAnimation , ANI_MOVE , "" , m_name);
         m_skeletonAnimation.state.SetAnimation(0 , ANI_MOVE , true);
         Monster.m_index = 0;
+        DestroyListSetup();
 
+        if (m_target == null)
+            m_target = GameManager.Instance().ROBO.gameObject;
         m_dir = m_target.transform.position - transform.position;
         m_dir.Normalize();
         Rotate();
+    }
+    
+    void DestroyListSetup()
+    {
+        Transform t = transform;
+        while (m_destroyBoneList.Count < 10)
+        {
+             t = t.GetChild(0);
 
+            if (t.childCount >= 2)
+            {
+                Stage2BOSSBone b = new Stage2BOSSBone();
+                b.m_hp = 3;
+                b.m_renderer = t.GetChild(1).GetComponent<SpriteRenderer>();
+                m_destroyBoneList.Add(b);
+            }
+        }
     }
 
     void Update()
@@ -103,6 +133,37 @@ public class Stage2Boss : Monster {
         SetCoolTime(Attack());
     }
 
+    public void Damage(int damage,string boneName)
+    {
+        base.Damage(damage);
+        SpriteRenderer target = null;
+
+        if(boneName.Equals("head"))
+        {
+
+        }
+        else if(boneName.Equals("Tail"))
+        {
+
+        }
+        else
+        {
+            string num = Regex.Replace(boneName , @"\D" , "");
+            MDebug.Log(boneName);
+            int index = int.Parse(num);
+            target = m_destroyBoneList[index-1].m_renderer;
+
+            m_destroyBoneList[index - 1].m_hp -= 1;
+
+            if(m_destroyBoneList[index - 1].m_hp <= 0)
+            {
+                m_destroyBoneList[index - 1].m_renderer.enabled = true;
+                NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonPartDestroy(index-1));
+            }
+                
+        }
+    }
+
     public void ShootBullet(int[] index,bool randDir = false)
     {
         for(int i = 0; i < index.Length; i++)
@@ -115,10 +176,10 @@ public class Stage2Boss : Monster {
 
             if(randDir)
             {
-                float t = (Random.Range(0 , 2) == 1) ? 1.0f : -1.0f;
+                float t = (UnityEngine.Random.Range(0 , 2) == 1) ? 1.0f : -1.0f;
                 dir *= t;
 
-                dir = new Vector3(dir.x + Random.Range(-0.3f , 0.3f) , dir.y + Random.Range(-0.3f , 0.3f));
+                dir = new Vector3(dir.x + UnityEngine.Random.Range(-0.3f , 0.3f) , dir.y + UnityEngine.Random.Range(-0.3f , 0.3f));
             }
 
             string name = GameManager.Instance().PLAYER.USER_NAME + "_boss2_" + Monster.m_index++;
@@ -149,15 +210,15 @@ public class Stage2Boss : Monster {
 
             if (randDir)
             {
-                float t = (Random.Range(0 , 2) == 1) ? 1.0f : -1.0f;
+                float t = (UnityEngine.Random.Range(0 , 2) == 1) ? 1.0f : -1.0f;
                 dir *= t;
 
-                dir = new Vector3(dir.x + Random.Range(-0.3f , 0.3f) , dir.y + Random.Range(-0.3f , 0.3f));
+                dir = new Vector3(dir.x + UnityEngine.Random.Range(-0.3f , 0.3f) , dir.y + UnityEngine.Random.Range(-0.3f , 0.3f));
             }
 
             string name = GameManager.Instance().PLAYER.USER_NAME + "_boss2_" + Monster.m_index++;
             b.SetupBullet(name , false , dir);
-            b.BULLET_SPEED = 20.0f + Random.Range(-10.0f , 10.0f);
+            b.BULLET_SPEED = 20.0f + UnityEngine.Random.Range(-10.0f , 10.0f);
             Vector3 pos = bone.transform.position;
             b.transform.position = pos;
 

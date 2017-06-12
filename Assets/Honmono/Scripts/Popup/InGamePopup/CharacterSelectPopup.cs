@@ -18,6 +18,10 @@ public class CharacterSelectPopup : MonoBehaviour,PopupManager.PopupHide {
     [SerializeField]
     private GameObject m_Right = null;
 
+    public List<SkeletonGraphic> m_LeftList = new List<SkeletonGraphic>();
+    public List<SkeletonGraphic> m_RightList = new List<SkeletonGraphic>();
+    public List<SkeletonGraphic> m_CenterList = new List<SkeletonGraphic>();
+
     [SerializeField]
     private List<Image> m_speedList = new List<Image>();
 
@@ -50,18 +54,19 @@ public class CharacterSelectPopup : MonoBehaviour,PopupManager.PopupHide {
     {
         // SoundManager.Instance().PlaySound(m_selectFinish);
         //튜토리얼 시작   
-     //   GameManager.Instance().ChangeScene(GameManager.PLACE.TUTORIAL_START);
-          //  CameraManager.Instance().MoveCamera(gameObject , 10 , CameraManager.CAMERA_PLACE.TUTORIAL_PLAYERMOVE);
+        //   GameManager.Instance().ChangeScene(GameManager.PLACE.TUTORIAL_START);
+        //  CameraManager.Instance().MoveCamera(gameObject , 10 , CameraManager.CAMERA_PLACE.TUTORIAL_PLAYERMOVE);
 
 
         //정상
-       // PopupManager.Instance().AddPopup("LobbyPopup");
+        // PopupManager.Instance().AddPopup("LobbyPopup");
 
 
         //씬 옮기기
 
         //SceneManager.LoadScene("TutorialScene");
-
+        GameManager.Instance().PLAYER.SKELETON_DATA_ASSET = 
+            m_Center.GetComponent<SkeletonGraphic>().SkeletonDataAsset.name;
         PopupManager.Instance().ClosePopup(gameObject);
     }
 
@@ -90,6 +95,8 @@ public class CharacterSelectPopup : MonoBehaviour,PopupManager.PopupHide {
 
         UIUpdate();
 
+        NetworkManager.Instance().SendMoveMessage(JSONMessageTool.ToJsonMove(
+            GameManager.Instance().PLAYER.USER_NAME , 0 , 0 , 0 , true , Vector3.zero));
       //  SoundManager.Instance().PlayBGM(1);
     }
 	
@@ -109,9 +116,9 @@ public class CharacterSelectPopup : MonoBehaviour,PopupManager.PopupHide {
 
     public void LeftButton()
     {
-        m_leftStart = m_Left.transform.position;
-        m_centerStart = m_Center.transform.position;
-        m_rightStart = m_Right.transform.position;
+        m_leftStart = m_Left.GetComponent<RectTransform>().position;
+        m_centerStart = m_Center.GetComponent<RectTransform>().position;
+        m_rightStart = m_Right.GetComponent<RectTransform>().position;
         SoundManager.Instance().PlaySound(m_swipe);
         if (!m_aniPlay)
             LeftMove();
@@ -131,8 +138,8 @@ public class CharacterSelectPopup : MonoBehaviour,PopupManager.PopupHide {
     {
         m_Right.transform.SetSiblingIndex(2);
         m_Left.transform.SetSiblingIndex(1);
-        Tween(m_Left, m_Right.transform.position, "left_r");
-        Tween(m_Center, m_Left.transform.position, "center_l");
+        Tween(m_Left, m_Right.transform.position, "");
+        Tween(m_Center, m_Left.transform.position, "");
         Tween(m_Right, m_Center.transform.position, "right_c");
     }
 
@@ -140,14 +147,14 @@ public class CharacterSelectPopup : MonoBehaviour,PopupManager.PopupHide {
     {
         m_Right.transform.SetSiblingIndex(1);
         m_Left.transform.SetSiblingIndex(2);
-        Tween(m_Left, m_Center.GetComponent<RectTransform>().position, "left_c");
-        Tween(m_Center, m_Right.GetComponent<RectTransform>().position, "center_r");
+        Tween(m_Left, m_Center.GetComponent<RectTransform>().position, "");
+        Tween(m_Center, m_Right.GetComponent<RectTransform>().position, "");
         Tween(m_Right, m_Left.GetComponent<RectTransform>().position, "right_l");
     }
 
     //-----------------------------------------------------------------------------------//
 
-    private void Tween(GameObject obj,Vector3 target,string dir)
+    private void Tween(GameObject obj , Vector3 target , string dir = null)
     {
         m_aniPlay = true;
 
@@ -157,52 +164,72 @@ public class CharacterSelectPopup : MonoBehaviour,PopupManager.PopupHide {
             "oncomplete", "TweenEnd", 
             "oncompleteparams",dir));
     }
-    int test = 0;
+
     private void TweenEnd(string info)
     {
+        if (string.IsNullOrEmpty(info))
+            return;
         string[] infos = info.Split('_');
+        m_aniPlay = false;
 
-        test++;
-        if (test >= 3)
-            m_aniPlay = false;
-        
-        if(infos[0] == "left")
+        m_Left.transform.position = m_leftStart;
+        m_Right.transform.position = m_rightStart;
+        m_Center.transform.position = m_centerStart;
+
+        if (infos[0] == "right")
         {
-            m_Left.GetComponent<RectTransform>().position = m_leftStart;
-            if (infos[1] == "r")
-            {
-                // TODO 추후 캐릭터 추가시 여기서 바꿈 CENTER 로 바꿔야함
-            }
-            else
-            {
-                // TODO 추후 캐릭터 추가시 여기서 바꿈 RIGHT 로 바꿔야함
-            }
-        }
-        else if (infos[0] == "center")
-        {
-            m_Center.GetComponent<RectTransform>().position = m_centerStart;
-            if (infos[1] == "r")
-            {
-                
-                // TODO 추후 캐릭터 추가시 여기서 바꿈 left 로 바꿔야함
-            }
-            else
-            {
-                // TODO 추후 캐릭터 추가시 여기서 바꿈 right 로 바꿔야함
-            }
-        }
-        else if (infos[0] == "right")
-        {
-            m_Right.GetComponent<RectTransform>().position = m_rightStart;
+
             if (infos[1] == "l")
             {
                 // TODO 추후 캐릭터 추가시 여기서 바꿈 CENTER 로 바꿔야함
+                // 바뀌기 전 이름
+                SkeletonGraphic left = m_Left.GetComponent<SkeletonGraphic>();
+                SkeletonGraphic right = m_Right.GetComponent<SkeletonGraphic>();
+                SkeletonGraphic center = m_Center.GetComponent<SkeletonGraphic>();
+
+                int l = ChangeCharacterInfo(m_LeftList , right.SkeletonDataAsset.name);
+                int r = ChangeCharacterInfo(m_RightList , center.SkeletonDataAsset.name);
+                int c = ChangeCharacterInfo(m_CenterList , left.SkeletonDataAsset.name);
+
+                m_Left = m_LeftList[l].gameObject;
+                m_Right = m_RightList[r].gameObject;
+                m_Center = m_CenterList[c].gameObject;
+
             }
             else
             {
                 // TODO 추후 캐릭터 추가시 여기서 바꿈 left 로 바꿔야함
+                SkeletonGraphic left = m_Left.GetComponent<SkeletonGraphic>();
+                SkeletonGraphic right = m_Right.GetComponent<SkeletonGraphic>();
+                SkeletonGraphic center = m_Center.GetComponent<SkeletonGraphic>();
+
+                int l = ChangeCharacterInfo(m_LeftList , center.SkeletonDataAsset.name);
+                int r = ChangeCharacterInfo(m_RightList , left.SkeletonDataAsset.name);
+                int c = ChangeCharacterInfo(m_CenterList , right.SkeletonDataAsset.name);
+
+                m_Left = m_LeftList[l].gameObject;
+                m_Right = m_RightList[r].gameObject;
+                m_Center = m_CenterList[c].gameObject;
             }
         }
+    }
+
+
+    int ChangeCharacterInfo(List<SkeletonGraphic> list, string name)
+    {
+        int index = -1;
+        for(int i = 0; i < list.Count; i++)
+        {
+            SkeletonGraphic s = list[i];
+            if (s.skeletonDataAsset.name.Equals(name))
+            {
+                index = i;
+                s.gameObject.SetActive(true);
+            }
+            else
+                s.gameObject.SetActive(false);
+        }
+        return index;
     }
 
     //-- 능력치 조절 -------------------------------------------------------------------//

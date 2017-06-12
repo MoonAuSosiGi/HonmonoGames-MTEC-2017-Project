@@ -66,6 +66,20 @@ public class MapManager : Singletone<MapManager> {
   
 
     // -- 오브젝트 생성 -------------------------------------------------------------------------------------------//
+    public GameObject AddHero(string prefabPath,Vector2 pos)
+    {
+
+        if (string.IsNullOrEmpty(prefabPath))
+            return null;
+
+        GameObject prefab = Resources.Load(prefabPath) as GameObject;
+        GameObject obj = GameObject.Instantiate(prefab);
+        obj.transform.parent = transform;
+        obj.transform.position = pos;
+        this.m_users.Add(obj.GetComponent<Hero>());
+        return obj;
+    }
+
 
     public GameObject AddObject(string prefabPath,Vector2 pos)
     {

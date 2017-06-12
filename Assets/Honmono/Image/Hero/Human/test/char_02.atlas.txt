@@ -1,5 +1,5 @@
 
-char_01.png
+char_02.png
 size: 1024,256
 format: RGBA8888
 filter: Linear,Linear
@@ -13,105 +13,105 @@ repeat: none
   index: -1
 백인_우주복_L_foot
   rotate: false
-  xy: 836, 174
+  xy: 831, 182
   size: 44, 25
   orig: 44, 25
   offset: 0, 0
   index: -1
 백인_우주복_L_leg
   rotate: true
-  xy: 719, 144
+  xy: 714, 152
   size: 53, 88
   orig: 55, 88
   offset: 2, 0
   index: -1
 백인_우주복_R_arm
   rotate: false
-  xy: 596, 133
+  xy: 591, 141
   size: 66, 111
   orig: 66, 111
   offset: 0, 0
   index: -1
 백인_우주복_R_foot
   rotate: true
-  xy: 991, 197
+  xy: 986, 205
   size: 47, 27
   orig: 47, 27
   offset: 0, 0
   index: -1
 백인_우주복_R_leg
   rotate: true
-  xy: 919, 193
+  xy: 914, 201
   size: 51, 70
   orig: 51, 70
   offset: 0, 0
   index: -1
 백인_우주복_body
   rotate: false
-  xy: 360, 94
+  xy: 355, 102
   size: 121, 150
   orig: 121, 152
   offset: 0, 2
   index: -1
 백인_우주복_head
   rotate: false
-  xy: 180, 65
-  size: 178, 179
+  xy: 176, 74
+  size: 177, 178
   orig: 178, 179
-  offset: 0, 0
+  offset: 0, 1
   index: -1
 플젝_백인_0004_head
   rotate: false
   xy: 2, 61
-  size: 176, 183
-  orig: 176, 183
+  size: 172, 191
+  orig: 172, 191
   offset: 0, 0
   index: -1
 플젝_백인_0005_L_arm
   rotate: true
-  xy: 719, 199
+  xy: 714, 207
   size: 45, 115
   orig: 45, 115
   offset: 0, 0
   index: -1
 플젝_백인_0006_R_foot
   rotate: false
-  xy: 596, 106
+  xy: 591, 114
   size: 46, 25
   orig: 46, 25
   offset: 0, 0
   index: -1
 플젝_백인_0007_L_foot
   rotate: true
-  xy: 809, 151
+  xy: 804, 159
   size: 46, 25
   orig: 46, 25
   offset: 0, 0
   index: -1
 플젝_백인_0008_L_leg
   rotate: true
-  xy: 836, 201
+  xy: 831, 209
   size: 43, 81
   orig: 43, 81
   offset: 0, 0
   index: -1
 플젝_백인_0009_body
   rotate: false
-  xy: 483, 105
+  xy: 478, 113
   size: 111, 139
   orig: 111, 139
   offset: 0, 0
   index: -1
 플젝_백인_0010_R_arm
   rotate: false
-  xy: 664, 136
+  xy: 659, 144
   size: 53, 108
   orig: 53, 108
   offset: 0, 0
   index: -1
 플젝_백인_0011_R_leg
   rotate: true
-  xy: 360, 51
+  xy: 355, 59
   size: 41, 72
   orig: 41, 72
   offset: 0, 0

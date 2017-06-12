@@ -42,7 +42,16 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
     private int m_hp = 10;
 
-    public int HP { get { return m_hp; } set { m_hp = value; } }
+    public int HP {
+        get { return m_hp; }
+        set
+        {
+            m_hp = value;
+            GameManager.Instance().ChangeCharacterHP(m_hp , GameSetting.HERO_MAX_HP);
+            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCharacterHPUpdate(
+                m_hp , GameSetting.HERO_MAX_HP));
+        }
+    }
 
     // sound
     public AudioClip m_walkSound = null;
@@ -284,8 +293,6 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     // Use this for initialization
     void Start()
     {
-
-       
         // 움직였을 때만 패킷을 전송해야 한다. 그러기 위한 디스턴스 판별용 포지션 적용
         m_prevPos = transform.position;
 
@@ -505,35 +512,42 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             switch (GameManager.Instance().SCENE_PLACE)
             {
                 case GameManager.PLACE.ROBO_IN:
+                case GameManager.PLACE.ROBO_IN_DRIVE:
+                case GameManager.PLACE.ROBO_IN_GUN:
                     func = "RobotOutEnd";
-                    
-                    GameManager.Instance().ChangeScene(GameManager.PLACE.PLANET1 , gameObject , func);
+
+                    GameManager.PLACE place = GameManager.PLACE.PLANET1;
+                    switch(GameManager.Instance().ROBO.ROBO_PLACE_NAME)
+                    {
+                        case "PLANET1": place = GameManager.PLACE.PLANET1; break;
+                        case "PLANET2": place = GameManager.PLACE.PLANET2; break;
+                    }
+                    GameManager.Instance().ChangeScene(place , gameObject , func);
                     break;
-                case GameManager.PLACE.PLANET:    
+                case GameManager.PLACE.PLANET:
+                case GameManager.PLACE.PLANET1:
+                case GameManager.PLACE.PLANET2:
                     this.GetComponent<Rigidbody2D>().gravityScale = 0.0f;
                     func = "RobotInEnd";
 
-                    GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO_IN , gameObject , func);
+                    GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO_IN_DRIVE , gameObject , func);
                     break;
 
             }
-            
-            //CameraManager.Instance().MoveCameraAndObject(target , cameraSize , place , gameObject,gameObject,func,false);
-
-
-
         }
     }
     // ::::: 행성 관련 메소드
     void RobotOutEnd()
     {
-        m_skletonAnimation.skeleton.SetSkin("char_01_a");
+        m_skletonAnimation.skeleton.SetSkin(GameManager.Instance().GetCharacterSuitSkin(
+            GameManager.Instance().PLAYER.SKELETON_DATA_ASSET));
         m_skletonAnimation.skeleton.SetToSetupPose();
     }
     //들어올때
     void RobotInEnd()
     {
-        m_skletonAnimation.skeleton.SetSkin("char_01");
+        m_skletonAnimation.skeleton.SetSkin(GameManager.Instance().GetCharacterNormalSkin(
+            GameManager.Instance().PLAYER.SKELETON_DATA_ASSET));
         m_skletonAnimation.skeleton.SetToSetupPose();
         //m_curState = BitControl.Set(m_curState , (int)HERO_STATE.LADDER);
 
@@ -1114,18 +1128,17 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
 
 
-    public void Damage(int damage,bool left = true)
+    public void Damage(int damage,bool left = true,float power = 100.0f)
     {
         if (m_damageCoolTime)
             return;
-        m_hp -= damage;
+        HP -= damage;
         m_damageCoolTime = true;
-
         
 
         if (m_rigidBody != null)
         {
-            float xpower = (!left) ? -100.0f : 100.0f;  
+            float xpower = (!left) ? -power : power;  
             m_rigidBody.AddForce(new Vector2(xpower , m_jumpPower * 0.5f));
 
             InvokeRepeating("DamageEffect" ,0.1f, 0.1f);

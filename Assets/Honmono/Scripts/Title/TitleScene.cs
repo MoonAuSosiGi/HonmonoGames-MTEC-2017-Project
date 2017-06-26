@@ -18,7 +18,14 @@ public class TitleScene : MonoBehaviour {
 
     public void TitleEnd()
     {
-        PopupManager.Instance().AddPopup("CharacterSelectPopup");
+        if (GameManager.Instance().PLAYER.NETWORK_INDEX == 1)
+        {
+
+          
+        }
+        else
+            PopupManager.Instance().AddPopup("CharacterSelectPopup");
+
     }
 
 }

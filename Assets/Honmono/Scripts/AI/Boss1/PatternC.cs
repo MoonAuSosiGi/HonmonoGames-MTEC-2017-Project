@@ -30,6 +30,7 @@ public class PatternC : PatternState
         NetworkManager.Instance().SendOrderMessage(
             JSONMessageTool.ToJsonAIMessage(m_aiTarget,"C",new string[]{ "transform" , "attack_C_charge" , "attack_C_fire" }));
 
+        m_skletonAnimation.gameObject.GetComponent<AudioSource>().Play();
         m_skletonAnimation.state.Complete += CompleteEvent;
         base.PatternStart();
     }

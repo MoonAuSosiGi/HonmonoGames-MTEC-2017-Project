@@ -47,21 +47,11 @@ public class CharacterSelectPopup : MonoBehaviour,PopupManager.PopupHide {
 
     public void CharacterSelectButton()
     {
-        
+        ReturnButton();
     }
 
     public void ReturnButton()
     {
-        // SoundManager.Instance().PlaySound(m_selectFinish);
-        //튜토리얼 시작   
-        //   GameManager.Instance().ChangeScene(GameManager.PLACE.TUTORIAL_START);
-        //  CameraManager.Instance().MoveCamera(gameObject , 10 , CameraManager.CAMERA_PLACE.TUTORIAL_PLAYERMOVE);
-
-
-        //정상
-        // PopupManager.Instance().AddPopup("LobbyPopup");
-
-
         //씬 옮기기
 
         //SceneManager.LoadScene("TutorialScene");
@@ -72,7 +62,7 @@ public class CharacterSelectPopup : MonoBehaviour,PopupManager.PopupHide {
 
     public void HideEndEvent()
     {
-        //GameManager.Instance().ChangeScene(GameManager.PLACE.TUTORIAL_START);
+
         PopupManager.Instance().AddPopup("LobbyPopup");
     }
 
@@ -95,8 +85,10 @@ public class CharacterSelectPopup : MonoBehaviour,PopupManager.PopupHide {
 
         UIUpdate();
 
+        Vector3 p = NetworkManager.Instance().m_playerStartPosition.transform.position;
         NetworkManager.Instance().SendMoveMessage(JSONMessageTool.ToJsonMove(
-            GameManager.Instance().PLAYER.USER_NAME , 0 , 0 , 0 , true , Vector3.zero));
+            GameManager.Instance().PLAYER.USER_NAME + "_robo" , 
+            p.x, p.y , 0 , true , Vector3.zero));
       //  SoundManager.Instance().PlayBGM(1);
     }
 	

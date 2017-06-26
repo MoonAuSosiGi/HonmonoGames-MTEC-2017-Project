@@ -109,11 +109,10 @@ public class NetworkStage1BOSS : MonoBehaviour,NetworkManager.NetworkMessageEven
                 }
                 break;
             case NetworkManager.HP_UPDATE:
+                if (e.targetName.Equals(m_bossName))
                 {
-                    if (!e.targetName.Equals("boss1"))
-                        return;
-                    m_hp = (int)e.msg.GetField(NetworkManager.HP_UPDATE).i;
-                    this.transform.GetChild(3).GetComponent<TextMesh>().text = "BOSS hp : " + m_hp + "/100";
+                    GameManager.Instance().SetCurrentEnemy(GetComponent<Monster>());
+
                 }
                 break;
             case NetworkManager.AI_ANI_NAME:
@@ -136,7 +135,10 @@ public class NetworkStage1BOSS : MonoBehaviour,NetworkManager.NetworkMessageEven
                                 for (int i = 1; i < e.msg.GetField(NetworkManager.AI_ANI_NAME).Count; i++)
                                 {
                                     m_skeletonAnimation.state.AddAnimation(2 , e.msg.GetField(NetworkManager.AI_ANI_NAME)[i].str , false , 0.0f);
-                                }                            
+                                }
+                                AudioSource source = GetComponent<AudioSource>();
+                                if (source != null && !source.isPlaying)
+                                    source.Play();
                                 break;
                         }
                         m_curPattern = e.msg.GetField(NetworkManager.AI_PATTERN_NAME).str;

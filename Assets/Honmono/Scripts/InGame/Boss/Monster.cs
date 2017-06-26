@@ -35,7 +35,9 @@ public class Monster : MonoBehaviour {
     public string MONSTER_NAME { get { return m_name; } set { m_name = value; } }
 
     protected GameObject m_attackTarget = null;
-    private RoboHUD m_hud = null;
+    protected RoboHUD m_hud = null;
+    public int HP { get { return m_hp; } }
+    public int MAX_HP { get { return m_fullHp; } }
 
     // -- 네트워크용 ------------------------------------------------------------------------------//
 
@@ -68,13 +70,11 @@ public class Monster : MonoBehaviour {
     // 데미지를 입는 처리
     public virtual void Damage(int damage)
     {
-        if (m_pattern == null)
-            return;
         // 그전의 방어력 경감 효과가 있는 상태인지 체크
         
-        float per = m_pattern.PreProcessedDamge();
+        float per = (m_pattern == null) ? 1.0f : m_pattern.PreProcessedDamge();
 
-        m_hp -= (int)(damage * per);
+        m_hp -= (int)Mathf.Round((float)damage * (float)per);
 
         if (m_hud != null)
             m_hud.MonsterHPUpdate(m_hp , m_fullHp);
@@ -83,6 +83,8 @@ public class Monster : MonoBehaviour {
     // 체력 보여주기용 
     public void SetHUD(RoboHUD hud)
     {
+        if (hud != null)
+            hud.gameObject.SetActive(true);
         m_hud = hud;
     }
 

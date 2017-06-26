@@ -18,18 +18,36 @@ public class ChatUI : MonoBehaviour, NetworkManager.NetworkMessageEventListenrer
     // 실제 메시지들이 저장될 리스트
     private List<string> m_messageStrs = new List<string>();
 
+    public static bool INPUT = false;
+
     // ---------------------------------------------------------------------------//
 
     void Start()
     {
         NetworkManager.Instance().AddNetworkMessageEventListener(this);
+
+        Invoke("HideChatUI" , 2.0f);
     }
 
     void Update()
     {
         if(Input.GetKeyDown(KeyCode.Return))
         {
-            m_inputField.Select();
+            if(string.IsNullOrEmpty(m_inputField.text))
+            {
+                INPUT = true;
+                transform.GetChild(0).gameObject.SetActive(true);
+                transform.GetComponent<Image>().enabled = true;
+                m_inputField.Select();
+                CancelInvoke("HideChatUI");
+                Invoke("HideChatUI" , 2.0f);
+            }
+            else
+            {
+                SendMessageToServer();
+            }
+            
+            
         }
 
         if (m_messageStrs.Count > 0)
@@ -46,6 +64,7 @@ public class ChatUI : MonoBehaviour, NetworkManager.NetworkMessageEventListenrer
 
     public void SendMessageToServer()
     {
+        INPUT = false;
         NetworkManager.Instance().SendNetworkMessage(JSONMessageTool.ToJsonChat(m_inputField.text));
     //    m_messageStrs.Add(m_inputField.text);
         m_inputField.Select();
@@ -64,5 +83,17 @@ public class ChatUI : MonoBehaviour, NetworkManager.NetworkMessageEventListenrer
             return;
 
         m_messageStrs.Add(e.user + " : " + e.msg.GetField(NetworkManager.MSG));
+        transform.GetChild(0).gameObject.SetActive(true);
+        transform.GetComponent<Image>().enabled = true;
+        CancelInvoke("HideChatUI");
+        Invoke("HideChatUI" , 2.0f);
+    }
+
+    void HideChatUI()
+    {
+        m_inputField.text = "";
+        INPUT = false;
+        transform.GetChild(0).gameObject.SetActive(false);
+        transform.GetComponent<Image>().enabled = false;
     }
 }

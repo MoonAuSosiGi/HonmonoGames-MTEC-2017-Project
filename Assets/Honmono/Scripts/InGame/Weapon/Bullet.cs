@@ -55,6 +55,8 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
             float movex = (m_filp) ? m_moveSpeed * Time.deltaTime : -m_moveSpeed * Time.deltaTime;
             float posx = transform.position.x;
 
+
+
             if (m_bulletName.IndexOf("boss") >= 0)
             {
                 transform.position += m_bulletDir * m_moveSpeed * Time.deltaTime;
@@ -205,14 +207,16 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
             if (col.transform.tag.Equals("ENEMY") && m_curTarget == BULLET_TARGET.PLAYER)
             {
                 Monster mon = col.GetComponent<Monster>();
+                GameManager.Instance().SetCurrentEnemy(mon);
                 if (mon.enabled)
                 {
-                    GameManager.Instance().SetCurrentEnemy(mon);
                     mon.Damage(1);
-                    
                 }
                 else
-                    NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonHPUdate(mon.MONSTER_NAME , 1));
+                {   
+                    NetworkManager.Instance().SendOrderMessage(
+                        JSONMessageTool.ToJsonHPUdate(mon.MONSTER_NAME , 1));
+                }
                 DeleteBullet();
             }
             else if(col.transform.tag.Equals("BOSS") && m_curTarget == BULLET_TARGET.PLAYER)
@@ -221,9 +225,10 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
                 Stage1BOSS boss = col.GetComponent<Stage1BOSS>();
                 GameManager.Instance().SetCurrentEnemy(boss);
                 if (boss.enabled)
-                    boss.Damage(1);
+                    boss.Damage(8);
                 else
-                    NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonDamage(boss.MONSTER_NAME , 1));
+                    NetworkManager.Instance().SendOrderMessage(
+                        JSONMessageTool.ToJsonDamage(boss.MONSTER_NAME ,8));
                 DeleteBullet();
             }
             else if(col.transform.tag.Equals("BOSS2") && m_curTarget == BULLET_TARGET.PLAYER)
@@ -231,9 +236,10 @@ public class Bullet : MonoBehaviour, NetworkManager.NetworkMoveEventListener
                 Stage2BossBone bone = col.GetComponent<Stage2BossBone>();
                 GameManager.Instance().SetCurrentEnemy(bone.m_boss2);
                 if (bone.m_boss2.enabled)
-                    bone.m_boss2.Damage(1,bone.name);
+                    bone.m_boss2.Damage(8,bone.name);
                 else
-                    NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonDamage(bone.m_boss2.MONSTER_NAME , 1));
+                    NetworkManager.Instance().SendOrderMessage(
+                        JSONMessageTool.ToJsonDamage(bone.m_boss2.MONSTER_NAME , 8));
                 DeleteBullet();
 
             }

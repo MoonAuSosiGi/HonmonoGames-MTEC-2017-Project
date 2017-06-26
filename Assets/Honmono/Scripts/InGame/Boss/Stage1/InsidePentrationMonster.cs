@@ -146,8 +146,13 @@ public class InsidePentrationMonster : Monster ,NetworkManager.NetworkMessageEve
         m_skeletonAnimation.state.SetAnimation(0 , ANI_ATTACK_PREV , false);
         m_skeletonAnimation.state.AddAnimation(0 , ANI_ATTACK , false,0.0f);
 
+        AudioSource source = this.GetComponent<AudioSource>();
+        if (source != null && !source.isPlaying)
+            source.Play();
+
         if (m_curState != m_prevState)
         {
+
             NetworkManager.Instance().SendOrderMessage(
                 JSONMessageTool.ToJsonAIMessage(m_name , "",new string[] { ANI_ATTACK_PREV , ANI_ATTACK }));
         }
@@ -174,8 +179,8 @@ public class InsidePentrationMonster : Monster ,NetworkManager.NetworkMessageEve
              -100.0f : 100.0f;
         InvokeRepeating("DamageEffect" , 0.1f , 0.1f);
 
-        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderStateValueChange(m_name , m_hp));
-        
+        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonHPUdate(m_name , m_hp));
+
     }
 
     void DamageEffect()
@@ -274,9 +279,24 @@ public class InsidePentrationMonster : Monster ,NetworkManager.NetworkMessageEve
         if (e.msgType.Equals(NetworkManager.HP_UPDATE))
         {
             // 데미지 입은것이 들어옴
-            if (e.targetName.Equals(m_name))
+            if (e.targetName.Equals(m_name) && 
+                !GameManager.Instance().PLAYER.USER_NAME.Equals(e.user))
             {
-                Damage((int)e.msg.GetField(NetworkManager.HP_UPDATE).i);
+                GameManager.Instance().SetCurrentEnemy(this);
+                base.Damage((int)e.msg.GetField(NetworkManager.HP_UPDATE).i);
+                if (m_hp <= 0)
+                {
+                    MapManager.Instance().AddObject(GamePath.EFFECT , transform.position);
+                    NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder(m_name , "Monster"));
+                    NetworkManager.Instance().RemoveNetworkOrderMessageEventListener(this);
+                    GameObject.Destroy(gameObject);
+                    return;
+                }
+
+                m_damageCoolTime = true;
+                float xpower = (m_skeletonAnimation.skeleton.flipX) ?
+                     -100.0f : 100.0f;
+                InvokeRepeating("DamageEffect" , 0.1f , 0.1f);
             }
         }
     }

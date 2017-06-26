@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Spine.Unity;
 
-public class SpacePentrationMonster : Monster {
+public class SpacePentrationMonster : Monster , NetworkManager.NetworkMessageEventListenrer {
 
     // -- 기본 정보 ---------------------------------------------------//
     private const string ANI_MOVE = "move";
@@ -141,6 +141,7 @@ public class SpacePentrationMonster : Monster {
             GameObject.Destroy(gameObject);
             return;
         }
+        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonHPUdate(m_name , m_hp));
     }
 
 
@@ -162,7 +163,11 @@ public class SpacePentrationMonster : Monster {
     {
         //여기서 생성명령 
         if (AttackAbleCheck())
+        {
+            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder(m_name , "Monster"));
+            GameObject.Destroy(gameObject);
             MapManager.Instance().PentrationMonsterCreate();
+        }
         else
             return 10.0f;
         return 10.0f;
@@ -189,5 +194,26 @@ public class SpacePentrationMonster : Monster {
             return true;
         }
 
+    }
+    void NetworkManager.NetworkMessageEventListenrer.ReceiveNetworkMessage(NetworkManager.MessageEvent e)
+    {
+        if (e.msgType.Equals(NetworkManager.HP_UPDATE) && 
+            !GameManager.Instance().PLAYER.USER_NAME.Equals(e.user))
+        {
+            // 데미지 입은것이 들어옴
+            if (e.targetName.Equals(m_name))
+            {
+                GameManager.Instance().SetCurrentEnemy(this);
+                base.Damage((int)e.msg.GetField(NetworkManager.HP_UPDATE).i);
+                
+                if (m_hp <= 0)
+                {
+                    MapManager.Instance().AddObject(GamePath.EFFECT , transform.position);
+                    NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder(m_name , "Monster"));
+                    GameObject.Destroy(gameObject);
+                    return;
+                }
+            }
+        }
     }
 }

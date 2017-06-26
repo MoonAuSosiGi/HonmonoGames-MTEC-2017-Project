@@ -62,6 +62,8 @@ public class TutoHero : MonoBehaviour {
 
     // Update is called once per frame
     void Update () {
+        if (GameManager.Instance().PLAYER.NETWORK_INDEX != 1)
+            return;
         Control();
 
         if (m_tutoMoveCk)
@@ -80,6 +82,11 @@ public class TutoHero : MonoBehaviour {
                 m_damagePointFix.GetComponent<RoboDamagePoint>().DamageFix();
             }
         }
+    }
+
+    void ShowWeapon(bool v)
+    {
+        transform.GetChild(1).gameObject.SetActive(v);
     }
 
     // :: 튜토 세팅
@@ -555,6 +562,7 @@ public class TutoHero : MonoBehaviour {
 
         if (col.transform.tag.Equals("LADDER"))
         {
+            ShowWeapon(false);
             m_LadderState = true;
         }
         else if (!string.IsNullOrEmpty(col.transform.tag))
@@ -581,6 +589,7 @@ public class TutoHero : MonoBehaviour {
 
         if (col.tag == "LADDER")
         {
+            ShowWeapon(true);
             m_LadderState = false;
             m_rigidBody.gravityScale = 1.0f;
             m_curState = BitControl.Clear(m_curState , (int)Hero.HERO_STATE.LADDER);

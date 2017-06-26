@@ -13,6 +13,17 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
     [SerializeField]
     private List<GameObject> m_playerList = new List<GameObject>();
 
+
+    public struct Test
+    {
+        public string assetName;
+        public string userName;
+        public int networkIndex;
+        public Test(string s,string user,int i) { assetName = s; userName = user; networkIndex = i; }
+    }
+
+    private List<Test> m_playerAssetList = new List<Test>();
+
     [SerializeField]
     private Image m_readyButton = null;
     [SerializeField]
@@ -108,6 +119,13 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
     //-- host 정보가 세팅 되었는지 확인하고 되었다면 접속 알림
     void Update()
     {
+        if (Input.GetKeyUp(KeyCode.Space))
+        {
+            string t = "userName : " + GameManager.Instance().PLAYER.USER_NAME
+                + " index " + GameManager.Instance().PLAYER.NETWORK_INDEX + " aasset " +
+                GameManager.Instance().PLAYER.SKELETON_DATA_ASSET;
+            PopupManager.Instance().MessagePopupOK("Check" , t);
+        }
         if(!string.IsNullOrEmpty(NetworkOrderController.ORDER_NAME) && !m_hostCheck)
         {
             //접속 되었음 !
@@ -185,13 +203,13 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
                 JSONMessageTool.ToJsonOrderUserReady(true,GameManager.Instance().PLAYER.NETWORK_INDEX));
             m_readyButton.sprite = m_sprReady_setting;
 
-            GetRush(m_playerList[GameManager.Instance().PLAYER.NETWORK_INDEX-1]).SetActive(true);
-            GetRushName(m_playerList[GameManager.Instance().PLAYER.NETWORK_INDEX-1]).text = 
+            GetRush(m_playerList[GameManager.Instance().PLAYER.NETWORK_INDEX-2]).SetActive(true);
+            GetRushName(m_playerList[GameManager.Instance().PLAYER.NETWORK_INDEX-2]).text = 
                 GameManager.Instance().PLAYER.USER_NAME;
         }
         else
         {
-            GetRush(m_playerList[GameManager.Instance().PLAYER.NETWORK_INDEX-1]).SetActive(false);
+            GetRush(m_playerList[GameManager.Instance().PLAYER.NETWORK_INDEX-2]).SetActive(false);
             NetworkManager.Instance().SendOrderMessage(
                 JSONMessageTool.ToJsonOrderUserReady(false, GameManager.Instance().PLAYER.NETWORK_INDEX));
             m_readyButton.sprite = m_sprReady_normal;
@@ -201,7 +219,7 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
     //Start
     public void StartButton()
     {
-      //  if(m_startButton.sprite == m_sprStart_setting)
+       // if(m_startButton.sprite == m_sprStart_setting)
         {
             NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderGameSatart());
         }
@@ -224,14 +242,14 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
                         GameManager.Instance().PLAYER.STATUS,
                         GameManager.Instance().PLAYER.USER_NAME,
                         GameManager.Instance().PLAYER.SKELETON_DATA_ASSET,
-                        m_readyButton.sprite == m_sprReady_setting));
+                        m_readyButton.sprite.name == m_sprReady_setting.name));
             //유저가 나갔다
             else if(e.msgType == NetworkManager.USER_LOGOUT)
             {
                 // 로그아웃
                 GameObject user = m_playerList[(int)e.msg
                     .GetField(NetworkManager.USER_LOGOUT)
-                    .GetField(NetworkManager.USER_LOGOUT).i - 1];
+                    .GetField(NetworkManager.USER_LOGOUT).i - 2];
                 if (GetProfileWait(user) != null)
                     GetProfileWait(user).enabled = true;
                 GetProfileHide(user).enabled = true;
@@ -248,7 +266,7 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
                     m_readyCount--;
                     GetRush(m_playerList[(int)e.orders.GetField(NetworkManager.MSG)
                         .GetField(NetworkManager.USER_LOGOUT)
-                        .GetField(NetworkManager.USER_INDEX).i-1]).SetActive(false);
+                        .GetField(NetworkManager.USER_INDEX).i-2]).SetActive(false);
                 }
 
                 if (m_readyCount >= 3)
@@ -269,11 +287,11 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
                     GetRushName(
                         m_playerList[(int)e.msg
                                         .GetField(NetworkManager.USER_READY)
-                                        .GetField(NetworkManager.USER_INDEX).i-1])
+                                        .GetField(NetworkManager.USER_INDEX).i-2])
                                             .text = e.targetName;
                     GetRush(m_playerList[(int)e.msg
                         .GetField(NetworkManager.USER_READY)
-                        .GetField(NetworkManager.USER_INDEX).i-1]).SetActive(true);
+                        .GetField(NetworkManager.USER_INDEX).i-2]).SetActive(true);
                     m_readyCount++;
 
                     SoundManager.Instance().PlaySound(m_ready);
@@ -281,7 +299,7 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
                 else
                 {
                     GetRush(m_playerList[(int)e.msg
-                        .GetField(NetworkManager.USER_READY).GetField(NetworkManager.USER_INDEX).i-1])
+                        .GetField(NetworkManager.USER_READY).GetField(NetworkManager.USER_INDEX).i-2])
                         .SetActive(false);
                     m_readyCount--;
                 }
@@ -307,9 +325,10 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
                     users.Add(GetProfileName(m_playerList[i]).text);
                 }
                 GameManager.Instance().HudSetup(users);
+                //NetworkManager.Instance().GameStartSetup(m_playerAssetList);
 
                 NetworkManager.Instance().RemoveNetworkOrderMessageEventListener(this);
-                NetworkManager.Instance().GameStart();
+                
                 
                 
                 PopupManager.Instance().ClosePopup(gameObject);
@@ -322,8 +341,27 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
 
         int index = (int)e.msg
             .GetField(NetworkManager.USER_CONNECT).GetField(NetworkManager.USER_CONNECT).i;
-        
-        
+
+        bool check = false;
+        foreach(Test t in m_playerAssetList)
+        {
+            if(index == 1)
+            {
+                check = true;
+                break;
+            }
+            if(t.networkIndex == index)
+            {
+                check = true;
+                break;
+            }
+        }
+        if(!check)
+            m_playerAssetList.Add(new Test(e.msg.GetField(NetworkManager.USER_CONNECT)
+                    .GetField(NetworkManager.USER_SKELETON_DATA_ASSET).str,
+                     e.orders.GetField(NetworkManager.MSG)
+                    .GetField(NetworkManager.USER_CONNECT).GetField(NetworkManager.CLIENT_ID).str , index));
+
         // 나자신을 세팅할 필요는 없음
         if (index == GameManager.Instance().PLAYER.NETWORK_INDEX)
             return;
@@ -396,8 +434,9 @@ public class LobbyPopup : MonoBehaviour,NetworkManager.NetworkMessageEventListen
             m_readyButton.sprite == m_sprReady_setting));
     }
 
-    public void HideEndEvent()
+    void PopupManager.PopupHide.HideEndEvent()
     {
         GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO_IN);
+        
     }
 }

@@ -257,7 +257,7 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
                     return;
 
                 NetworkManager.Instance().CreateUserCharacter(
-                    e.targetName,e.msg.GetField(NetworkManager.USER_CHARACTER_CREATE).str);
+                    e.user,e.msg.GetField(NetworkManager.USER_CHARACTER_CREATE).str);
                 break;
             
                 
@@ -287,7 +287,7 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
         }
         else
         {
-            boss.AddComponent<NetworkStage2BOSS>();
+            boss.AddComponent<NetworkStage2BOSS>().BOSS_NAME = targetName;
             boss.GetComponent<Stage2Boss>().enabled = false;
             boss.GetComponent<Stage2Boss>().MONSTER_NAME = targetName;    
         }
@@ -319,11 +319,14 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
             return;
         Vector3 p = new Vector3(x , y , -1.0f);
         GameObject m = MapManager.Instance().AddObject(monsterPrefab , new Vector3(p.x , p.y , -1));
+
         NetworkMoving moving = m.AddComponent<NetworkMoving>();
         moving.AUTO_DIR = autoDir;
-
+        moving.NAME = targetName;
         if (!monsterPrefab.Equals(GamePath.PLANET_MONSTER2))
         {
+           
+
             m.AddComponent<NetworkStage1MonsterMoveAttack>().NAME = targetName;
             m.GetComponent<Stage1MonsterMoveAttack>().MONSTER_NAME = targetName;
             m.GetComponent<Stage1MonsterMoveAttack>().enabled = false;
@@ -337,7 +340,7 @@ public class NetworkOrderController : MonoBehaviour,NetworkManager.NetworkMessag
             m.GetComponent<Stage1MonsterStopAttack>().NETWORKING = true;
         }
        
-        moving.NAME = targetName;
+       
     }
 
     void CreateInsideMonster(string userName , string targetName , float x , float y , bool autoDir = true)

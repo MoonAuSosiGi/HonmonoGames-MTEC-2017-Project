@@ -17,6 +17,8 @@ public class SoundManager : Singletone<SoundManager> {
     // temp Code
     public void PlayBGM(int stage)
     {
+        if (m_bgmSource.clip == m_bgmList[stage])
+            return;
         m_bgmSource.clip = m_bgmList[stage];
         m_bgmSource.Play();
     }

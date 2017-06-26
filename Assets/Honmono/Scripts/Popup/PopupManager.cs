@@ -40,6 +40,16 @@ public class PopupManager : Singletone<PopupManager> {
             iTween.ScaleTo(popup, iTween.Hash("x", 1.0f, "y", 1.0f, "easetype", m_tween, "time", 0.3f));
     }
 
+    public void AddInteractionPopup(string text)
+    {
+        GameObject popup = GameObject.Instantiate(Resources.Load(GamePath.POPUP + "InteractionPopup") , transform) as GameObject;
+        popup.transform.localScale = new Vector3(0 , 0 , 0);
+        popup.GetComponent<InteractionPopup>().SetText(text);
+        m_popupQueue.Enqueue(popup);
+        if (m_popupQueue.Count == 1)
+            iTween.ScaleTo(popup , iTween.Hash("x" , 1.0f , "y" , 1.0f , "easetype" , m_tween , "time" , 0.3f));
+    }
+
     // 기본 팝업 - OK
     public void MessagePopupOK(string title,string text,GameObject target = null,string okFunc = null)
     {

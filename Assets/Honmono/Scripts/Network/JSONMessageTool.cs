@@ -184,8 +184,29 @@ public static class JSONMessageTool  {
         return obj.ToString();
 
     }
+
+    public static string ToJsonCharacterHPUpdate(string targetName,int hp , int maxhp)
+    {
+        JSONObject obj = GetDefJSON(targetName , NetworkManager.CHARACTER_HPUPDATE);
+        JSONObject msg = obj.GetField(NetworkManager.ORDERS)[0].GetField(NetworkManager.MSG);
+        msg.AddField(NetworkManager.CHARACTER_HPUPDATE , hp);
+        msg.AddField(NetworkManager.CHARACTER_MAXHP , maxhp);
+
+        return obj.ToString();
+
+    }
     // HP Update
     public static string ToJsonHPUdate(string targetName,int hp)
+    {
+        JSONObject obj = GetDefJSON(targetName , NetworkManager.HP_UPDATE);
+        obj.GetField(NetworkManager.ORDERS)[0]
+            .GetField(NetworkManager.MSG)
+            .AddField(NetworkManager.HP_UPDATE , hp);
+        return obj.ToString();
+
+    }
+
+    public static string ToJsonHPUdate(string targetName , float hp)
     {
         JSONObject obj = GetDefJSON(targetName , NetworkManager.HP_UPDATE);
         obj.GetField(NetworkManager.ORDERS)[0]

@@ -40,7 +40,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
    
     // 기본 정보 --------------------------------------------------------------------------------------//
 
-    private int m_hp = 10;
+    private int m_hp = GameSetting.HERO_MAX_HP;
 
     public int HP {
         get { return m_hp; }
@@ -48,6 +48,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         {
             m_hp = value;
             GameManager.Instance().ChangeCharacterHP(m_hp , GameSetting.HERO_MAX_HP);
+            if(m_isMe)
             NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonCharacterHPUpdate(
                 m_hp , GameSetting.HERO_MAX_HP));
         }
@@ -101,7 +102,9 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     // USER NAME
     public string USERNAME {
         get { return m_userName; }
-        set { m_userName = value; }
+        set { m_userName = value;
+            transform.GetChild(0).GetComponent<TextMesh>().text = USERNAME.Split('_')[0];
+        }
     }
 
     public bool IS_PLAYER
@@ -208,8 +211,18 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     void NetworkManager.NetworkMessageEventListenrer.ReceiveNetworkMessage(NetworkManager.MessageEvent e)
     {
 
+        if(e.msgType == NetworkManager.CHARACTER_HPUPDATE 
+            && (e.user).Equals(USERNAME))
+        {
+            InvokeRepeating("DamageEffect" , 0.1f , 0.1f);
+        }
+        if(e.msgType == NetworkManager.CHARACTER_HPUPDATE && e.targetName.Equals(USERNAME))
+        {
+
+            Damage(1);
+        }
         // 상태 체인지
-        if (e.msgType == NetworkManager.STATE_CHANGE && (e.targetName).Equals(m_userName))
+        else if (e.msgType == NetworkManager.STATE_CHANGE && (e.targetName).Equals(m_userName))
         {
             if (m_isMe)
                 return;
@@ -273,7 +286,10 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
     void InteractionEffect()
     {
-        PopupManager.Instance().AddPopup("InteractionPopup");
+        if(BitControl.Get(m_curState,(int)HERO_STATE.CONTROL_GUN))
+            PopupManager.Instance().AddInteractionPopup("WEAPON SYSTEM ONLINE");
+        else
+            PopupManager.Instance().AddInteractionPopup("DRIVE SYSTEM ONLINE");
     }
     //------------------------------------------------------------------------------------------------------------------------//
 
@@ -293,8 +309,12 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     // Use this for initialization
     void Start()
     {
-        // 움직였을 때만 패킷을 전송해야 한다. 그러기 위한 디스턴스 판별용 포지션 적용
-        m_prevPos = transform.position;
+
+        m_chargePad = transform.parent.parent.GetChild(5).GetChild(6).GetChild(1).GetComponent<SpriteRenderer>();
+        m_chargeTopObj = transform.parent.parent.GetChild(5).GetChild(6).GetChild(2).gameObject;
+        m_chargeBottomObj = transform.parent.parent.GetChild(5).GetChild(6).GetChild(3).gameObject;
+    // 움직였을 때만 패킷을 전송해야 한다. 그러기 위한 디스턴스 판별용 포지션 적용
+    m_prevPos = transform.position;
 
         m_skletonAnimation.state.Complete += CompleteAnimation;
 
@@ -309,29 +329,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         m_skletonAnimation.state.Data.SetMix(ANI_MOVE , ANI_IDLE , 0.25f);
         m_skletonAnimation.state.Data.SetMix(ANI_MOVE , ANI_REPAIR , 0.6f);
     }
-
-    void OnEnable()
-    {
-        if (!m_isMe)
-            transform.GetChild(0).GetComponent<TextMesh>().text = USERNAME.Split('_')[0];
-
-
-        if (!m_isMe)
-            return;
-
-        if(m_isMe)
-            transform.GetChild(0).GetComponent<TextMesh>().text = GameManager.Instance().PLAYER.USER_NAME;
-        Vector3 pos = transform.position;
-        float area = (float)((m_inSpace) ? (int)NetworkOrderController.AreaInfo.AREA_SPACE : (int)NetworkOrderController.AreaInfo.AREA_ROBOT);
-        NetworkManager.Instance().SendMoveMessage(
-          JSONMessageTool.ToJsonMove(
-              m_userName ,
-              pos.x , pos.y ,
-              1 , // :: Area 선택해서 날림
-              false,
-              m_prevPos));
-    }
-
+    
     void OnDisable()
     {
         if (!m_isMe)
@@ -340,20 +338,25 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
     void CompleteAnimation(TrackEntry trackEntry)
     {
-        if (!m_isMe)
-            return;
-
+      
         if (trackEntry.animation.name.Equals(ANI_REPAIR))
         {
             m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.ATTACK);
             m_skletonAnimation.state.ClearTrack(1);
-            if(m_damagePointFix != null)
+
+            if (!m_isMe)
+                return;
+            if (m_damagePointFix != null)
             {
                 m_damagePointFix.GetComponent<RoboDamagePoint>().DamageFix();
             }
             else if(m_monster != null)
             {
-                m_monster.Damage(1);
+                if(m_monster.enabled)
+                    m_monster.Damage(1);
+                else
+                    NetworkManager.Instance().SendOrderMessage(
+                        JSONMessageTool.ToJsonHPUdate(m_monster.MONSTER_NAME , 1));
             }
         }
     }
@@ -371,6 +374,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
         if (m_isMe)
         {
+            if (ChatUI.INPUT)
+                return;
             
 
             if (!m_inSpace)
@@ -392,6 +397,15 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     void NetworkMoveLerp()
     {
         transform.position = m_targetPos;
+
+        if (GameManager.Instance().SCENE_PLACE == GameManager.PLACE.PLANET ||
+            GameManager.Instance().SCENE_PLACE == GameManager.PLACE.PLANET1 ||
+            GameManager.Instance().SCENE_PLACE == GameManager.PLACE.PLANET2)
+        {
+            SetSkinSuit();
+        }
+        else
+            SetSkinNormal();
     }
 
     // -- Network Message 에 따른 애니메이션 처리 ---------------------------------------------------------------------------//
@@ -400,42 +414,45 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         if (m_curState == (int)HERO_STATE.IDLE)
         {
             CheckAndSetAnimation(ANI_IDLE , true);
-            //m_skletonAnimation.state.SetAnimation(0,ANI_IDLE, true);
         }
         else
         {
-            if (BitControl.Get(m_curState, (int)HERO_STATE.JUMP))
+            if (BitControl.Get(m_curState , (int)HERO_STATE.JUMP))
             {
+                // 점프 ㄱㄱ
                 // IDLE / MOVE 상태일 때만 점프 애니메이션 
-                if (IsCurrentAnimation(ANI_IDLE) || IsCurrentAnimation(ANI_MOVE))
+                if (IsCurrentAnimation(ANI_IDLE))// || IsCurrentAnimation(ANI_MOVE))
                 {
                     //레디 -> 점핑 ㄱㄱ
-                    m_skletonAnimation.state.SetAnimation(0, ANI_JUMP_READY, false);
-                    m_skletonAnimation.state.AddAnimation(0, ANI_JUMP_JUMPING, true, 0f);
+                    m_skletonAnimation.state.SetAnimation(0 , ANI_JUMP_READY , false);
+                    m_skletonAnimation.state.AddAnimation(0 , ANI_JUMP_JUMPING , true , 0f);
                 }
 
             }
 
-            if (BitControl.Get(m_curState, (int)HERO_STATE.JUMP_FALL))
+            if (BitControl.Get(m_curState , (int)HERO_STATE.JUMP_FALL))
             {
                 //떨어지는 중
                 if (!BitControl.Get(m_curState , (int)HERO_STATE.MOVE))
-                    CheckAndSetAnimation(ANI_JUMP_FALL, false);
+                    CheckAndSetAnimation(ANI_JUMP_FALL , false);
             }
 
-            if (BitControl.Get(m_curState, (int)HERO_STATE.MOVE))
+            if (BitControl.Get(m_curState , (int)HERO_STATE.MOVE))
             {
                 if (!IsCurrentAnimation(ANI_MOVE))
                 {
                     m_skletonAnimation.state.SetAnimation(0 , ANI_MOVE , true);//
                 }
             }
+
+
             if (BitControl.Get(m_curState , (int)HERO_STATE.LADDER))
             {
                 m_skletonAnimation.enabled = false;
                 this.GetComponent<MeshRenderer>().enabled = false;
                 m_climb.gameObject.SetActive(true);
-
+                ShowWeapon(false);
+               
                 if (BitControl.Get(m_curState , (int)HERO_STATE.MOVE))
                 {
                     if (m_climb.state.GetCurrent(0) != null &&
@@ -443,19 +460,23 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
                         m_climb.state.SetAnimation(0 , "animation" , true);
                     else if (m_climb.state.GetCurrent(0) == null)
                         m_climb.state.SetAnimation(0 , "animation" , true);
+                    MDebug.Log("LADDER move");
+
+
                 }
-                else
-                {
-                    if(m_climb.state != null)
-                        m_climb.state.ClearTrack(0);
-                }
+                MDebug.Log("LADDER");
             }
             else
             {
+                ShowWeapon(true);
                 m_skletonAnimation.enabled = true;
                 this.GetComponent<MeshRenderer>().enabled = true;
                 m_climb.gameObject.SetActive(false);
+                //if(m_climb.state != null && m_climb.state.GetCurrent(0) != null)
+                //    m_climb.state.ClearTrack(0);
             }
+
+        
 
             if (BitControl.Get(m_curState , (int)HERO_STATE.ATTACK))
                 m_skletonAnimation.state.SetAnimation(1 , ANI_REPAIR , false);
@@ -527,7 +548,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
                 case GameManager.PLACE.PLANET:
                 case GameManager.PLACE.PLANET1:
                 case GameManager.PLACE.PLANET2:
-                    this.GetComponent<Rigidbody2D>().gravityScale = 0.0f;
+                    m_rigidBody.velocity = new Vector2(0.0f , 0.0f);
                     func = "RobotInEnd";
 
                     GameManager.Instance().ChangeScene(GameManager.PLACE.ROBO_IN_DRIVE , gameObject , func);
@@ -536,27 +557,53 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             }
         }
     }
+
+    public void SetSkinSuit()
+    {
+        if (m_skletonAnimation.skeleton.skin.name.Equals(GameManager.Instance().GetCharacterSuitSkin(
+           GameManager.Instance().PLAYER.SKELETON_DATA_ASSET)))
+            return;
+        m_skletonAnimation.skeleton.SetSkin(GameManager.Instance().GetCharacterSuitSkin(
+          m_skletonAnimation.skeletonDataAsset.name));
+        m_skletonAnimation.skeleton.SetToSetupPose();
+        if(!IS_PLAYER)
+            GetComponent<BoxCollider2D>().isTrigger = false;
+
+        if(m_climb != null)
+        {
+            m_climb.gameObject.SetActive(false);
+            m_climb = transform.GetChild(3).GetComponent<SkeletonAnimation>();
+        }
+    }
+
+    public void SetSkinNormal()
+    {
+        if (m_skletonAnimation.skeleton.skin.name.Equals(GameManager.Instance().GetCharacterNormalSkin(
+           GameManager.Instance().PLAYER.SKELETON_DATA_ASSET)))
+            return;
+        m_skletonAnimation.skeleton.SetSkin(GameManager.Instance().GetCharacterNormalSkin(
+            m_skletonAnimation.skeletonDataAsset.name));
+        m_skletonAnimation.skeleton.SetToSetupPose();
+        if (!IS_PLAYER)
+            GetComponent<BoxCollider2D>().isTrigger = true;
+
+        if (m_climb != null)
+        {
+            m_climb.gameObject.SetActive(false);
+            m_climb = transform.GetChild(2).GetComponent<SkeletonAnimation>();
+        }
+    }
+
     // ::::: 행성 관련 메소드
     void RobotOutEnd()
     {
-        m_skletonAnimation.skeleton.SetSkin(GameManager.Instance().GetCharacterSuitSkin(
-            GameManager.Instance().PLAYER.SKELETON_DATA_ASSET));
-        m_skletonAnimation.skeleton.SetToSetupPose();
+        SetSkinSuit();
     }
     //들어올때
     void RobotInEnd()
     {
-        m_skletonAnimation.skeleton.SetSkin(GameManager.Instance().GetCharacterNormalSkin(
-            GameManager.Instance().PLAYER.SKELETON_DATA_ASSET));
-        m_skletonAnimation.skeleton.SetToSetupPose();
-        //m_curState = BitControl.Set(m_curState , (int)HERO_STATE.LADDER);
+        SetSkinNormal();
 
-        //m_LadderState = false;
-        //m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.LADDER);
-        //m_skletonAnimation.enabled = true;
-        //this.GetComponent<MeshRenderer>().enabled = true;
-        //m_climb.state.ClearTrack(0);
-        //m_climb.gameObject.SetActive(false);
     }
 
     // ::::::::::::::::::::::::::::
@@ -569,6 +616,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         {
             m_userControlName = null;
             m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.CONTROL_HEAL);
+            HP = GameSetting.HERO_MAX_HP;
         }
     }
 
@@ -580,12 +628,16 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             if(Input.GetKeyDown(KeyCode.Space))
             {
                
-                if (iTween.Count(m_chargePad.gameObject) <= 0)
+                if (GameManager.Instance().ROBO.ENERGY < 100.0f && iTween.Count(m_chargePad.gameObject) <= 0)
                 {
                     iTween.MoveTo(m_chargePad.gameObject ,
                         iTween.Hash("y" , m_chargeTopObj.transform.position.y , "oncompletetarget" , gameObject ,
                         "oncomplete" , "PadTweenEnd" , "speed" , 4.0f,"onupdatetarget",gameObject,"onupdate", "ChargeMoveSend"));
-                    GameManager.Instance().ROBO.ENERGY = GameManager.Instance().ROBO.ENERGY + 0.5f;
+                    GameManager.Instance().ROBO.ENERGY += 1.0f;
+
+                    NetworkManager.Instance().SendOrderMessage(
+                        JSONMessageTool.ToJsonEnergyUdate("robo" , GameManager.Instance().ROBO.ENERGY));
+                    
                 }
                 else
                 {
@@ -700,6 +752,9 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
             this.m_skletonAnimation.skeleton.flipX = false;
             //this.GetComponent<SpriteRenderer>().flipX = false;
+
+            if (m_rigidBody.velocity.x > 0.0f)
+                m_rigidBody.velocity = new Vector2(0.0f , m_rigidBody.velocity.y);
         }
 
 
@@ -710,6 +765,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             moveX = m_moveSpeed * Time.deltaTime;
 
             this.m_skletonAnimation.skeleton.flipX = true;
+            if (m_rigidBody.velocity.x > 0.0f)
+                m_rigidBody.velocity = new Vector2(0.0f , m_rigidBody.velocity.y);
 
         }
         return moveX;
@@ -759,8 +816,13 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     // 공격하기
     void AttackControl()
     {
-        if (Input.GetKeyUp(KeyCode.Space) && !BitControl.Get(m_curState,(int)HERO_STATE.CONTROL_ENERGY_CHARGE))
+        if (Input.GetKeyUp(KeyCode.Space) && 
+            !BitControl.Get(m_curState,(int)HERO_STATE.CONTROL_ENERGY_CHARGE))
         {
+            m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.ATTACK);
+            if(m_skletonAnimation.state.GetCurrent(1) != null)
+            m_skletonAnimation.state.ClearTrack(1);
+
             m_curState = BitControl.Set(m_curState , (int)HERO_STATE.ATTACK);
         }
     }
@@ -794,7 +856,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
         // 이동 애니메이션 체크
         if ((BitControl.Get(m_curState, (int)HERO_STATE.MOVE) && 
-            (Input.GetKeyUp(KeyCode.A) || Input.GetKeyUp(KeyCode.D) || Input.GetKeyUp(KeyCode.W) || Input.GetKeyUp(KeyCode.S))))
+            (Input.GetKeyUp(KeyCode.A) || Input.GetKeyUp(KeyCode.D) 
+            || Input.GetKeyUp(KeyCode.W) || Input.GetKeyUp(KeyCode.S))))
         {
 
             m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.MOVE);
@@ -805,7 +868,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             }
             else
             {
-                m_climb.state.ClearTrack(0);
+                if(m_climb.state != null)
+                    m_climb.state.ClearTrack(0);
             }
         }
 
@@ -884,9 +948,10 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             }
 
             //test
-            if(BitControl.Get(m_curState,(int)HERO_STATE.ATTACK))
+            if (BitControl.Get(m_curState , (int)HERO_STATE.ATTACK))
                 m_skletonAnimation.state.SetAnimation(1 , ANI_REPAIR , false);
         }
+       
         Debug.DrawLine(pos, new Vector3(pos.x,pos.y - GetComponent<BoxCollider2D>().bounds.size.y,0.0f),Color.red);
 
         MoveSend();
@@ -1039,9 +1104,9 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
     //사다리용
     void OnTriggerEnter2D(Collider2D col)
     {
-        MDebug.Log("Enter " + col.tag);
-
-        if(col.tag.Equals("DAMAGE_POINT"))
+        if (!m_isMe)
+            return;
+         if (col.tag.Equals("DAMAGE_POINT"))
         {
             m_damagePointFix = col.gameObject;
         }
@@ -1053,6 +1118,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         if(col.transform.tag.Equals("LADDER"))
         {
             m_LadderState = true;
+            ShowWeapon(false);
         }
         else if (!string.IsNullOrEmpty(col.transform.tag))
             m_userControlName = col.transform.tag;
@@ -1062,6 +1128,8 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
     void OnTriggerStay2D(Collider2D col)
     {
+        if (!m_isMe)
+            return;
         if (!col.transform.tag.Equals("LADDER") && !string.IsNullOrEmpty(col.transform.tag))
             m_userControlName = col.transform.tag;
 
@@ -1075,7 +1143,31 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
 
     void OnTriggerExit2D(Collider2D col)
     {
-        MDebug.Log("Exit " + col.tag);
+        if (col.tag == "LADDER")
+        {
+            ShowWeapon(true);
+            m_LadderState = false;
+            m_rigidBody.gravityScale = 1.0f;
+            m_curState = BitControl.Clear(m_curState , (int)HERO_STATE.LADDER);
+
+            // 사다리
+            m_skletonAnimation.enabled = true;
+            this.GetComponent<MeshRenderer>().enabled = true;
+
+            try
+            {
+                if (m_climb.state.GetCurrent(0) != null)
+                    m_climb.state.ClearTrack(0);
+                m_climb.gameObject.SetActive(false);
+            }
+            catch (Exception)
+            {
+
+            }
+
+        }
+        if (!m_isMe)
+            return;
 
         if (m_damagePointFix != null && m_damagePointFix.Equals(col.gameObject))
             m_damagePointFix = null;
@@ -1086,28 +1178,7 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
         if (m_monster != null && col.transform.tag.Equals("ENEMY"))
             m_monster = null;
 
-        if (col.tag == "LADDER")
-        {
-            m_LadderState = false;
-            m_rigidBody.gravityScale = 1.0f;
-            m_curState = BitControl.Clear(m_curState, (int)HERO_STATE.LADDER);
-
-            // 사다리
-            m_skletonAnimation.enabled = true;
-            this.GetComponent<MeshRenderer>().enabled = true;
-            
-            try
-            {
-                if (m_climb.state.GetCurrent(0) != null)
-                    m_climb.state.ClearTrack(0);
-                m_climb.gameObject.SetActive(false);
-            }
-            catch(Exception)
-            {
-
-            }
-            
-        }
+        
         
     }
 
@@ -1170,5 +1241,9 @@ public class Hero : MonoBehaviour, NetworkManager.NetworkMoveEventListener , Net
             CancelInvoke("DamageEffectEnd");
             m_damageCoolTime = false;
         }
+    }
+    void ShowWeapon(bool v)
+    {
+        transform.GetChild(1).gameObject.SetActive(v);
     }
 }

@@ -7,7 +7,7 @@ public class Stage1MonsterMoveAttack : Monster,NetworkManager.NetworkMessageEven
 
     // -- 기본 정보 ------------------------------------------------//
     public GameObject m_target = null;
-
+    public AudioSource m_source = null;
     private const string ANI_IDLE = "idle";
     private const string ANI_MOVE = "move";
     private const string ANI_ATTACK = "attack";
@@ -198,6 +198,8 @@ public class Stage1MonsterMoveAttack : Monster,NetworkManager.NetworkMessageEven
         
         if (m_curState != m_prevState)
         {
+            if (!m_source.isPlaying)
+                m_source.Play();
             NetworkManager.Instance().SendOrderMessage(
                 JSONMessageTool.ToJsonAIMessage(m_name , "" , ANI_ATTACK , false));
         }
@@ -224,7 +226,7 @@ public class Stage1MonsterMoveAttack : Monster,NetworkManager.NetworkMessageEven
              -100.0f : 100.0f;
         InvokeRepeating("DamageEffect" , 0.1f , 0.1f);
 
-        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderStateValueChange(m_name , m_hp));
+        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonHPUdate(m_name , m_hp));
 
     }
 
@@ -297,7 +299,7 @@ public class Stage1MonsterMoveAttack : Monster,NetworkManager.NetworkMessageEven
 
         m_attackTick += Time.deltaTime;
    //     MDebug.Log("Tick " + string.Format("{0:F1}" , tick));
-        if (m_attackTick <= 2.0f)
+        if (m_attackTick <= 0.5f)
         {
             
             return;
@@ -307,7 +309,11 @@ public class Stage1MonsterMoveAttack : Monster,NetworkManager.NetworkMessageEven
 
         if (hero != null)
         {
-            hero.Damage(1 , m_skeletonAnimation.skeleton.flipX,500.0f);
+            if(hero.IS_PLAYER)
+                hero.Damage(1 , m_skeletonAnimation.skeleton.flipX,500.0f);
+            else
+                NetworkManager.Instance().SendOrderMessage(
+                        JSONMessageTool.ToJsonCharacterHPUpdate(hero.USERNAME , 10 , GameSetting.HERO_MAX_HP));
         }
         CheckAndSetAnimation(0 , ANI_MOVE , true);
     }
@@ -340,9 +346,28 @@ public class Stage1MonsterMoveAttack : Monster,NetworkManager.NetworkMessageEven
         if (e.msgType.Equals(NetworkManager.HP_UPDATE))
         {
             // 데미지 입은것이 들어옴
-            if (e.targetName.Equals(m_name))
+            if (e.targetName.Equals(m_name) && !GameManager.Instance().PLAYER.USER_NAME.Equals(e.user))
             {
-                Damage((int)e.msg.GetField(NetworkManager.HP_UPDATE).i);
+                if (m_damageCoolTime)
+                    return;
+                GameManager.Instance().SetCurrentEnemy(this);
+               
+
+                base.Damage((int)e.msg.GetField(NetworkManager.HP_UPDATE).i);
+                if (m_hp <= 0)
+                {
+                    MapManager.Instance().AddObject(GamePath.EFFECT , transform.position);
+                    NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder(m_name , "Monster"));
+                    NetworkManager.Instance().RemoveNetworkOrderMessageEventListener(this);
+                    GameObject.Destroy(gameObject);
+                    return;
+                }
+
+                m_damageCoolTime = true;
+                float xpower = (m_skeletonAnimation.skeleton.flipX) ?
+                     -100.0f : 100.0f;
+                InvokeRepeating("DamageEffect" , 0.1f , 0.1f);
+
             }
         }
     }

@@ -125,12 +125,15 @@ public class Stage1BOSS : Monster, NetworkManager.NetworkMessageEventListenrer
         if(m_hp <=0)
         {
             //CameraManager.Instance().MoveCamera(null , 10.0f , CameraManager.CAMERA_PLACE.STAGE1);
-            //GameObject obj = MapManager.Instance().AddObject(GamePath.EFFECT,tr);
-            //obj.transform.position = transform.position;
+            GameObject obj = MapManager.Instance().AddObject(GamePath.EFFECT , transform.position);
+            obj.transform.position = transform.position;
+            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder("Monster" , m_name));
+            GameObject.Destroy(gameObject);
+            
             m_pattern = null;  
         }
-        this.transform.GetChild(3).GetComponent<TextMesh>().text = "BOSS hp : " + m_hp + "/100";
-        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonHPUdate("boss1" , m_hp));
+      //  this.transform.GetChild(3).GetComponent<TextMesh>().text = "BOSS hp : " + m_hp + "/100";
+      //  NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonHPUdate(m_name , m_hp));
         
     }
     
@@ -160,7 +163,12 @@ public class Stage1BOSS : Monster, NetworkManager.NetworkMessageEventListenrer
             NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder(m_name , "Monster"));
             return;
         }
-            
+        if(Input.GetKeyUp(KeyCode.I))
+        {
+            GameManager.Instance().SetCurrentEnemy(this);
+
+            Damage(20);
+        }
 
         
         // 방향설정
@@ -332,8 +340,10 @@ public class Stage1BOSS : Monster, NetworkManager.NetworkMessageEventListenrer
     {
         if(e.msgType.Equals(NetworkManager.DAMAGE))
         {
-            if(e.targetName.Equals(m_name))
+            if(e.targetName.Equals(m_name) && 
+                !GameManager.Instance().PLAYER.USER_NAME.Equals(e.user))
             {
+                GameManager.Instance().SetCurrentEnemy(this);
                 Damage((int)e.msg.GetField(NetworkManager.DAMAGE).i);
             }
         }

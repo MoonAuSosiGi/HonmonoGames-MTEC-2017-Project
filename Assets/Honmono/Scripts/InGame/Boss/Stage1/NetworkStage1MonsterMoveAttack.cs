@@ -71,6 +71,13 @@ public class NetworkStage1MonsterMoveAttack : MonoBehaviour, NetworkManager.Netw
                     GameObject.Destroy(gameObject);
                 }
                 break;
+            case NetworkManager.HP_UPDATE:
+                if (e.targetName.Equals(m_name))
+                {
+                    GameManager.Instance().SetCurrentEnemy(GetComponent<Monster>());
+
+                }
+                break;
             case NetworkManager.STATE_CHANGE:
                 if (e.targetName.Equals(m_name))
                 {
@@ -90,12 +97,25 @@ public class NetworkStage1MonsterMoveAttack : MonoBehaviour, NetworkManager.Netw
                     m_skeletonAnimation.state.GetCurrent(0).animation == null ||
                     m_skeletonAnimation.state.GetCurrent(0).animation.name == null)
                     return;
-                if (m_skeletonAnimation.state.GetCurrent(0).animation.name.Equals(e.msg.GetField(NetworkManager.AI_ANI_NAME).str))
+                if (m_skeletonAnimation.state.GetCurrent(0).animation.name.Equals(
+                    e.msg.GetField(NetworkManager.AI_ANI_NAME).str))
                     return;
 
-                m_skeletonAnimation.state.SetAnimation(0 ,
-                            e.msg.GetField(NetworkManager.AI_ANI_NAME).str ,
-                            e.msg.GetField(NetworkManager.AI_ANI_LOOP).b);
+                try
+                {
+                    m_skeletonAnimation.state.SetAnimation(0 ,
+                                e.msg.GetField(NetworkManager.AI_ANI_NAME).str ,
+                                e.msg.GetField(NetworkManager.AI_ANI_LOOP).b);
+
+
+                    AudioSource source = GetComponent<AudioSource>();
+                    if(source != null && !source.isPlaying)
+                        source.Play();
+                }
+                catch(Exception)
+                {
+
+                }
 
                 break;
         }

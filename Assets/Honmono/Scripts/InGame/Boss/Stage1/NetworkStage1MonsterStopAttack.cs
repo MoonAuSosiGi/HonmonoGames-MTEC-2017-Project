@@ -76,9 +76,10 @@ public class NetworkStage1MonsterStopAttack : MonoBehaviour, NetworkManager.Netw
                     GameObject.Destroy(gameObject);
                 }
                 break;
-            case NetworkManager.STATE_CHANGE:
+            case NetworkManager.HP_UPDATE:
                 if (e.targetName.Equals(m_name))
                 {
+                    GameManager.Instance().SetCurrentEnemy(GetComponent<Monster>());
                     if (IsInvoking("DamageEffect") || IsInvoking("DamageEffectEnd"))
                     {
                         CancelInvoke();
@@ -87,6 +88,9 @@ public class NetworkStage1MonsterStopAttack : MonoBehaviour, NetworkManager.Netw
 
                     InvokeRepeating("DamageEffect" , 0.1f , 0.1f);
                 }
+                break;
+            case NetworkManager.STATE_CHANGE:
+                
                 break;
             case NetworkManager.AI_ANI_NAME:
                 if (!e.targetName.Equals(m_name) || m_skeletonAnimation == null ||
@@ -102,6 +106,9 @@ public class NetworkStage1MonsterStopAttack : MonoBehaviour, NetworkManager.Netw
                             e.msg.GetField(NetworkManager.AI_ANI_NAME).str ,
                             e.msg.GetField(NetworkManager.AI_ANI_LOOP).b);
 
+                AudioSource source = GetComponent<AudioSource>();
+                if (source != null && !source.isPlaying)
+                    source.Play();
                 break;
         }
     }

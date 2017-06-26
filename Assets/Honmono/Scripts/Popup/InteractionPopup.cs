@@ -13,6 +13,7 @@ public class InteractionPopup : MonoBehaviour
     public GameObject m_cwSlowHexagon = null;
     public GameObject m_randomLeftSide = null;
     public GameObject m_randomRightSide = null;
+    public Text m_text = null;
     // ------------------------------------------------------------------------- //
     // tween 용
     class TweenObj
@@ -25,12 +26,17 @@ public class InteractionPopup : MonoBehaviour
         public TweenObj(bool b , GameObject t) { upTweenEnd = b; target = t; }
     }
 
+    public void SetText(string text)
+    {
+        m_text.text = text;
+    }
+
     void Start()
     {
         GameManager.Instance().UIShow(false);
         // TEST CODE :: 
         // side tween 
-
+        
         int rand = Random.Range(0 , 100);
 
         if (rand % 3 == 0)
@@ -62,6 +68,7 @@ public class InteractionPopup : MonoBehaviour
         ScaleUpAnimation(m_scaleUpDownHexagon);
         m_randomRightSide.SetActive(false);
         m_randomLeftSide.SetActive(false);
+        m_text.gameObject.SetActive(false);
         //ScaleUpAnimation(m_randomLeftSide);
         //ScaleUpAnimation(m_randomRightSide);
     }

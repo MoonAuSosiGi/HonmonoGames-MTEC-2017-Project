@@ -80,7 +80,6 @@ public class RoboHUD : MonoBehaviour,
         CancelInvoke("MonsterHPOutCheck");
 
         m_currentTarget = mon;
-        MDebug.Log(" mon " + mon.name);
         m_currentTarget.SetHUD(this);
         m_topEnemyHPBar.transform.parent.gameObject.SetActive(true);
 
@@ -116,6 +115,8 @@ public class RoboHUD : MonoBehaviour,
 
         m_enemyHPLeftArrow.transform.position = left;
         m_enemyHPRightArrow.transform.position = right;
+
+        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonHPUdate("targetMon" , percent));
     }
     
 
@@ -201,7 +202,7 @@ public class RoboHUD : MonoBehaviour,
         {
             // HP UPDATE
             int curHP = (int)e.msg.GetField(NetworkManager.CHARACTER_HPUPDATE).i;
-            int maxHP = (int)e.msg.GetField(NetworkManager.CHARACTER_MAXHP).i;
+            int maxHP = GameSetting.HERO_MAX_HP;//(int)e.msg.GetField(NetworkManager.CHARACTER_MAXHP).i;
             string name = e.user;
 
             for (int i = 0; i < m_userList.Count; i++)
@@ -221,9 +222,33 @@ public class RoboHUD : MonoBehaviour,
                 ((GameUI.RobotHPUpdateEvent)this).HPUpdate(
                     (int)e.msg.GetField(NetworkManager.HP_UPDATE).i , GameSetting.HERO_ROBO_MAX_HP);
             }
+            else if(e.targetName.Equals("targetMon"))
+            {
+                if (!NetworkOrderController.OBSERVER_MODE || e.user.Equals(GameManager.Instance().PLAYER.USER_NAME))
+                    return;
+                
+                gameObject.SetActive(true);
+
+                m_topEnemyHPBar.transform.parent.gameObject.SetActive(true);
+                float width = m_topEnemyHPBar.sprite.rect.size.x;
+                RectTransform t = m_topEnemyHPBar.GetComponent<RectTransform>();
+                t.sizeDelta = new Vector2(width * e.msg.GetField(NetworkManager.HP_UPDATE).f , t.sizeDelta.y);
+
+                float arrowWidth = m_enemyHPLeftArrow.sprite.rect.size.x * 0.5f;
+
+                Vector3 left = new Vector3(
+                    m_topEnemyHPBar.transform.position.x - (t.sizeDelta.x / 2.0f) - arrowWidth ,
+                    m_enemyHPLeftArrow.transform.position.y);
+                Vector3 right = new Vector3(
+                    m_topEnemyHPBar.transform.position.x + (t.sizeDelta.x / 2.0f) + arrowWidth ,
+                    m_enemyHPLeftArrow.transform.position.y);
+                CancelInvoke("MonsterHPOutCheck");
+                Invoke("MonsterHPOutCheck" , 3.0f);
+            }
         }
         else if (e.msgType.Equals(NetworkManager.ENERGY_UPDATE))
         {
+            
             if (e.targetName.Equals("robo"))
             {
                 ((GameUI.ENERGYUpdateEvent)this).EnergyUpdate(

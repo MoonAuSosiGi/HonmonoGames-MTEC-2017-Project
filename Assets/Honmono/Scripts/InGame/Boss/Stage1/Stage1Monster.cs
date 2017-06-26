@@ -267,7 +267,7 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
         base.Damage(damage);
 
         if(!m_tutorial)
-            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderStateValueChange(m_name , m_hp));
+            NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonHPUdate(m_name , m_hp));
 
         if (m_hp <= 0)
         {
@@ -352,9 +352,27 @@ public class Stage1Monster : Monster , NetworkManager.NetworkMessageEventListenr
         if(e.msgType.Equals(NetworkManager.HP_UPDATE))
         {
             // 데미지 입은것이 들어옴
-            if(e.targetName.Equals(m_name))
+            if(e.targetName.Equals(m_name)
+                && !GameManager.Instance().PLAYER.USER_NAME.Equals(e.user))
             {
-                Damage((int)e.msg.GetField(NetworkManager.HP_UPDATE).i);
+                GameManager.Instance().SetCurrentEnemy(this);
+                base.Damage((int)e.msg.GetField(NetworkManager.HP_UPDATE).i);
+                if (m_hp <= 0)
+                {
+                    MapManager.Instance().AddObject(GamePath.EFFECT , transform.position);
+
+                    if (!m_tutorial)
+                    {
+                        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder(m_name , "Monster"));
+                        NetworkManager.Instance().RemoveNetworkOrderMessageEventListener(this);
+                    }
+                    else
+                    {
+                        m_tutoRobo.TutoKillMonster();
+                    }
+
+                    GameObject.Destroy(gameObject);
+                }
             }
         }
     }

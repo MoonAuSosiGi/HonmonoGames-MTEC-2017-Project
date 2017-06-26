@@ -40,10 +40,13 @@ public class NetworkMonster : MonoBehaviour, NetworkManager.NetworkMessageEventL
                     GameObject.Destroy(gameObject);
                 }
                 break;
-            case NetworkManager.STATE_CHANGE:
-                //if(e.targetName.Equals(m_name))
-                //    m_text.text = "HP : " + e.msg.GetField(NetworkManager.STATE_CHANGE).i;
-                //break;
+            case NetworkManager.HP_UPDATE:
+                if(e.targetName.Equals(m_name))
+                {
+                    GameManager.Instance().SetCurrentEnemy(GetComponent<Monster>());
+                    
+                }
+                break;
             case NetworkManager.AI_ANI_NAME:
                 if (!e.targetName.Equals(m_name) || m_skeletonAnimation == null ||
                     e.msg.GetField(NetworkManager.AI_ANI_NAME) == null ||

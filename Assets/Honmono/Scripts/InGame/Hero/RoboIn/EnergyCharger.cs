@@ -26,6 +26,7 @@ public class EnergyCharger : MonoBehaviour ,NetworkManager.NetworkMessageEventLi
         }
         UpdateEnergy();
         GameManager.Instance().AddEnergyUpdateEvent(this);
+        NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
     }
 
     void Update()
@@ -36,7 +37,7 @@ public class EnergyCharger : MonoBehaviour ,NetworkManager.NetworkMessageEventLi
             if (!string.IsNullOrEmpty(NetworkOrderController.ORDER_NAME) &&
                 !NetworkOrderController.ORDER_NAME.Equals(GameManager.Instance().PLAYER.USER_NAME))
             {
-                NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
+                
                 NetworkMoving m = transform.GetChild(1).gameObject.AddComponent<NetworkMoving>();
                 m.NAME = NetworkOrderController.ORDER_NAME + "_pad";
                 m_networkCheck = true;
@@ -46,11 +47,12 @@ public class EnergyCharger : MonoBehaviour ,NetworkManager.NetworkMessageEventLi
 
     public void ReceiveNetworkMessage(NetworkManager.MessageEvent e)
     {
-        if (e.user.Equals(GameManager.Instance().PLAYER.USER_NAME))
-            return;
-
-        if (e.msgType == NetworkManager.ENERGY_UPDATE)
+        if (e.msgType.Equals(NetworkManager.ENERGY_UPDATE))
         {
+            
+            if (!e.targetName.Equals("robo"))
+                return;
+
             GameManager.Instance().ROBO.ENERGY = e.msg.GetField(NetworkManager.ENERGY_UPDATE).f;
             UpdateEnergy();
         }

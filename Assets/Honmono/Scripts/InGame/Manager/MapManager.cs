@@ -56,7 +56,7 @@ public class MapManager : Singletone<MapManager> {
         this.m_cameraHalfWdith = (Camera.main.orthographicSize * Screen.width / Screen.height);
         this.m_cameraHalfHeight = (this.m_cameraHalfWdith * Screen.height / Screen.width);
 
-        GameManager.Instance().HeroSetup(m_users[0]);
+       // GameManager.Instance().HeroSetup(m_users[0]);
         GameManager.Instance().ROBO = m_robo;
         //temp 
 

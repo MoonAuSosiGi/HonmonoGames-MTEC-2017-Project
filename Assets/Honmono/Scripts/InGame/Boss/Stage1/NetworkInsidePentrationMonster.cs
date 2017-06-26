@@ -87,6 +87,10 @@ public class NetworkInsidePentrationMonster : MonoBehaviour,NetworkManager.Netwo
                     m_skeletonAnimation.state.SetAnimation(0 , e.msg.GetField(NetworkManager.AI_ANI_NAME)[0].str , false);
                     for (int i = 1; i < e.msg.GetField(NetworkManager.AI_ANI_NAME).Count; i++)
                         m_skeletonAnimation.state.AddAnimation(0 , e.msg.GetField(NetworkManager.AI_ANI_NAME)[i].str , false , 0.0f);
+
+                    AudioSource source = GetComponent<AudioSource>();
+                    if (source != null && !source.isPlaying)
+                        source.Play();
                 }
                 else
                 {

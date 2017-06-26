@@ -6,7 +6,9 @@ using UnityEngine;
 public class NetworkStage2BOSS : MonoBehaviour, NetworkManager.NetworkMessageEventListenrer
 {
     private List<SpriteRenderer> m_destroyBoneList = new List<SpriteRenderer>();
+    private string m_name = null;
 
+    public string BOSS_NAME { get { return m_name; } set { m_name = value; } }
 
     void DestroyListSetup()
     {
@@ -35,5 +37,15 @@ public class NetworkStage2BOSS : MonoBehaviour, NetworkManager.NetworkMessageEve
         {
             m_destroyBoneList[(int)e.msg.GetField(NetworkManager.PART_DESTROY).i].enabled = true;
         }
+        else if (e.msgType.Equals(NetworkManager.HP_UPDATE))
+        {
+            if (e.targetName.Equals(m_name))
+            {
+                GameManager.Instance().SetCurrentEnemy(GetComponent<Monster>());
+
+            }
+        }
+
+        
     }
 }

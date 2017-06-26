@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using Spine.Unity;
 
-public class Stage1MonsterStopAttack : Monster,NetworkManager.NetworkMessageEventListenrer {
+public class Stage1MonsterStopAttack : Monster, NetworkManager.NetworkMessageEventListenrer
+{
     // -- 기본 정보 ------------------------------------------------//
     public GameObject m_target = null;
+    public AudioSource m_source = null;
 
     private const string ANI_IDLE = "idle";
     private const string ANI_ATTACK = "attack";
@@ -27,6 +29,8 @@ public class Stage1MonsterStopAttack : Monster,NetworkManager.NetworkMessageEven
     private bool m_isNetworkObject = false;
     bool m_networkObjectCheck = false;
     public bool NETWORKING { set { m_isNetworkObject = value; } }
+
+    private Hero m_heroTarget = null;
 
     // -------------------------------------------------------------//
 
@@ -64,7 +68,7 @@ public class Stage1MonsterStopAttack : Monster,NetworkManager.NetworkMessageEven
                 NetworkManager.Instance().SendOrderMessage(
                     JSONMessageTool.ToJsonCreateOrder(m_name , "PlanetMonster2" , pos.x , pos.y , -1.0f));
             }
-            
+
 
             NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderStateValueChange(m_name , m_hp));
             MoveSend();
@@ -74,6 +78,7 @@ public class Stage1MonsterStopAttack : Monster,NetworkManager.NetworkMessageEven
 
             // 초기 시작값
             this.m_skeletonAnimation.state.SetAnimation(0 , ANI_IDLE , true);
+           // m_heroTarget = GameManager.Instance().PLAYER.PLAYER_HERO;
             return true;
         }
         else if (!string.IsNullOrEmpty(NetworkOrderController.ORDER_NAME) && !string.IsNullOrEmpty(GameManager.Instance().PLAYER.USER_NAME) &&
@@ -90,11 +95,15 @@ public class Stage1MonsterStopAttack : Monster,NetworkManager.NetworkMessageEven
         {
             m_curState = "idle";
 
-            Hero hero = GameManager.Instance().PLAYER.PLAYER_HERO;
+            Hero hero = m_heroTarget;
 
             if (hero != null)
             {
-                hero.Damage(1 , m_skeletonAnimation.skeleton.flipX);
+                if (hero.IS_PLAYER)
+                    hero.Damage(1 , m_skeletonAnimation.skeleton.flipX);
+                else
+                    NetworkManager.Instance().SendOrderMessage(
+                        JSONMessageTool.ToJsonCharacterHPUpdate(hero.USERNAME , 1 , GameSetting.HERO_MAX_HP));
             }
             m_skeletonAnimation.state.SetAnimation(0 , ANI_IDLE , true);
             //  m_target = null;
@@ -131,22 +140,25 @@ public class Stage1MonsterStopAttack : Monster,NetworkManager.NetworkMessageEven
     {
         m_curState = "attack";
 
-        Vector3 pos = transform.position;
-        Vector3 hero = GameManager.Instance().PLAYER.PLAYER_HERO.transform.position;
+        if (m_heroTarget == null)
+            return 1.0f;
 
-        if(pos.x <= hero.x)
+        Vector3 pos = transform.position;
+        Vector3 hero = m_heroTarget.transform.position;
+
+        if (pos.x <= hero.x)
         {
             m_skeletonAnimation.skeleton.flipX = true;
         }
         else
             m_skeletonAnimation.skeleton.flipX = false;
 
-        MDebug.Log("tt " + string.Format("{0:F1}" , Vector3.Distance(pos , hero)));
-        if (Vector3.Distance(pos,hero) <= 11.0f)
+        if (Mathf.Abs(Vector3.Distance(pos , hero) )<= 51.0f)
         {
             CheckAndSetAnimation(0 , ANI_ATTACK , false);
             if (!m_curState.Equals(m_prevState))
             {
+                m_source.Play();
                 NetworkManager.Instance().SendOrderMessage(
                     JSONMessageTool.ToJsonAIMessage(m_name , "" , ANI_ATTACK , false));
             }
@@ -170,9 +182,7 @@ public class Stage1MonsterStopAttack : Monster,NetworkManager.NetworkMessageEven
 
         m_damageCoolTime = true;
         InvokeRepeating("DamageEffect" , 0.1f , 0.1f);
-
-        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonOrderStateValueChange(m_name , m_hp));
-
+        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonHPUdate(m_name , m_hp));
     }
 
     void DamageEffect()
@@ -230,11 +240,11 @@ public class Stage1MonsterStopAttack : Monster,NetworkManager.NetworkMessageEven
         if (col.transform.tag.Equals("Player"))
         {
             m_target = col.gameObject;
-          
+
         }
     }
 
- 
+
 
     protected void MoveSend()
     {
@@ -258,10 +268,46 @@ public class Stage1MonsterStopAttack : Monster,NetworkManager.NetworkMessageEven
         if (e.msgType.Equals(NetworkManager.HP_UPDATE))
         {
             // 데미지 입은것이 들어옴
-            if (e.targetName.Equals(m_name))
+            if (e.targetName.Equals(m_name) && !GameManager.Instance().PLAYER.USER_NAME.Equals(e.user))
             {
-                Damage((int)e.msg.GetField(NetworkManager.HP_UPDATE).i);
+                if (m_damageCoolTime)
+                    return;
+                m_damageCoolTime = true;
+                GameManager.Instance().SetCurrentEnemy(this);
+
+                base.Damage((int)e.msg.GetField(NetworkManager.HP_UPDATE).i);
+                if (m_hp <= 0)
+                {
+                    MapManager.Instance().AddObject(GamePath.EFFECT , transform.position);
+                    NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder(m_name , "Monster"));
+                    NetworkManager.Instance().RemoveNetworkOrderMessageEventListener(this);
+                    GameObject.Destroy(gameObject);
+                    return;
+                }
+
+                m_damageCoolTime = true;
+                if(!IsInvoking("DamageEffect"))
+                    InvokeRepeating("DamageEffect" , 0.1f , 0.1f);
             }
         }
+    }
+
+    void OnTriggerStay2D(Collider2D col)
+    {
+        Hero t = col.GetComponent<Hero>();
+
+        if (t != null)
+        {
+          //  if (m_heroTarget != t)
+            //    MDebug.Log("다른녀석이 장전됨 " + t.USERNAME + " d " + m_heroTarget.USERNAME);
+            m_heroTarget = t;
+            
+        }
+    }
+
+    void OnTriggerExit2D(Collider2D col)
+    {
+        if(col.tag.Equals("Player"))
+        m_heroTarget = null;
     }
 }

@@ -37,8 +37,8 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
 
 
     public string CURRENT_PLACE { get { return m_currentPlace; } set { m_currentPlace = value; } }
-    public string MOVE_PLYAER { get { return m_movePlayerName; } set { m_movePlayerName = value; } }
-    public string GUN_PLAYER { get { return m_gunPlayerName; } set { m_gunPlayerName = value; } }
+    public string MOVE_PLYAER { get { return m_movePlayerName; } set { m_energyUserTick = 0.0f; CancelInvoke("EnergyTestUser"); m_movePlayerName = value; } }
+    public string GUN_PLAYER { get { return m_gunPlayerName; } set { m_energyUserTick = 0.0f;  CancelInvoke("EnergyTestUser"); m_gunPlayerName = value; } }
 
 
     // 이동을 제외한 상태가 지정된다.
@@ -112,7 +112,8 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
 
 
     // --------------------------------------------------------------------------------//
-  
+
+    float m_lastEnergySendCheck = 0.0f;
 
     public float ENERGY { get { return m_roboEnergy; }
         set {
@@ -120,8 +121,23 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             if (NetworkOrderController.OBSERVER_MODE)
                 return;
             GameManager.Instance().ChangeEnergy(m_roboEnergy);
-            NetworkManager.Instance().SendOrderMessage(
+            
+
+            if ((!string.IsNullOrEmpty(m_movePlayerName) && m_movePlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
+                || 
+                (!string.IsNullOrEmpty(m_gunPlayerName) && m_gunPlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME)))
+            {
+                if (m_lastEnergySendCheck - Time.deltaTime <= 0.1f)
+                {
+                    
+                    return;
+                }
+                m_lastEnergySendCheck = 0.0f;
+
+
+                NetworkManager.Instance().SendOrderMessage(
                 JSONMessageTool.ToJsonEnergyUdate("robo" , m_roboEnergy));
+            }
         } }
     
 
@@ -156,15 +172,22 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
 
     // Update is called once per frame
     void Update () {
-
+        m_lastEnergySendCheck += Time.deltaTime;
         m_prevState = m_roboState;
+
+        if(Input.GetKeyUp(KeyCode.U))
+        {
+            Heal(10);
+        }
+
+        if(Input.GetKeyUp(KeyCode.Y))
+        {
+            ENERGY += 0.5f;
+        }
+
         if (!string.IsNullOrEmpty(m_movePlayerName) &&
             m_movePlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
         {
-            if (ENERGY < 0.5f)
-                m_energyDummyUI.SetActive(true);
-            else
-                m_energyDummyUI.SetActive(false);
 
             Control();
             MoveSend();
@@ -176,10 +199,6 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         if (!string.IsNullOrEmpty(m_gunPlayerName) &&
             m_gunPlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
         {
-            if (ENERGY < 0.5f)
-                m_energyDummyUI.SetActive(true);
-            else
-                m_energyDummyUI.SetActive(false);
             ControlGun();
             GunAngleSend();
             StateSend();
@@ -206,6 +225,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             MapManager.Instance().AddMonster(GamePath.BOSS2 , "boss2_" + GameManager.Instance().PLAYER.USER_NAME ,
                 MapManager.Instance().m_bossCreatePlace.transform.position);
         }
+        
     }
     
     // Network Move Message Send ------------------------------------!
@@ -258,9 +278,10 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
 
     void EnergyTestUser()
     {
-        ENERGY -= 0.5f;
+        ENERGY -= 2.0f;
+        CancelInvoke("EnergyTestUser");
     }
-  
+    float m_energyUserTick = 0.0f;
     /// <summary>
     /// 캐릭터 조작에 관련된 함수
     /// </summary>
@@ -279,20 +300,22 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         {
             m_engineAnimator.SetInteger("play" , 1);
             m_roboState = BitControl.Set(m_roboState, (int)ROBO_STATE.MOVE);
+            m_energyUserTick = 0.0f;
         }
         
         // Horizontal
-        if (Input.GetKey(KeyCode.LeftArrow) && ENERGY >= 0.5f)
+        if (Input.GetKey(KeyCode.LeftArrow) && ENERGY >= 2)
         {
-            if(!IsInvoking("EnergyTestUser"))
+            if (!IsInvoking("EnergyTestUser"))
                 Invoke("EnergyTestUser" , 0.5f);
+           
             movex = -m_moveSpeed * Time.deltaTime;
 
             m_skletonAnimation.skeleton.flipX = false;
 
         }
 
-        if (Input.GetKey(KeyCode.RightArrow) && ENERGY >= 0.5f)
+        if (Input.GetKey(KeyCode.RightArrow) && ENERGY >= 2)
         {
             if (!IsInvoking("EnergyTestUser"))
                 Invoke("EnergyTestUser" , 0.5f);
@@ -301,13 +324,13 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             m_skletonAnimation.skeleton.flipX = true;
         }
         // Vertical
-        if (Input.GetKey(KeyCode.UpArrow) && ENERGY >= 0.5f)
+        if (Input.GetKey(KeyCode.UpArrow) && ENERGY >= 2)
         {
             if (!IsInvoking("EnergyTestUser"))
                 Invoke("EnergyTestUser" , 0.5f);
             movey = m_moveSpeed * Time.deltaTime;
         }
-        if (Input.GetKey(KeyCode.DownArrow) && ENERGY >= 0.5f)
+        if (Input.GetKey(KeyCode.DownArrow) && ENERGY >= 2)
         {
             if (!IsInvoking("EnergyTestUser"))
                 Invoke("EnergyTestUser" , 0.5f);
@@ -367,7 +390,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
                 m_gunAngle += 1.0f;
         }
 
-        if (!BitControl.Get(m_roboState , (int)ROBO_STATE.COOLTIME) && Input.GetKeyUp(KeyCode.Space))
+        if (ENERGY >= 2.0f && !BitControl.Get(m_roboState , (int)ROBO_STATE.COOLTIME) && Input.GetKeyUp(KeyCode.Space))
         {
             SoundManager.Instance().PlaySound(m_laser1);
             m_roboState = BitControl.Set(m_roboState, (int)ROBO_STATE.ATTACK);
@@ -382,11 +405,19 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             m_roboState = BitControl.Clear(m_roboState, (int)ROBO_STATE.ATTACK);
             m_roboState = BitControl.Set(m_roboState, (int)ROBO_STATE.COOLTIME);
             
-            if(ENERGY >= 0.5f)
+            if(ENERGY >= 2.0f)
             {
-                if (!IsInvoking("EnergyTestUser"))
-                    Invoke("EnergyTestUser" , 0.5f);
-                
+
+                //if (!IsInvoking("EnergyTestUser"))
+                //   Invoke("EnergyTestUser" , 0.5f);
+
+                if (m_gunPlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
+                {
+
+                    ENERGY -= 2.0f;
+                    FireBullet();
+                }
+
             }
             
         }
@@ -419,6 +450,8 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
             m_roboState = BitControl.Clear(m_roboState , (int)ROBO_STATE.ATTACK);
             m_roboState = BitControl.Set(m_roboState , (int)ROBO_STATE.COOLTIME);
 
+         
+
         }
     }
 
@@ -427,8 +460,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     {
         if(trackEntry.animation.name.Equals(ANI_ATTACK))//trackEntry.animation.name == ANI_ATTACK)
         {
-            if (m_gunPlayerName.Equals(GameManager.Instance().PLAYER.USER_NAME))
-                FireBullet();
+            
             m_roboState = BitControl.Clear(m_roboState, (int)ROBO_STATE.COOLTIME);
             m_skletonAnimation.state.SetAnimation(0 , ANI_IDLE , true);
             //m_effectAnimator.gameObject.SetActive(true);
@@ -626,15 +658,10 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         {
             if (!r)
             {
-                GameManager.Instance().CUR_PLACE = GameManager.ROBO_PLACE.BOSS_AREA;
+                //GameManager.Instance().CUR_PLACE = GameManager.ROBO_PLACE.BOSS_AREA;
                 //CameraManager.Instance().MoveCameraAndObject(gameObject , 10 ,
                 //    CameraManager.CAMERA_PLACE.BOSS , gameObject);
-
-                if(userName.Equals(MOVE_PLYAER))
-                    MapManager.Instance().AddMonster(
-                        GamePath.BOSS1 ,
-                        "boss1_" + GameManager.Instance().PLAYER.USER_NAME ,
-                        new Vector3(121.06f , 6.34f));
+                
                 r = true;
             }
           
@@ -642,15 +669,12 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         switch (col.tag)
         {
             case "BOSS_SCENE":
-                GameManager.Instance().ChangeScene(GameManager.PLACE.STAGE1_BOSS);
-                MapManager.Instance().AddMonster(GamePath.BOSS1 , "boss1_" + GameManager.Instance().PLAYER.USER_NAME ,
-                    MapManager.Instance().m_bossCreatePlace.transform.position);
+                
                 break;
             case "BOSS_SCENE2":
-                GameManager.Instance().ChangeScene(GameManager.PLACE.STAGE1_BOSS);
-                MapManager.Instance().AddMonster(GamePath.BOSS1 , "boss2_" + GameManager.Instance().PLAYER.USER_NAME ,
-                    MapManager.Instance().m_bossCreatePlace.transform.position);
+                
                 break;
+            case "PLANET":
             case "PLANET1":
             case "PLANET2":
                 m_controllName = col.tag;
@@ -684,7 +708,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
         HP -= damage;
         GameManager.Instance().CameraShake(1.0f);
         // 이곳에서 구멍 이펙트 생성 
-        if(HP % 10 == 0)
+        if(HP % 5 == 0)
         {
             // 10이상 데미지를 받을 때마다 생성
             DamagePointCreate();
@@ -701,7 +725,7 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     {
         HP += heal;
 
-        if (HP >= GameSetting.HERO_MAX_HP)
+        if (HP >= GameSetting.HERO_ROBO_MAX_HP)
             HP = GameSetting.HERO_ROBO_MAX_HP;
     }
 
@@ -709,9 +733,10 @@ public class HeroRobo : MonoBehaviour, NetworkManager.NetworkMessageEventListenr
     void DamagePointCreate()
     {   
         int index = UnityEngine.Random.Range(0 , m_DamageAnchorList.Count);
-        
+        Vector3 pos = m_DamageAnchorList[index].transform.position;
+        pos.z = -1.0f;
         GameObject obj = MapManager.Instance().AddObject(
-            GamePath.DAMAGE_POINT, m_DamageAnchorList[index].transform.position);
+            GamePath.DAMAGE_POINT, pos);
         obj.transform.parent = m_DamageAnchorList[index].transform.parent;
 
     }

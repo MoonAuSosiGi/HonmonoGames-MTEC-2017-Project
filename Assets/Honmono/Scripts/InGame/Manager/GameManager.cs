@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using UnityEngine.UI;
 
 public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessageEventListenrer{
 
+    public Text m_queueCountChecker = null;
     //-- GameManager ------------------------------------------------//
     // 게임의 전반적인 내용에 대한 관리를 하는 클래스
     private struct Resolution
@@ -79,6 +81,10 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
     // 현재 때리고 있는 몬스터 
     public void SetCurrentEnemy(Monster monster)
     {
+        if (monster != null)
+            m_gameHUD.gameObject.SetActive(true);
+        else
+            m_gameHUD.gameObject.SetActive(false);
         m_gameHUD.SetMonster(monster);
     }
     // -- Scene Management ---------------------------------------------------------------------//
@@ -128,7 +134,7 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
     }
     //------------------------------------------------------------------------------------------//
     //--옵저버용--------------------------------------------------------------------------------//
-    class GameUserInfo
+    public class GameUserInfo
     {
         public PLACE place;
         public Hero player;
@@ -139,23 +145,22 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
         }
     }
     //접속중인 유저들
-    private List<GameUserInfo> m_gameUserInfo = null;
+    private List<GameUserInfo> m_gameUserInfo = new List<GameUserInfo>();
+    public List<GameUserInfo> GAME_USER_INFO
+    {
+        get { return m_gameUserInfo; }
+    }
 
     public void HudSetup(List<string> users)
     {
         m_gameHUD.SetPlayerInfo(users);
         NetworkManager.Instance().AddNetworkOrderMessageEventListener(m_gameHUD);
+        
     }
 
-    public void SetupObserver()
+    public void AddObserverInfo(Hero hero)
     {
-        m_gameUserInfo = new List<GameUserInfo>();
-
-        foreach (Hero hero in NetworkManager.Instance().ROBO_USERLIST)
-        {
-            m_gameUserInfo.Add(new GameUserInfo(PLACE.ROBO_IN , hero));
-        }
-
+        m_gameUserInfo.Add(new GameUserInfo(PLACE.ROBO_IN , hero));
     }
     // 현재 보고 있는 유저
     private int m_curIndex = 0;
@@ -229,6 +234,9 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
     // -- Scene 전환 관련 정리 ----------------------------------------------------------------//
     public void ChangeScene(PLACE place,GameObject funcTarget = null, string func = null,bool fadeOutEndFunc = true)
     {
+        if(m_place == PLACE.ONLY_POPUP_SHOW && place == PLACE.ROBO_IN)
+            NetworkManager.Instance().GameStart();
+
         m_place = place;
 
         PLACE_INFO info = m_placeList[(int)place];
@@ -247,16 +255,30 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
         m_moveCamera.TARGET_MOVEABLE = false;
         switch (place)
         {
+            case PLACE.STAGE1_BOSS:
+                SoundManager.Instance().PlayBGM(4);
+                break;
             case PLACE.PLANET:
+                if(!NetworkOrderController.OBSERVER_MODE)
+                    m_moveTarget = GameManager.Instance().PLAYER.PLAYER_HERO.gameObject;
                 m_moveCamera.CORRECTION = new Vector2(0.0f , 5.5f);
                 break;
+            case PLACE.PLANET2:
             case PLACE.PLANET1:
+                SoundManager.Instance().PlayBGM(3);
+                if (!NetworkOrderController.OBSERVER_MODE)
+                    m_moveTarget = GameManager.Instance().PLAYER.PLAYER_HERO.gameObject;
                 m_moveCamera.TARGET_MOVEABLE = true;
                 m_moveCamera.CORRECTION = new Vector2(0.0f , 6.0f);
                 break;
             case PLACE.ROBO_IN_DRIVE:
             case PLACE.ROBO_IN_GUN:
             case PLACE.ROBO_IN:
+                NetworkManager.Instance().SendOrderMessage(
+                JSONMessageTool.ToJsonEnergyUdate("robo" , ROBO.ENERGY));
+                SoundManager.Instance().PlayBGM(2);
+                if (!NetworkOrderController.OBSERVER_MODE)
+                    m_moveTarget = GameManager.Instance().PLAYER.PLAYER_HERO.gameObject;
                 m_moveCamera.CORRECTION = new Vector2(0.0f , 5.76f);
                 m_moveCamera.TARGET_MOVEABLE = true;
                 break;
@@ -280,11 +302,12 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
             NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonUserPlaceChange((int)m_place));
     }
 
-
+    bool m_ob_interaction = false;
+    private string m_ob_intreactionMode = "";
     // 옵저버가 플레이어를 쫒아다닌다 
     public void ChangeUser(int userIndex)
     {
-        if (userIndex < 0 || userIndex >= m_gameUserInfo.Count)
+        if (userIndex < 0 || m_gameUserInfo.Count <= 0 || userIndex >= m_gameUserInfo.Count)
             return;
 
         GameUserInfo info = m_gameUserInfo[userIndex];
@@ -305,10 +328,45 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
                 break;
         }
 
+        if (info.place == PLACE.ROBO)
+        {
+            string moveCheck = (string.IsNullOrEmpty(ROBO.MOVE_PLYAER)) ? "" : ROBO.MOVE_PLYAER;
+            string gunCheck = (string.IsNullOrEmpty(ROBO.GUN_PLAYER)) ? "" : ROBO.GUN_PLAYER;
+            m_ob_interaction = true;
+            m_ob_intreactionMode = 
+                (info.player.USERNAME.Equals(gunCheck + "_robo")) ? 
+                "WEAPON SYSTEM ONLINE" : (info.player.USERNAME.Equals(moveCheck + "_robo")) ? "DRIVE SYSTEM ONLINE" : "";
+        }
+
+        switch (info.place)
+        {
+            case PLACE.PLANET:
+            case PLACE.PLANET1:
+            case PLACE.PLANET2:
+                info.player.SetSkinSuit();
+                break;
+            default:
+                info.player.SetSkinNormal();
+                break;
+
+        }
+
     }
 
+
+    void InteractionPopup()
+    {
+        PopupManager.Instance().AddInteractionPopup(m_ob_intreactionMode);
+    }
     void Update()
     {
+        //string peek = "";
+
+        //if (NetworkManager.Instance().m_socketOrders.Count > 0)
+        //    peek = NetworkManager.Instance().m_socketOrders.Peek();
+        //m_queueCountChecker.text = "QUEUE Count : "
+        //    + NetworkManager.Instance().m_socketOrders.Count + "\n" + peek;
+
         if (!NetworkOrderController.OBSERVER_MODE)
             return;
 
@@ -319,13 +377,19 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
         if (Input.GetKeyDown(KeyCode.E)) index = 2;
         if (Input.GetKeyDown(KeyCode.R)) index = 3;
         if (index < 0)
+        {
             return;
+        }
+        else
+        {
+            GameUserInfo info = m_gameUserInfo[index];
+            if (string.IsNullOrEmpty(info.player.USERNAME))
+                return;
 
-        GameUserInfo info = m_gameUserInfo[index];
-        if (string.IsNullOrEmpty(info.player.USERNAME))
-            return;
+            m_curIndex = index;
+        }
 
-        m_curIndex = index;
+       
 
         ChangeUser(m_curIndex);
         
@@ -429,8 +493,16 @@ public class GameManager : Singletone<GameManager> , NetworkManager.NetworkMessa
             if (m_funcTarget != null && !m_faceOutEndFunc)
                 m_funcTarget.SendMessage(m_func);
 
+            if(m_ob_interaction)
+            {
+                InteractionPopup();
+                m_ob_interaction = false;
+            }
+
             if (m_place != PLACE.ONLY_POPUP_SHOW)
                 UIShow(true);
+            if (m_place == PLACE.TUTORIAL_ROBO || m_place == PLACE.TUTORIAL_ROBO_IN || m_place == PLACE.TUTORIAL_START)
+                UIShow(false);
             m_uiObj.SetActive(true);
         }
     }

@@ -38,7 +38,7 @@ public class LoginPopup : MonoBehaviour ,PopupManager.PopupHide{
 	// Use this for initialization
 	void Start () {
         //  SoundManager.Instance().PlayBGM(0);
-        m_serverInput.text = "localhost";
+        m_serverInput.text = "localhost"; //  "52.79.58.106";
 	}
 	
 	// Update is called once per frame
@@ -140,6 +140,14 @@ public class LoginPopup : MonoBehaviour ,PopupManager.PopupHide{
 
     public void HideEndEvent()
     {
-        GameManager.Instance().ChangeScene(GameManager.PLACE.ONLY_POPUP_SHOW);
+        if(GameManager.Instance().PLAYER.NETWORK_INDEX > 1)
+            GameManager.Instance().ChangeScene(GameManager.PLACE.ONLY_POPUP_SHOW);
+        else
+        {
+            SoundManager.Instance().PlayBGM(3);
+
+            GameManager.Instance().ChangeScene(GameManager.PLACE.TUTORIAL_START);
+        }
+        
     }
 }

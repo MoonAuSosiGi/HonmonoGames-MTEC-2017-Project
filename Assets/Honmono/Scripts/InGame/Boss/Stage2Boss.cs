@@ -5,7 +5,7 @@ using System;
 using System.Text.RegularExpressions;
 using Spine.Unity;
 
-public class Stage2Boss : Monster {
+public class Stage2Boss : Monster,NetworkManager.NetworkMessageEventListenrer {
     // -- Network ------------------------------------------------------------------//
     private Vector3 m_targetPos = Vector3.zero;
     private Vector3 m_prevPos = Vector3.zero;
@@ -62,7 +62,7 @@ public class Stage2Boss : Monster {
         m_skeletonAnimation.state.SetAnimation(0 , ANI_MOVE , true);
         Monster.m_index = 0;
         DestroyListSetup();
-
+        NetworkManager.Instance().AddNetworkOrderMessageEventListener(this);
         if (m_target == null)
             m_target = GameManager.Instance().ROBO.gameObject;
         m_dir = m_target.transform.position - transform.position;
@@ -80,7 +80,7 @@ public class Stage2Boss : Monster {
             if (t.childCount >= 2)
             {
                 Stage2BOSSBone b = new Stage2BOSSBone();
-                b.m_hp = 3;
+                b.m_hp = 2;
                 b.m_renderer = t.GetChild(1).GetComponent<SpriteRenderer>();
                 m_destroyBoneList.Add(b);
             }
@@ -93,7 +93,14 @@ public class Stage2Boss : Monster {
         {
             MapManager.Instance().AddObject(GamePath.EFFECT , transform.position);
             NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonRemoveOrder(m_name , "Monster"));
+            GameObject.Destroy(gameObject);
             return;
+        }
+        if (Input.GetKeyUp(KeyCode.I))
+        {
+            GameManager.Instance().SetCurrentEnemy(this);
+
+            Damage(20);
         }
         if (m_pattern != null)
             m_pattern.Update(gameObject);
@@ -162,6 +169,7 @@ public class Stage2Boss : Monster {
             }
                 
         }
+        NetworkManager.Instance().SendOrderMessage(JSONMessageTool.ToJsonHPUdate(m_name , m_hp));
     }
 
     public void ShootBullet(int[] index,bool randDir = false)
@@ -197,7 +205,6 @@ public class Stage2Boss : Monster {
                     false));
         }
     }
-
     public void ShootEgg(int[] index , bool randDir = false)
     {
         for (int i = 0; i < index.Length; i++)
@@ -358,5 +365,17 @@ public class Stage2Boss : Monster {
             m_pattern = new Boss2PatternC(m_skeletonAnimation , ANI_MOVE ,"" , m_name);
 
         return true;
+    }
+
+    public void ReceiveNetworkMessage(NetworkManager.MessageEvent e)
+    {
+        if (e.msgType.Equals(NetworkManager.DAMAGE))
+        {
+            if (e.targetName.Equals(m_name))
+            {
+                GameManager.Instance().SetCurrentEnemy(this);
+                Damage((int)e.msg.GetField(NetworkManager.DAMAGE).i);
+            }
+        }
     }
 }
